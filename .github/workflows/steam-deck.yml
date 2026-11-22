@@ -131,7 +131,7 @@ jobs:
           docker run --rm --user 1000:1000 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-audio,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-obs-smoke.sh
           docker run --rm --user 1000:1000 -e "OBSGOD_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-capture,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-capture-smoke.sh /src/dist
           docker run --rm --user 1000:1000 -e "OBSGOD_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-game-obs,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-game-obs-smoke.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: obsgod-candidate-${{ github.sha }}
           path: |
