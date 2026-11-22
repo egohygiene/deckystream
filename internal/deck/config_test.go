@@ -24,6 +24,7 @@ func testPaths(t *testing.T) Paths {
 const fixtureSettings = `{"version":1,"server":"rtmps://example.invalid/app","bitrate":4500,"fps":30,"encoder":"vaapi","microphone":false,"stream_key":"fixture-never-real"}`
 
 func TestChangingDestinationRequiresItsOwnExplicitKey(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -49,6 +50,7 @@ func TestChangingDestinationRequiresItsOwnExplicitKey(t *testing.T) {
 }
 
 func TestBlankKeyCannotRepairAMismatchedPairIntoAnotherDestination(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -83,6 +85,7 @@ func TestBlankKeyCannotRepairAMismatchedPairIntoAnotherDestination(t *testing.T)
 }
 
 func TestPrivateConfigAndSecretPreservation(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	s, e := Configure(p, strings.NewReader(fixtureSettings))
 	if e != nil {
@@ -191,6 +194,7 @@ func TestCaptureRejectsBlankButAcceptsRealPixels(t *testing.T) {
 }
 
 func TestPreparePreservesOtherOBSConfig(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	other := filepath.Join(filepath.Dir(p.OBSConfig), "obs-studio", "global.ini")
 	if e := os.MkdirAll(filepath.Dir(other), 0700); e != nil {

@@ -56,6 +56,18 @@ def git_file(revision, name):
     return subprocess.check_output(["git", "show", revision + ":" + name], cwd=ROOT)
 
 
+def source_repository(revision):
+    """Use the selected source's canonical publisher, never the Go module or env."""
+    require(re.fullmatch(r"[0-9a-f]{40}", revision), "Full source revision required")
+    product = json.loads(git_file(revision, "product.json"))
+    repository = product.get("repository") if isinstance(product, dict) else None
+    require(isinstance(repository, str) and re.fullmatch(
+        r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}", repository)
+        and "--" not in repository.split("/", 1)[0]
+        and repository.split("/", 1)[1] not in (".", ".."), "Invalid canonical source repository")
+    return repository
+
+
 def source(revision):
     require(bool(re.fullmatch(r"[0-9a-f]{40}", revision)), "Full source revision required")
     require(command("git", "rev-parse", "HEAD") == revision, "Checkout differs from selected source")
@@ -278,8 +290,10 @@ def audit_payload(name, data, files, target, version, identity, prepared):
 
 def sidecars(record, version, identity):
     identity_hash = record["sha256"]
+    repository_url = "https://github.com/" + source_repository(identity["revision"])
     packages = [{"SPDXID": "SPDXRef-Application", "name": "obsgod", "versionInfo": version,
-                 "downloadLocation": "NOASSERTION", "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "MIT"},
+                 "downloadLocation": repository_url + "/tree/" + identity["revision"],
+                 "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "MIT"},
                 {"SPDXID": "SPDXRef-Go", "name": "Go standard library", "versionInfo": GO,
                  "downloadLocation": "NOASSERTION", "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "BSD-3-Clause"}]
     relationships = [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-Application"},
@@ -297,12 +311,12 @@ def sidecars(record, version, identity):
                       "licenseConcluded": "NOASSERTION", "licenseInfoInFiles": ["NOASSERTION"], "copyrightText": "NOASSERTION"})
         relationships.append({"spdxElementId": "SPDXRef-Application", "relationshipType": "CONTAINS", "relatedSpdxElement": identifier})
     sbom = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": record["name"],
-            "documentNamespace": "https://github.com/szmyty/obsgod/sbom/" + identity["revision"] + "/" + identity_hash,
+            "documentNamespace": repository_url + "/sbom/" + identity["revision"] + "/" + identity_hash,
             "creationInfo": {"created": identity["created"], "creators": ["Tool: obsgod-generic-release-schema1"]},
             "packages": packages, "files": files, "relationships": relationships,
             "comment": "UNSIGNED local inventory. Notice catalog is a target-selected module superset; only actual linked modules are package dependencies. Platform compilation is not native runtime qualification."}
-    materials = [{"uri": "git+https://github.com/szmyty/obsgod@" + identity["revision"], "digest": {"sha1": identity["revision"]}}]
-    for name in ("go.mod", "go.sum", ".goreleaser.yml", ".github/workflows/goreleaser.yml", "scripts/generic-release.py", "docs/generic-cli-distribution.md"):
+    materials = [{"uri": "git+" + repository_url + "@" + identity["revision"], "digest": {"sha1": identity["revision"]}}]
+    for name in ("product.json", "go.mod", "go.sum", ".goreleaser.yml", ".github/workflows/goreleaser.yml", "scripts/generic-release.py", "docs/generic-cli-distribution.md"):
         materials.append({"uri": name, "digest": {"sha256": sha(git_file(identity["revision"], name))}})
     provenance = {"_type": "https://in-toto.io/Statement/v1", "subject": [{"name": record["name"], "digest": {"sha256": identity_hash}}],
                   "predicateType": "https://slsa.dev/provenance/v1", "predicate": {

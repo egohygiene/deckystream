@@ -14,6 +14,7 @@ import (
 )
 
 func TestMixerPreferencesPreserveLegacyCredentialBinding(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(strings.Replace(fixtureSettings, `"microphone":false`, `"microphone":true`, 1))); err != nil {
 		t.Fatal(err)
@@ -67,6 +68,7 @@ func TestMixerRejectsUnsafePreferencesAndRequests(t *testing.T) {
 	}
 }
 func TestMixerCacheExpiresActualEvidenceAndNoticeRedactsIdentity(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	r := blankMixer(p)
 	r.Known = true
@@ -94,6 +96,7 @@ func TestMixerCacheExpiresActualEvidenceAndNoticeRedactsIdentity(t *testing.T) {
 	}
 }
 func TestTalkLeaseBoundsAndFastRenewalWithoutOBS(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	pref := defaultMixerPreferences(DefaultSettings())
 	pref.MicrophoneEnabled = true
@@ -131,6 +134,7 @@ func TestTalkLeaseBoundsAndFastRenewalWithoutOBS(t *testing.T) {
 	}
 }
 func TestTalkGuardianExpiresMutedWithoutNormalControlLease(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	normalUnlock, err := Lock(context.Background(), p)
 	if err != nil {
@@ -160,6 +164,7 @@ func TestTalkGuardianExpiresMutedWithoutNormalControlLease(t *testing.T) {
 	}
 }
 func TestTalkGuardianRetainsUnconfirmedLeaseAndDoesNotClaimMute(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	token, _ := newTalkToken()
 	now := time.Now().UTC()
@@ -182,6 +187,7 @@ func TestTalkGuardianRetainsUnconfirmedLeaseAndDoesNotClaimMute(t *testing.T) {
 	}
 }
 func TestTalkGuardianFailsMutedOnUnreadableLeaseAndReload(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	for _, kind := range []string{"corrupt", "reload"} {
 		t.Run(kind, func(t *testing.T) {
 			p := testPaths(t)
@@ -252,6 +258,7 @@ func TestMixerHoldToTalkRequiresExplicitArmButNeverConfiguresHotMic(t *testing.T
 }
 
 func TestTalkGuardianRetiresReadinessBeforeReplacementLease(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	oldUnlock, err := Lock(context.Background(), mixerLeasePaths(p))
 	if err != nil {
@@ -288,6 +295,7 @@ func TestTalkGuardianRetiresReadinessBeforeReplacementLease(t *testing.T) {
 	}
 }
 func TestTalkCancelWithNoLeasePreservesOrdinaryMicrophone(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	pref := defaultMixerPreferences(DefaultSettings())
 	pref.MicrophoneEnabled = true
@@ -311,6 +319,7 @@ func TestTalkCancelWithNoLeasePreservesOrdinaryMicrophone(t *testing.T) {
 }
 
 func TestTalkRenewRefusesDeadOrStaleGuardian(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	for _, kind := range []string{"missing", "dead", "stale"} {
 		t.Run(kind, func(t *testing.T) {
 			p := testPaths(t)

@@ -4,6 +4,7 @@ The future publisher exists only in separately loaded fixture source. Production
 trust remains unchanged. Decky/Flatpak/OBS observations and network responses are
 explicit fixtures; this is not physical Deck or published-repository evidence.
 """
+import ast
 import contextlib
 import hashlib
 import importlib.util
@@ -125,9 +126,20 @@ class RepositoryMigration(unittest.TestCase):
             original = ROOT / name
             content = original.read_bytes() if original.is_file() else ("fixture " + name).encode()
             if name == "releases.py":
-                before = b'REPOSITORY = "' + OLD_REPOSITORY.encode() + b'"'
-                self.assertEqual(content.count(before), 1)
-                content = content.replace(before, b'REPOSITORY = "' + repository.encode() + b'"')
+                # Rehearse both publishers even after the real source moves.
+                # Change only the literal; retain all production trust policy.
+                assignments = [node for node in ast.parse(content).body
+                               if isinstance(node, ast.Assign) and any(
+                                   isinstance(target, ast.Name) and target.id == "REPOSITORY"
+                                   for target in node.targets)]
+                self.assertEqual(len(assignments), 1)
+                value = assignments[0].value
+                self.assertIsInstance(value, ast.Constant)
+                self.assertIsInstance(value.value, str)
+                lines = content.splitlines(keepends=True)
+                start = sum(map(len, lines[:value.lineno - 1])) + value.col_offset
+                end = sum(map(len, lines[:value.end_lineno - 1])) + value.end_col_offset
+                content = content[:start] + json.dumps(repository).encode() + content[end:]
             (package / name).write_bytes(content)
         with zipfile.ZipFile(package / "obsgod-decky.zip", "w") as archive:
             archive.writestr("obsgod/plugin.json", json.dumps({"name": "OBSGod", "version": version}))

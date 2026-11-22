@@ -1,0 +1,171 @@
+{
+  "schema": "deckystream.dependency-integration-review/v1",
+  "pull_request": "https://github.com/egohygiene/deckystream/pull/15",
+  "original_prs": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "base_revision": "18d0e1169fe46c82f9f7336b3a7c103f66775def",
+  "first_integration_head": "78fb053682fd5bf024b4dbe673f48b9cab6803c8",
+  "platform": "Linux x86_64 cloud workspace",
+  "tools": {
+    "go": "1.27.4",
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "python": "3.12.14",
+    "goreleaser": "2.20.2"
+  },
+  "reviewed_source_sha256": {
+    ".goreleaser.yml": "82215bf6b8696f7104e622447f3e15e732fb955eb786f1be115639832f21fcb0",
+    "scripts/generic-release.py": "309d386d611ab14d0209614bbef788483dd9425c7536a08f9de9206992c6d90c",
+    "scripts/nfpm-release.py": "58e92c44aaf3e121726844b938a48467d65b121336ba46a25e229b924bda3719",
+    "scripts/release-audit.py": "4a0df0532556d1dc535e8d660723d1fc3d751e0ca7d69eb74b1c78fbdaae97a1",
+    "scripts/protect-main.py": "fe3c94b9997e7ed0dec50237da606bfc72e8a424c75e4cb94eb59ac9f9fa05f0",
+    "scripts/tests/test_main_ruleset.py": "1ea37fc12eb8541c52babe65c3e0e9b3b1f5414c2aab95e0b3f079e806980218",
+    "steamdeck/decky/rollup.config.js": "23414a547a8f331d97014fcb28bb612a1cece82b0030be72a94cd9762f93bf4d",
+    "steamdeck/tests/test_repository_migration.py": "742c5c789193921271cfa2d84b734810c6ed7fa52fea64f734efbd1459ce5713",
+    "steamdeck/tests/test_dependency_setup.py": "7a647e57d9cd02de08404a9ac8d570e95f275dd4fcfe2e535f07b5f32aba94a3"
+  },
+  "go_source_sha256": {
+    "internal/commands/deck_advanced_test.go": "eecd779463be682fea5954e5212cbb29d3379b93d38f6e9a7181b1c8ae97b48b",
+    "internal/deck/platform_test.go": "4535067632122e9b013c1babdc7fb14945f7a0c62de97b21e520c95a6a3b0411",
+    "internal/deck/config_test.go": "50944e0e850ca768def16165f0fd7f34dd62fa9aa16010892147f04a6907a740",
+    "internal/deck/connection_test.go": "029eee8535930e98930b44a1d489dae89f1fb001102892e4266c708173dead70",
+    "internal/deck/idle_media_test.go": "9d06c9e2da1d906ee635f425db75dc66c361116375b231f587f17cbd4324ef21",
+    "internal/deck/media_test.go": "c7652b4479d36c00ef892082b0e5a9f916788689ab002d8d02553b92f4b45898",
+    "internal/deck/mixer_test.go": "2a53edf18be959798ff3ea524e989ccb64d89c36e4d07a399fb45daec6c2e107",
+    "internal/deck/native_configuration_test.go": "d48857e680aa8fcf846d17b5f9951ec0fdd80ec4b0a8d742cbf840e91b16336a",
+    "internal/deck/profiles_test.go": "5962ff148c1b0639d7328bbea78681cc3ed7db8504c43bde6f8f3a9a2d95d5cb",
+    "internal/deckyinstall/install_test.go": "2765bc02526a855cf3d120691874c99529cbb6e0dbc6082109bddaf6c65207de"
+  },
+  "local_checks": [
+    {
+      "command": "go test -race ./...",
+      "outcome": "passed",
+      "tested_packages": 8
+    },
+    {
+      "command": "go vet ./...",
+      "outcome": "passed",
+      "exit_code": 0
+    },
+    {
+      "command": "/workspace/.obsgod-tools/pkg/bin/govulncheck ./...",
+      "outcome": "passed",
+      "summary": "No vulnerabilities found."
+    },
+    {
+      "command": "go test -race -count=1 -tags=deck_process ./internal/commands -run '^TestCaptureModeCommandProcess'",
+      "outcome": "passed"
+    },
+    {
+      "command": "GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go test -exec=/usr/bin/true -run=^$ ./...",
+      "outcome": "cross-compilation-passed",
+      "execution": "No Darwin tests executed; /usr/bin/true only substitutes for foreign test binary invocation."
+    },
+    {
+      "command": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go test -exec=/usr/bin/true -run=^$ ./...",
+      "outcome": "cross-compilation-passed",
+      "execution": "No Windows tests executed; /usr/bin/true only substitutes for foreign test binary invocation."
+    },
+    {
+      "command": "git diff --check",
+      "outcome": "passed"
+    },
+    {
+      "command": "python3 -m unittest discover -s steamdeck/tests -p test_*.py",
+      "outcome": "passed",
+      "tests": 292,
+      "skipped": 2
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_*.py",
+      "outcome": "passed-before-canonical-provenance-repair",
+      "tests": 206
+    },
+    {
+      "command": "python3 scripts/frontend-command.py typecheck",
+      "outcome": "passed"
+    },
+    {
+      "command": "python3 scripts/frontend-command.py test",
+      "outcome": "passed",
+      "tests": 161
+    },
+    {
+      "command": "python3 scripts/frontend-command.py build",
+      "outcome": "passed"
+    },
+    {
+      "command": "npm --prefix steamdeck/decky audit --json",
+      "outcome": "passed",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_*release*.py -v",
+      "outcome": "passed-after-canonical-provenance-repair",
+      "tests": 43
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_main_ruleset.py",
+      "outcome": "passed",
+      "tests": 9
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_*.py",
+      "outcome": "passed-after-canonical-provenance-repair",
+      "tests": 210
+    },
+    {
+      "command": "python3 -m unittest discover -s steamdeck/tests -p test_dependency_setup.py",
+      "outcome": "passed-after-fixture-scheduling-repair",
+      "tests": 20,
+      "skipped": 1
+    }
+  ],
+  "first_head_hosted": {
+    "head": "78fb053682fd5bf024b4dbe673f48b9cab6803c8",
+    "tested_merge_revision": "20c984bd03a585121fc8343a812bb3a61011af89",
+    "candidate_run": 45038924923,
+    "candidate_outcome": "passed",
+    "generic_snapshot_run": 45038924898,
+    "generic_snapshot_outcome": "failed: implicit project name differed from retained CLI/package identity; repaired before next CI",
+    "dependency_review_job": 137258784375,
+    "dependency_review_outcome": "passed",
+    "dependency_compare_changes": 92,
+    "dependency_compare_listed_vulnerabilities": 0
+  },
+  "act": {
+    "status": "preflight-refused",
+    "revision": "78fb053682fd5bf024b4dbe673f48b9cab6803c8",
+    "exit_code": 3,
+    "available_bytes": 1624023040,
+    "required_same_filesystem_bytes": 13986812076,
+    "workflow_execution": "unrun"
+  },
+  "qualification_policy": "Focused local results identify tested bytes. Final hosted qualification/merge must use the latest PR15 head and actual check results; this file does not infer acceptance at a newer revision.",
+  "limitations": [
+    "No physical Steam Deck/provider-viewer acceptance.",
+    "No release, deployment, old-repository retirement or artwork-rights decision.",
+    "No ACT workflow execution; no cache/image cleanup or spending.",
+    "Ruleset command has not applied any settings.",
+    "Unsigned provenance remains self-reported; no authenticated publisher attestation is claimed."
+  ],
+  "second_head_hosted": {
+    "head": "d7f4fea42cad96c42c63f2b7cc71cc780d88c3c0",
+    "generic_snapshot_run": 45040234072,
+    "generic_snapshot_outcome": "passed",
+    "candidate_run": 45040234100,
+    "candidate_outcome": "failed: subsecond test budget could expire before fake OBS installation began; fixture repaired without changing production deadlines"
+  },
+  "test_scheduling_review": "Independent read-only review passed: real0.6-second timeout retained, observed compatibility bound to persisted actual fixture state, retry still required, private large-output checks separate; other barrier-based tests retain deterministic partial-install coverage."
+}

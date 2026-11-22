@@ -1,4 +1,6 @@
 version: 2
+# Preserve the generic CLI/package identity when the repository name changes.
+project_name: obsgod
 dist: dist/snapshot
 
 before:
@@ -7,7 +9,8 @@ before:
     - python3 scripts/generic-release.py prepare
     - python3 scripts/nfpm-release.py prepare
 builds:
-  - binary: obsgod
+  - id: obsgod
+    binary: obsgod
     env:
       - CGO_ENABLED=0
     flags:
@@ -71,7 +74,7 @@ archives:
 nfpms:
   - ids:
       - obsgod
-    homepage: "https://github.com/szmyty/obsgod"
+    homepage: "https://github.com/egohygiene/deckystream"
     maintainer: "szmyty"
     description: "obsgod is a command-line remote control for OBS"
     license: MIT

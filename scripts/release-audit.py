@@ -118,6 +118,22 @@ def git(revision, path):
     return subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{path}"])
 
 
+def source_repository(revision):
+    """Read source identity from the selected commit, never ambient settings."""
+    require(re.fullmatch(r"[0-9a-f]{40}", revision), "Full source revision required")
+    product = json.loads(git(revision, "product.json"))
+    require(isinstance(product, dict), "Invalid source product metadata")
+    repository = product.get("repository")
+    require(isinstance(repository, str), "Invalid source repository")
+    parts = repository.split("/")
+    require(len(parts) == 2
+            and re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?", parts[0])
+            and "--" not in parts[0]
+            and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", parts[1])
+            and parts[1] not in (".", ".."), "Invalid source repository")
+    return repository
+
+
 def verify_checksum_list(data, artifacts):
     values = {}
     for line in data.decode().splitlines():
@@ -253,8 +269,9 @@ def audit(directory, expected_revision):
     if standard:
         require(json.loads(plugin["build/capture-build.json"]) == receipt, "Decky capture build receipt mismatch")
     artifacts["capture-build.json"] = (directory / "capture-build.json").read_bytes()
-    materials = [{"uri": "git+https://github.com/szmyty/obsgod@" + revision, "digest": {"sha1": revision}}]
-    build_inputs = ["go.mod", "go.sum", "steamdeck/decky/package-lock.json", "steamdeck/decky/rollup.config.js", "scripts/package-deck.py", "scripts/package-updater.py", "steamdeck/capture/build.Dockerfile"]
+    repository = source_repository(revision)
+    materials = [{"uri": "git+https://github.com/" + repository + "@" + revision, "digest": {"sha1": revision}}]
+    build_inputs = ["product.json", "go.mod", "go.sum", "steamdeck/decky/package-lock.json", "steamdeck/decky/rollup.config.js", "scripts/package-deck.py", "scripts/package-updater.py", "steamdeck/capture/build.Dockerfile"]
     if standard:
         build_inputs += ["scripts/decky_package.py", "scripts/package-decky.py", "scripts/frontend-command.py", "docs/decky-package.md"]
     for name in build_inputs:
@@ -267,10 +284,12 @@ def audit(directory, expected_revision):
 def documents(result):
     manifest, artifacts, payload, plugin, modules, lock, capture, materials, created = result
     revision, version = manifest["revision"], manifest["version"]
+    repository = source_repository(revision)
+    repository_url = "https://github.com/" + repository
     subjects = [{"name": name, "digest": {"sha256": sha(data)}} for name, data in sorted(artifacts.items())]
     identity = sha(canonical(subjects))
     packages = [{"SPDXID": "SPDXRef-Application", "name": "OBSGod", "versionInfo": version,
-                 "downloadLocation": "https://github.com/szmyty/obsgod/tree/" + revision,
+                 "downloadLocation": repository_url + "/tree/" + revision,
                  "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "MIT",
                  "copyrightText": "NOASSERTION", "sourceInfo": "Git revision " + revision}]
     relationships = [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-Application"}]
@@ -297,17 +316,17 @@ def documents(result):
         files.append({"SPDXID": identifier, "fileName": name, "checksums": [{"algorithm": "SHA256", "checksumValue": sha(data)}], "licenseConcluded": "NOASSERTION", "licenseInfoInFiles": ["NOASSERTION"], "copyrightText": "NOASSERTION"})
         relationships.append({"spdxElementId": "SPDXRef-Application", "relationshipType": "CONTAINS", "relatedSpdxElement": identifier})
     sbom = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": "OBSGod-" + version,
-            "documentNamespace": "https://github.com/szmyty/obsgod/sbom/" + revision + "/" + identity,
+            "documentNamespace": repository_url + "/sbom/" + revision + "/" + identity,
             "creationInfo": {"creators": ["Tool: obsgod-release-audit"], "created": created, "comment": "Deterministic inventory. Build inputs are distinguished from redistributed components; external OBS/Flatpak/GStreamer/Steam/Decky libraries are separately installed and outside this package inventory."},
             "packages": packages, "files": files, "relationships": relationships}
     provenance = {"_type": "https://in-toto.io/Statement/v1", "subject": subjects, "predicateType": "https://slsa.dev/provenance/v1",
-                  "predicate": {"buildDefinition": {"buildType": "https://github.com/szmyty/obsgod/blob/" + revision + "/scripts/package-deck.py",
-                    "externalParameters": {"version": version, "revision": revision, "platform": manifest["platform"]},
+                  "predicate": {"buildDefinition": {"buildType": repository_url + "/blob/" + revision + "/scripts/package-deck.py",
+                    "externalParameters": {"version": version, "revision": revision, "repository": repository, "platform": manifest["platform"]},
                     "internalParameters": {"go": manifest["go"], "node": manifest["node"], "npm": manifest["npm"], "capture_builder_image": capture["image_id"]},
                     "resolvedDependencies": materials},
                     "runDetails": {"builder": {"id": "urn:obsgod:local-self-reported-unsigned"}, "metadata": {"invocationId": "urn:sha256:" + identity},
                      "byproducts": [{"name": "trust-boundary", "annotations": {"status": "UNSIGNED", "claim": "Offline self-reported inventory only; no authenticated publisher or trusted builder identity; source and build receipts require independent review."}}]}}}
-    report = {"schema_version": 1, "revision": revision, "version": version, "artifact_identity_sha256": identity,
+    report = {"schema_version": 1, "revision": revision, "repository": repository, "version": version, "artifact_identity_sha256": identity,
               "integrity": "passed", "source_inventory": "passed", "preferred_source": "passed", "unsigned_provenance": "generated",
               "qualification": "unrun-by-this-audit", "publication": "not-authorized-by-this-audit",
               "remaining_gates": ["Final-revision automated qualification and review receipts", "Successful required hosted CI/review evidence; local act cannot prove GitHub services", "Actual Steam Deck/Flatpak/Gamescope/controller/audio and provider-viewer evidence", "Owner-controlled publisher/signing identity and signature verification policy", "Owner approval for release/publication/deployment and final consumer adoption proof"],

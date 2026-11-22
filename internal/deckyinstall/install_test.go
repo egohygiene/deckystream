@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -88,6 +89,9 @@ func TestInvalidArchivesNeverReachDecky(t *testing.T) {
 }
 
 func TestAuthenticatedFrontendTransportNeverOpensSecondWebSocket(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Decky installation requires POSIX private-file permissions on its Linux host")
+	}
 	input := fixtureZIP(t, nil)
 	for _, reject := range []bool{false, true} {
 		t.Run(map[bool]string{false: "installed", true: "rejected"}[reject], func(t *testing.T) {

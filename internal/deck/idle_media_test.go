@@ -29,6 +29,7 @@ func writeIdlePNG(t *testing.T, path string) []byte {
 	return out.Bytes()
 }
 func TestIdleImportCopiesOwnedBytesAndNeverStoresOriginalPath(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	source := filepath.Join(t.TempDir(), "owner file.not-png")
 	original := writeIdlePNG(t, source)
@@ -99,6 +100,7 @@ func TestIdleMediaRefusesUnsupportedUnsafeAndOversizedInputs(t *testing.T) {
 	}
 }
 func TestConfigureIdleRequiresRightsAndPreservesCredentials(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)

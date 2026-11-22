@@ -114,6 +114,7 @@ func TestLocalStartPreparesCaptureAndCleansFailedStartOnly(t *testing.T) {
 	}
 }
 func TestLocalStopKeepsReplayAndPreservesPartialClip(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, e := Configure(p, strings.NewReader(fixtureSettings)); e != nil {
 		t.Fatal(e)
@@ -194,6 +195,7 @@ func mediaFixtureFile(t *testing.T, p Paths, name string, age time.Duration) str
 	return path
 }
 func TestClipLibraryOwnsOnlyConfirmedUnchangedMedia(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	confirmed := mediaFixtureFile(t, p, "DeckyStream-confirmed.mkv", 0)
 	_ = mediaFixtureFile(t, p, "DeckyStream-interrupted.mkv", 0)
@@ -215,6 +217,7 @@ func TestClipLibraryOwnsOnlyConfirmedUnchangedMedia(t *testing.T) {
 	}
 }
 func TestClipExportCopiesExclusivelyAndPreservesOriginal(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	source := mediaFixtureFile(t, p, "DeckyStream-source.mkv", 0)
 	if e := RegisterMediaFile(p, source, "replay"); e != nil {
@@ -239,6 +242,7 @@ func TestClipExportCopiesExclusivelyAndPreservesOriginal(t *testing.T) {
 	}
 }
 func TestClipCleanupPreviewsAndConfirmsOnlyExactIDs(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	old := mediaFixtureFile(t, p, "DeckyStream-old.mkv", 72*time.Hour)
 	newer := mediaFixtureFile(t, p, "DeckyStream-new.mkv", 0)

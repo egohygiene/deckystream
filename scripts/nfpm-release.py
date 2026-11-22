@@ -256,10 +256,10 @@ def package_files(data, kind):
 def prepared(identity):
     documents = {**G.prepare_documents(identity), **{name: G.git_file(identity["revision"], name) for name in ("LICENSE", "README.md", "CHANGELOG.md")}}
     documents["SOURCE.json"] = G.canonical({"schema_version": 1, "source": identity,
-        "preferred_application_source": "https://github.com/szmyty/obsgod/tree/" + identity["revision"],
+        "preferred_application_source": "https://github.com/" + G.source_repository(identity["revision"]) + "/tree/" + identity["revision"],
         "go_module_sources": "GO-NOTICES.json records exact linked-module source checksums; full notices in THIRD_PARTY_NOTICES.md",
         "scope": "Generic statically linked Go CLI only; no separate Decky/native/OBS payload is redistributed",
-        "source_sha256": {name: G.sha(G.git_file(identity["revision"], name)) for name in ("go.mod", "go.sum", ".goreleaser.yml", "scripts/nfpm-release.py")}})
+        "source_sha256": {name: G.sha(G.git_file(identity["revision"], name)) for name in ("product.json", "go.mod", "go.sum", ".goreleaser.yml", "scripts/nfpm-release.py")}})
     return documents
 
 
