@@ -76,7 +76,14 @@ plugin="$HOME/.var/app/com.obsproject.Studio/config/deckystream/obs-studio/plugi
 mkdir -p "$plugin"
 gcc -shared -fPIC -O2 -o "$plugin/obs-gstreamer.so" /work/plugin-src/gstreamer*.c /work/plugin-src/version.c $(pkg-config --cflags --libs libobs gstreamer-app-1.0 gstreamer-audio-1.0 gstreamer-video-1.0 gstreamer-net-1.0)
 gcc -O2 -Wall -Wextra -Werror -o /work/capture-fixture /src/steamdeck/tests/capture-fixture.c $(pkg-config --cflags --libs libpipewire-0.3)
-python3 /src/steamdeck/tests/native-game-obs.py
+python3 /src/steamdeck/tests/native-game-obs.py || {
+  fixture_exit=$?
+  # Preserve the gate's whitelisted state facts in failed hosted job logs too.
+  if [[ -f /work/output/local-watcher-readiness.json ]]; then
+    cat /work/output/local-watcher-readiness.json >&2
+  fi
+  exit "$fixture_exit"
+}
 
 # Inspect real viewer-received H264/AAC at each held scene phase, not just OBS
 # screenshots or source registration. The same known tone must survive scenes.

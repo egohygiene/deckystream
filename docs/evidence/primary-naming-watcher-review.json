@@ -144,5 +144,14 @@
     "source_review": "One-shot fixture reads watcher before ordered StartResilienceWatch/StartCaptureWatch readiness necessarily completes. Source writes watching=false before StartRecording; observing recording and GAME pixels alone does not prove independent watcher readiness."
   },
   "qualification_binding": "The complete latest-head hosted candidate and security checks must be evaluated separately. Local observer protocol fixtures and helper-unit tests do not qualify actual OBS, Steam Deck, loader or provider behavior.",
-  "codeql_disposition": "Three protocol-prescribed SHA256 findings remain in the separate hosted PR security check; source annotations did not clear this hosted setup. Owner dismissal as false positives was requested because the connected identity cannot manage code-scanning alerts (HTTP403)."
+  "codeql_disposition": "Three protocol-prescribed SHA256 findings remain in the separate hosted PR security check; source annotations did not clear this hosted setup. Owner dismissal as false positives was requested because the connected identity cannot manage code-scanning alerts (HTTP403).",
+  "failure_evidence_delivery": {
+    "path": "steamdeck/tests/native-game-obs-smoke.sh",
+    "sha256": "4f1b8a8d3685cb8915cbd92f2e593990b849cfcf89210927241652578d313254",
+    "behavior": "If the native Python fixture fails, preserve its nonzero exit code and print only the fixed-schema readiness evidence produced by the privacy-tested gate. The normal candidate artifact upload does not run after a failed stage.",
+    "checks": [
+      "bash -n steamdeck/tests/native-game-obs-smoke.sh passed",
+      "All seven readiness/privacy/cleanup cases reran and passed"
+    ]
+  }
 }
