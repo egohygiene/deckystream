@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "display_name": "deckystream",
+  "description": "Stream from Steam Deck with OBS",
+  "repository": "egohygiene/deckystream",
+  "compatibility": {
+    "cli": "obsgod",
+    "plugin": "OBSGod",
+    "plugin_directory": "obsgod",
+    "storage_namespace": "obsgod"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "allowed_paths": [
+    "product.json",
+    "steamdeck/product.py",
+    "steamdeck/decky/src/product.ts",
+    "steamdeck/releases.py",
+    ".identity/identity.json"
+  ],
+  "changes": [
+    {
+      "after_sha256": "1a96bbf039342850e4cd348b4751ea5dc84ea9d03e034e9061bb109831895448",
+      "before_sha256": "1d6ff33e1def27298238c36fbf90c5e44ddd1ef4a8633152b094366af4130107",
+      "path": ".identity/identity.json"
+    },
+    {
+      "after_sha256": "2fdf16f1aa612be95faa075dc11fd144a09ccd33b321920e529284180cda61b3",
+      "before_sha256": "0413db5b7f10c82a0af2e94eda7342f906d116026087ab7ab68a6bb43c414e3d",
+      "path": "product.json"
+    },
+    {
+      "after_sha256": "0708147965fe6ef27e97e38539e7077d2994966fcd40c585edeec8374819ebdd",
+      "before_sha256": "7c2e15e9c90941886a7484ba99f36bee6a23b6150eb299da97142bf5073d0cc7",
+      "path": "steamdeck/decky/src/product.ts"
+    },
+    {
+      "after_sha256": "9bcd867751f42f46089c70e9c5681c9677d1f70133726fd0170f61c4960a435f",
+      "before_sha256": "dc3bac0be3e25667a4abd29df5545d16178266d938e6970c5decc51f5c7f94c8",
+      "path": "steamdeck/product.py"
+    },
+    {
+      "after_sha256": "6843246f7ca5daef71903ed51690e2c332fa2ee081d4818a0d3b23e19b1a98a8",
+      "before_sha256": "3a5e3348e102712809812352aa2a51c25d5c44e27ece638c0f1a3d3adbc6c7f0",
+      "path": "steamdeck/releases.py"
+    }
+  ],
+  "requested": true,
+  "scope": "Only product.repository, its two generated projections, updater REPOSITORY and Identity project.repository. Existing updater policy is unchanged apart from its exact repository literal. No binary/artifact qualification is inferred."
+}
