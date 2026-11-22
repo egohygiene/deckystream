@@ -1,5 +1,39 @@
 # Current work
 
+## Dependency integration and maintainer protection command
+
+[PR #15](https://github.com/egohygiene/deckystream/pull/15) integrates the exact
+original dependency PR heads #2–#7 and #9–#13, preserving their ancestry so a
+normal merge can reconcile the originals as merged. Recovery PR #14 merged at
+`18d0e1169fe46c82f9f7336b3a7c103f66775def`. Live branch metadata then reported
+`main` unprotected; the earlier administration-endpoint 403 did not mean that
+ordinary branch metadata was unavailable.
+
+Integration repaired the TypeScript 7 compiler-API removal, old-publisher
+migration fixture, Linux/POSIX test scopes and GoReleaser build/project identity.
+Artifact source URLs now use the selected revision's canonical `product.json`;
+Go module, installed CLI/plugin/package names and build-recipe URNs remain
+compatible. The [focused review](docs/evidence/dependency-integration-review.json)
+records exact local bytes/checks. Use PR #15's latest head and actual check
+results for final hosted evidence; older green checks do not qualify later code.
+The first integrated head `78fb053682fd5bf024b4dbe673f48b9cab6803c8` passed the
+complete hosted Deck candidate, browser and native harness; its generic snapshot
+audit failed on the implicit renamed project identity, prompting the explicit
+compatibility and canonical-source repairs in that PR.
+
+The requested [protection command](docs/main-branch-protection.md) defaults to
+read-only preview and needs explicit `--apply` with owner administration access.
+It allows repository admins and verified Codex/Dependabot apps to bypass its
+main-only rules; other installed apps must be explicitly selected. No rule has
+been applied by the implementation. Actual dependency comparison/review and
+default-branch SBOM reads now succeed in the public repository; inspect current
+manifest ingestion after merging. Local ACT preflight refused this attempt for
+insufficient disk before allocating a runner; no ACT workflow pass is claimed.
+
+Finalization #1 still owns actual Steam Deck/provider tests, rights, the release
+decision and old-repository retirement. Optional authentication research #8 is
+separate. Nothing in this integration publishes an Identity or plugin release.
+
 ## Fresh repository first push recovered — 2026-11-22
 
 The owner-created `egohygiene/deckystream` repository (ID `1467389697`) now has

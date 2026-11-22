@@ -107,6 +107,40 @@ BUILD = {"deb": deb, "rpm": rpm, "apk": apk}
 
 
 class NFPMTests(unittest.TestCase):
+    def test_source_and_package_provenance_use_selected_canonical_repository(self):
+        canonical = "https://github.com/egohygiene/deckystream"
+
+        def source_file(revision, name):
+            self.assertEqual(revision, REV)
+            return N.G.canonical({"repository": "egohygiene/deckystream"}) if name == "product.json" else name.encode()
+
+        with patch.object(N.G, "git_file", side_effect=source_file), patch.object(N.G, "prepare_documents", return_value={}):
+            source = json.loads(N.prepared(IDENTITY)["SOURCE.json"])
+        self.assertEqual(source["preferred_application_source"], canonical + "/tree/" + REV)
+        self.assertEqual(source["source_sha256"]["product.json"], N.G.sha(source_file(REV, "product.json")))
+        self.assertEqual(N.G.MODULE, "github.com/szmyty/obsgod")
+        with tempfile.TemporaryDirectory() as directory:
+            root, target = Path(directory), ("linux", "amd64", "")
+            names = [N.package_name(VERSION, target, kind) for kind in N.FORMATS]
+            for name in names:
+                (root / name).write_bytes(b"fixture")
+            (root / "metadata.json").write_bytes(N.G.canonical({"commit": REV, "project_name": "obsgod", "version": VERSION}))
+            (root / "checksums.txt").write_text("".join(N.G.sha(b"fixture") + "  " + name + "\n" for name in names))
+
+            def record(name, data, *args):
+                return {"name": name, "sha256": N.G.sha(data), "platform": {"goos": "linux", "goarch": "amd64", "goarm": ""},
+                        "dependencies": [], "files": {}}
+
+            with patch.object(N.G, "source", return_value=IDENTITY), patch.object(N.G, "git_file", side_effect=source_file), \
+                    patch.object(N, "prepared", return_value=DOCS), patch.object(N, "audit_package", side_effect=record):
+                documents, summary = N.audit(root, REV, target="linux-amd64")
+            self.assertEqual(summary["package_count"], 3)
+            for name in names:
+                provenance = json.loads(documents[name + ".provenance.unsigned.json"])
+                build = provenance["predicate"]["buildDefinition"]
+                self.assertEqual(build["buildType"], "urn:obsgod:nfpm-cli-snapshot")
+                self.assertEqual(build["resolvedDependencies"][0]["uri"], "git+" + canonical + "@" + REV)
+
     def test_readers_accept_only_the_exact_root_owned_regular_payload(self):
         for kind in N.FORMATS:
             with self.subTest(kind=kind):

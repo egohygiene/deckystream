@@ -61,6 +61,8 @@ def binary_metadata(data):
 
 def source_file(revision, name):
     assert revision == REV
+    if name == "product.json":
+        return G.canonical({"repository": "egohygiene/deckystream"})
     return name.encode()
 
 
@@ -162,6 +164,17 @@ class GenericReleaseTests(unittest.TestCase):
                 sbom = json.loads(next(data for name, data in documents.items() if name.endswith(".spdx.json")))
                 self.assertEqual({p["name"] for p in sbom["packages"]}, {"obsgod", "Go standard library", DEP["name"]})
                 self.assertIn("UNSIGNED", sbom["comment"])
+                canonical = "https://github.com/egohygiene/deckystream"
+                self.assertTrue(sbom["documentNamespace"].startswith(canonical + "/sbom/" + REV + "/"))
+                self.assertEqual(sbom["packages"][0]["downloadLocation"], canonical + "/tree/" + REV)
+                provenance = json.loads(next(data for name, data in documents.items() if name.endswith(".provenance.unsigned.json")))
+                build = provenance["predicate"]["buildDefinition"]
+                self.assertEqual(build["buildType"], "urn:obsgod:generic-cli-snapshot")
+                self.assertEqual(build["resolvedDependencies"][0], {"uri": "git+" + canonical + "@" + REV,
+                                                                   "digest": {"sha1": REV}})
+                self.assertIn({"uri": "product.json", "digest": {"sha256": G.sha(source_file(REV, "product.json"))}},
+                              build["resolvedDependencies"])
+                self.assertEqual(G.MODULE, "github.com/szmyty/obsgod")
                 archive = root / summary["archives"][0]["name"]
                 archive.write_bytes(b"tampered")
                 with self.assertRaisesRegex(ValueError, "checksum"):
@@ -169,6 +182,14 @@ class GenericReleaseTests(unittest.TestCase):
                 archive.unlink()
                 with self.assertRaisesRegex(ValueError, "reviewed20"):
                     G.audit(root, REV)
+
+    def test_source_repository_rejects_urls_traversal_and_malformed_canonical_metadata(self):
+        for repository in (None, [], "", "https://github.com/egohygiene/deckystream", "owner/name/extra",
+                           "owner/..", "owner/.", "owner/name?token=x", "owner/name\n", "-owner/name",
+                           "owner-/name", "owner--name/repo", "owner/na me"):
+            with self.subTest(repository=repository), patch.object(G, "git_file", return_value=G.canonical({"repository": repository})), \
+                    self.assertRaisesRegex(ValueError, "canonical source repository"):
+                G.source_repository(REV)
 
     def test_notice_preparation_verifies_pins_licenses_and_stays_go_only(self):
         with tempfile.TemporaryDirectory() as directory:

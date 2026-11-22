@@ -94,6 +94,7 @@ class ReleaseAuditTests(unittest.TestCase):
         capture = {name: name.encode() for name in ("gstobsgodcapture.c", "Makefile", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "build.Dockerfile")}
         source = {"steamdeck/capture/" + name: data for name, data in capture.items()}
         source.update({"LICENSE": b"MIT license", "docs/steam-deck.md": b"guide"})
+        source["product.json"] = AUDIT.canonical({"repository": "egohygiene/deckystream"})
         lock = {"packages": {"node_modules/@decky/api": {"version": "1.1.3", "license": "LGPL-2.1", "integrity": AUDIT.SDK_INTEGRITY},
                              "node_modules/qrcode-generator": {"version": "2.0.4", "license": "MIT"}}}
         source["steamdeck/decky/package-lock.json"] = AUDIT.canonical(lock)
@@ -165,6 +166,37 @@ class ReleaseAuditTests(unittest.TestCase):
         provenance = json.loads(first["provenance.unsigned.json"])
         self.assertIn("unsigned", provenance["predicate"]["runDetails"]["builder"]["id"])
         self.assertEqual(report["subjects"], provenance["subject"])
+
+    def test_canonical_source_urls_use_selected_repository_and_preserve_artifact_identity(self):
+        revision = "a" * 40
+        for repository in ("egohygiene/deckystream", "future-owner/deckystream"):
+            with self.subTest(repository=repository):
+                result = self.run_fixture(lambda runtime, plugin, source: source.update({
+                    "product.json": AUDIT.canonical({"repository": repository})}))
+                sbom = json.loads(result["sbom.spdx.json"])
+                provenance = json.loads(result["provenance.unsigned.json"])
+                base = "https://github.com/" + repository
+                self.assertEqual(sbom["packages"][0]["name"], "OBSGod")
+                self.assertEqual(sbom["packages"][0]["downloadLocation"], base + "/tree/" + revision)
+                self.assertTrue(sbom["documentNamespace"].startswith(base + "/sbom/" + revision + "/"))
+                definition = provenance["predicate"]["buildDefinition"]
+                self.assertEqual(definition["buildType"], base + "/blob/" + revision + "/scripts/package-deck.py")
+                self.assertEqual(definition["externalParameters"]["repository"], repository)
+                self.assertEqual(definition["resolvedDependencies"][0], {
+                    "uri": "git+" + base + "@" + revision, "digest": {"sha1": revision}})
+                self.assertIn({"uri": "product.json", "digest": {"sha256": AUDIT.sha(
+                    AUDIT.canonical({"repository": repository}))}}, definition["resolvedDependencies"])
+                self.assertTrue(all("szmyty/obsgod" not in item["uri"] for item in definition["resolvedDependencies"]))
+                self.assertIn("unsigned", provenance["predicate"]["runDetails"]["builder"]["id"])
+
+    def test_source_repository_rejects_urls_paths_and_non_string_values(self):
+        for repository in (None, 42, [], "https://github.com/egohygiene/deckystream",
+                           "egohygiene/deckystream/extra", "egohygiene/..", "egohygiene/.",
+                           "--owner/deckystream", "bad--owner/deckystream", "egohygiene/deckystream\n",
+                           "egohygiene/deckystream?ref=main", "egohygiene/deckystream#main"):
+            with self.subTest(repository=repository), self.assertRaisesRegex(ValueError, "Invalid source repository"):
+                self.run_fixture(lambda runtime, plugin, source: source.update({
+                    "product.json": AUDIT.canonical({"repository": repository})}))
 
     @staticmethod
     def standard_plugin(runtime, plugin, source, mutate=None):

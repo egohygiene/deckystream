@@ -1,4 +1,6 @@
 version: 2
+# Preserve the generic CLI/package identity when the repository name changes.
+project_name: obsgod
 dist: dist/snapshot
 
 before:
@@ -72,7 +74,7 @@ archives:
 nfpms:
   - ids:
       - obsgod
-    homepage: "https://github.com/szmyty/obsgod"
+    homepage: "https://github.com/egohygiene/deckystream"
     maintainer: "szmyty"
     description: "obsgod is a command-line remote control for OBS"
     license: MIT
