@@ -1,0 +1,271 @@
+{
+  "schema": "deckystream.naming-final-ci-repair/v1",
+  "base_revision": "456294712e3f8c887b9cb5569496898244a58a3a",
+  "qualification_binding": "Exact source bytes below and in the Python review; final hosted workflows at the latest PR16 head must qualify the final candidate. Earlier failed/cancelled runs are not final passes.",
+  "python_security_review": {
+    "timestamp_utc": "2026-11-22T17:45:46.642536+00:00",
+    "head": "456294712e3f8c887b9cb5569496898244a58a3a",
+    "source_state": "dirty working tree; no commit/push performed by this repair agent",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "source_sha256": {
+      "steamdeck/releases.py": "5257c5c929d254e19c98ab5a455fed4f14796cc14eb18d299f028dc6932ee978",
+      "steamdeck/tests/test_releases.py": "ee0f636bf085aed54183b52c3283a5c6599989cebf97491b067308d05a2e1d25",
+      "steamdeck/tests/native-audio.py": "03b8baa59a9e0fcd9516c323624536f515d4e13a48dbf9d8c98c34755c06010a",
+      "steamdeck/tests/native-game-obs.py": "dbadebb5416c590afdd23e53c06992d600aec8949b7d66a35c71ecbc31c4f26f",
+      "steamdeck/tests/native-resilience.py": "ff718388c696199816bc4d39e67041a42b8bb662416b2e64b4c60849448f1ed3"
+    },
+    "changes": [
+      {
+        "path": "steamdeck/releases.py",
+        "query": "py/incomplete-url-substring-sanitization",
+        "resolution": "exact parsed hostname determines Accept after existing full URL allowlist validation; no trust expansion",
+        "official_query_source": {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-020/IncompleteUrlSubstringSanitization.ql",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-020/IncompleteUrlSubstringSanitization.ql",
+          "sha256": "c380b6869d4d260d28c7bf83b7e8154df57eb7b1e16c0462b73ea9acdade0fa5"
+        }
+      },
+      {
+        "paths": [
+          "steamdeck/tests/native-audio.py",
+          "steamdeck/tests/native-game-obs.py",
+          "steamdeck/tests/native-resilience.py"
+        ],
+        "query": "py/weak-sensitive-data-hashing",
+        "resolution": "three query-specific standalone next-line CodeQL suppressions with protocol rationale and official spec URL; exact two-stage SHA256 algorithm unchanged",
+        "classification": "protocol challenge-response false positive; not stored password hashing",
+        "suppression_syntax": "# codeql[py/weak-sensitive-data-hashing] -- OBS WebSocket protocol-prescribed SHA256",
+        "suppression_placement": "Standalone comment on immediately preceding line. CodeQlSuppressionComment rejects an AST node before the comment on its own line, then covers the next line only with start/endcolumn0. Do not put codeql[] after an expression."
+      }
+    ],
+    "official_source_evidence": {
+      "codeql_revision": "aafa7deeff16c1e3c4e356eabec46cbca2dc09e3",
+      "obs_protocol_revision": "e28f84975984340e84fc4879cfc05741cc0afde1",
+      "sources": [
+        {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql",
+          "sha256": "5b041fa825de718da4812eb371bc405e56626e6ae946e2a0ddc5cdf939cdd3a5",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/github-codeql-python-ql-src-Security-CWE-327-WeakSensitiveDataHashing.ql"
+        },
+        {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/shared/util/codeql/util/suppression/AlertSuppression.qll",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/shared/util/codeql/util/suppression/AlertSuppression.qll",
+          "sha256": "aca17bf2fc1fdd8f877685f4a7e8b48a0cdc3405f20f24f68deafd3da2a37d91",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/github-codeql-shared-util-codeql-util-suppression-AlertSuppression.qll"
+        },
+        {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/test.py",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/test.py",
+          "sha256": "d7b96921b8f924d90058723294cbffa0f2ed8351afa5f73de954fb15edf39147",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/github-codeql-python-ql-test-query-tests-analysis-suppression-test.py"
+        },
+        {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/AlertSuppression.expected",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/AlertSuppression.expected",
+          "sha256": "4ad1443f547a3af574a8675ce47aa261f6a272b8f9cc8400c74344e95337777c",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/github-codeql-python-ql-test-query-tests-analysis-suppression-AlertSuppression.expected"
+        },
+        {
+          "url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/change-notes/released/0.6.0.md",
+          "raw_url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/change-notes/released/0.6.0.md",
+          "sha256": "5b0eaab57eb1d4cd918000c9fd966340f73599405ddd6ed4c8a5b93ea5e6476f",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/github-codeql-python-ql-src-change-notes-released-0.6.0.md"
+        },
+        {
+          "url": "https://github.com/obsproject/obs-websocket/blob/e28f84975984340e84fc4879cfc05741cc0afde1/docs/generated/protocol.md",
+          "raw_url": "https://raw.githubusercontent.com/obsproject/obs-websocket/e28f84975984340e84fc4879cfc05741cc0afde1/docs/generated/protocol.md",
+          "sha256": "05be4e286bbce53cb2643703480e0d4cc9f210e7418e5bfc94e6c6451339d60d",
+          "local_copy": "/workspace/.obsgod-tools/naming-20261122/codeql-official-source/obsproject-obs-websocket-docs-generated-protocol.md"
+        }
+      ]
+    },
+    "suppression_parser_tests": {
+      "repository": "github/codeql",
+      "revision": "aafa7deeff16c1e3c4e356eabec46cbca2dc09e3",
+      "query_id": "py/weak-sensitive-data-hashing",
+      "modern_syntax": "# codeql[py/weak-sensitive-data-hashing] -- OBS WebSocket protocol-prescribed SHA256",
+      "placement": "Standalone comment on immediately preceding line. CodeQlSuppressionComment rejects an AST node before the comment on its own line, then covers the next line only with start/endcolumn0. Do not put codeql[] after an expression.",
+      "official_regression": "test.py comments69/71/73 map in AlertSuppression.expected to whole-line ranges70/72/74. Trailingcodeqlcomment75 is omitted.",
+      "sources": [
+        {
+          "path": "shared/util/codeql/util/suppression/AlertSuppression.qll",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/shared/util/codeql/util/suppression/AlertSuppression.qll",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/shared/util/codeql/util/suppression/AlertSuppression.qll",
+          "sha256": "aca17bf2fc1fdd8f877685f4a7e8b48a0cdc3405f20f24f68deafd3da2a37d91",
+          "bytes": 5314
+        },
+        {
+          "path": "python/ql/src/AlertSuppression.ql",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/AlertSuppression.ql",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/AlertSuppression.ql",
+          "sha256": "3b368d0f5041ef89bdf474a3eb4a6e34412beee078bf04307b0d3f5ae62e81dc",
+          "bytes": 1547
+        },
+        {
+          "path": "python/ql/test/query-tests/analysis/suppression/test.py",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/test.py",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/test.py",
+          "sha256": "d7b96921b8f924d90058723294cbffa0f2ed8351afa5f73de954fb15edf39147",
+          "bytes": 1710
+        },
+        {
+          "path": "python/ql/test/query-tests/analysis/suppression/AlertSuppression.expected",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/AlertSuppression.expected",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/test/query-tests/analysis/suppression/AlertSuppression.expected",
+          "sha256": "4ad1443f547a3af574a8675ce47aa261f6a272b8f9cc8400c74344e95337777c",
+          "bytes": 12310
+        },
+        {
+          "path": "python/ql/src/change-notes/released/0.6.0.md",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/change-notes/released/0.6.0.md",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/change-notes/released/0.6.0.md",
+          "sha256": "5b0eaab57eb1d4cd918000c9fd966340f73599405ddd6ed4c8a5b93ea5e6476f",
+          "bytes": 950
+        },
+        {
+          "path": "python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql",
+          "url": "https://raw.githubusercontent.com/github/codeql/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql",
+          "github_url": "https://github.com/github/codeql/blob/aafa7deeff16c1e3c4e356eabec46cbca2dc09e3/python/ql/src/Security/CWE-327/WeakSensitiveDataHashing.ql",
+          "sha256": "5b041fa825de718da4812eb371bc405e56626e6ae946e2a0ddc5cdf939cdd3a5",
+          "bytes": 1876
+        }
+      ],
+      "limitations": [
+        "Parser/query tests demonstrate supported annotation and line semantics; final hosted CodeQL analysis must prove the configured service honors it. No local CodeQL evaluator ran.",
+        "Default suite selectors and automatic alert-suppression delivery remain under investigation; do not yet claim CI alerts cleared."
+      ]
+    },
+    "protocol_vector": {
+      "status": "passed",
+      "reference": "OBS WebSocket protocol public sample password/salt/challenge; independent OpenSSL SHA256 implementation",
+      "authentication_vector": "1Ct943GAT+6YQUUX47Ia/ncufilbe6+oD6lY+5kaCu4=",
+      "cases": [
+        {
+          "path": "steamdeck/tests/native-audio.py",
+          "reported_hash_line": 79,
+          "suppression": "query-specific preceding line",
+          "status": "passed"
+        },
+        {
+          "path": "steamdeck/tests/native-game-obs.py",
+          "reported_hash_line": 73,
+          "suppression": "query-specific preceding line",
+          "status": "passed"
+        },
+        {
+          "path": "steamdeck/tests/native-resilience.py",
+          "reported_hash_line": 49,
+          "suppression": "query-specific preceding line",
+          "status": "passed"
+        }
+      ],
+      "limitations": "AST evaluates only existing two protocol expressions; no OBS/websocket/device session run."
+    },
+    "checks": [
+      {
+        "command": "python3 -m unittest discover -s steamdeck/tests -p 'test_releases.py'",
+        "outcome": "passed",
+        "tests": 25,
+        "seconds": 0.026
+      },
+      {
+        "command": "python3 -m py_compile steamdeck/releases.py steamdeck/tests/test_releases.py steamdeck/tests/native-audio.py steamdeck/tests/native-game-obs.py steamdeck/tests/native-resilience.py",
+        "outcome": "passed"
+      },
+      {
+        "command": "git diff --check",
+        "outcome": "passed"
+      },
+      {
+        "command": "AST-extracted existing OBS auth expressions compared with independent OpenSSL SHA256 public protocol vector",
+        "outcome": "passed",
+        "cases": 3,
+        "receipt": "/workspace/.obsgod-tools/naming-20261122/obs-websocket-sha256-vector.json"
+      }
+    ],
+    "hosted_codeql_confirmation": "unrun; must confirm configured GitHub analysis processes suppression comments after final push",
+    "limitations": [
+      "No local CodeQL evaluator was installed/run; syntax recognized by official current parser and Python regression expectations.",
+      "No OBS server, SteamOS, provider or physical Steam Deck test ran.",
+      "Algorithm was not weakened, replaced or disguised; only documented false-positive comments were added at the three reported first-stage protocol hashes."
+    ]
+  },
+  "deterministic_fixture_review": {
+    "path": "scripts/tests/test_release_audit.py",
+    "sha256": "b7b903333c89de16aae01be5678ffad5b6808c806735415e9c0787f548800afa",
+    "finding": "Fixture tarfile.open(w:gz) used wall-clock gzip metadata. Production packagers already fix gzip metadata. No production auditor or checksum assertion changed.",
+    "before": {
+      "gzip_mtimes": [
+        1700000000,
+        1700000003
+      ],
+      "same_uncompressed_tar": true,
+      "archive_bytes_equal": false,
+      "documents_equal": false,
+      "document_sha256": [
+        {
+          "sbom.spdx.json": "e6e3f1ddd66bd16bab1c25581113251ba43bd8295d0d0fa25f93dd8a73c0288c",
+          "provenance.unsigned.json": "e0d694fadb708556d83e4339a8650d0722387f82b6ac662b058187c4afd0bbce",
+          "release-audit.json": "f19cfdb2a72d15ae1d9edd03afc014addd22798b70844fe27737e326a96e84a1"
+        },
+        {
+          "sbom.spdx.json": "0b7e2fc1a9f025a8d8cb27f46b88e4aacb9cb9b3abbdea59ebfa552818605f2b",
+          "provenance.unsigned.json": "3e260b58cd4c8ffb80a1c02a0cd622bf2e0554ff87cf1ace3aaef3447bd62198",
+          "release-audit.json": "96f9b8232c7b21150fdf12b1b5871cb729d0edf9e7a41b8739e316f9dd5a9470"
+        }
+      ]
+    },
+    "after": {
+      "clock_cases": [
+        {
+          "clock_pair": [
+            1700000000,
+            1700000001
+          ],
+          "gzip_mtimes": [
+            0,
+            0
+          ],
+          "archive_bytes_equal": true,
+          "documents_equal": true
+        },
+        {
+          "clock_pair": [
+            1700000001,
+            1700000003
+          ],
+          "gzip_mtimes": [
+            0,
+            0
+          ],
+          "archive_bytes_equal": true,
+          "documents_equal": true
+        },
+        {
+          "clock_pair": [
+            1700000003,
+            1700000060
+          ],
+          "gzip_mtimes": [
+            0,
+            0
+          ],
+          "archive_bytes_equal": true,
+          "documents_equal": true
+        }
+      ],
+      "repeated_boundary_tests_passed": 30
+    },
+    "command": "python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v",
+    "outcome": "passed",
+    "cases": 213,
+    "evidence_sha256": "56c65053d7b4fa889d67003fc5e1ed80f82f9cb495f7d670150c6b4d24d25b5d"
+  },
+  "limitations": [
+    "Hosted CodeQL suppression processing and the full repaired-source candidate matrix remain unrun by this local receipt.",
+    "Protocol vector and native fixtures are not real Steam Deck, provider or loader acceptance.",
+    "No release, deployment, old-repository retirement or issue closure is authorized by these local checks."
+  ]
+}

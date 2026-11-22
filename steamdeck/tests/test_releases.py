@@ -18,6 +18,24 @@ API_URL = "https://api.github.com/repos/" + releases.REPOSITORY
 
 
 class ReleaseChecks(unittest.TestCase):
+    def test_download_accept_header_uses_the_validated_exact_hostname(self):
+        cases = [
+            (releases.RELEASES_URL, "application/vnd.github+json"),
+            (API_URL + "/commits/v1.0.0", "application/vnd.github+json"),
+            (RAW_URL + "/" + "a" * 40 + "/manifest.json", "application/octet-stream"),
+            (REPOSITORY_URL + "/releases/download/v1.0.0/deckystream-decky.zip", "application/octet-stream"),
+        ]
+        for url, expected in cases:
+            with self.subTest(url=url), patch.object(releases, "_open_url", return_value=io.BytesIO(b"fixture")) as opened:
+                self.assertEqual(releases._read_url(url), b"fixture")
+                request = opened.call_args.args[0]
+                self.assertEqual(request.get_header("Accept"), expected)
+                self.assertEqual(request.get_header("User-agent"), "deckystream-updater")
+        with patch.object(releases, "_open_url") as opened:
+            with self.assertRaises(releases.ReleaseError):
+                releases._read_url("https://untrusted.invalid/api.github.com/manifest.json")
+            opened.assert_not_called()
+
     def fixture(self, version="0.1.0-deck.10", raw=False):
         revision = "1" * 40
         archive = "deckystream-deck_" + version + "_linux_amd64.tar.gz"

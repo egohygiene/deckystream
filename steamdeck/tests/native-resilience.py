@@ -44,6 +44,8 @@ async def run(game_pid):
         identify = {"rpcVersion": 1, "eventSubscriptions": 0}
         auth = hello["d"].get("authentication")
         if auth:
+            # https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#creating-an-authentication-string
+            # codeql[py/weak-sensitive-data-hashing] -- OBS WebSocket mandates this challenge-response SHA256; this is not a stored password hash.
             secret = base64.b64encode(hashlib.sha256((password + auth["salt"]).encode()).digest()).decode()
             identify["authentication"] = base64.b64encode(hashlib.sha256((secret + auth["challenge"]).encode()).digest()).decode()
         await socket.send(json.dumps({"op": 1, "d": identify}))

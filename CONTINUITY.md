@@ -35,6 +35,18 @@ dropped capabilities and production ownership checks. [Its receipt](docs/evidenc
 records fresh race/static/security checks and 12 NFPM cases; actual package
 lifecycle and the complete final matrix must be read at the latest pushed head.
 
+At `456294712e3f8c887b9cb5569496898244a58a3a`, the real deb/rpm/apk lifecycle
+passed. The candidate then exposed wall-clock gzip metadata in its audit test
+fixture; the fixture now pins that metadata and its existing full-document
+equality assertion crosses a forced clock boundary. All 213 tooling cases passed
+locally. CodeQL's separate PR security check also flagged URL substring
+classification and three protocol-prescribed OBS authentication hashes. The URL
+header uses the exact validated hostname; the three unchanged challenge-response
+expressions have specific, documented query exceptions using the official
+parser's syntax. [The final repair review](docs/evidence/primary-naming-final-ci-repair.json)
+pins official sources and records an independent OpenSSL protocol-vector check.
+The final hosted CodeQL and candidate results must confirm the latest head.
+
 The README is 76 lines with the selected light/dark banner, five badges, short
 features and linked setup/development guidance. The active testing booklet was
 regenerated as 13 pages; its original MD/PDF are preserved under `docs/history`.

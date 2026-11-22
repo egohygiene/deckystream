@@ -78,7 +78,8 @@ def _safe_url(url):
 def _read_url(url, limit=MAX_METADATA):
     if not _safe_url(url):
         raise ReleaseError("Release metadata contains an unsupported download address.")
-    request = urllib.request.Request(url, headers={"User-Agent": "deckystream-updater", "Accept": "application/vnd.github+json" if "api.github.com/" in url else "application/octet-stream"})
+    host = urllib.parse.urlsplit(url).hostname
+    request = urllib.request.Request(url, headers={"User-Agent": "deckystream-updater", "Accept": "application/vnd.github+json" if host == "api.github.com" else "application/octet-stream"})
     try:
         with _open_url(request, timeout=12) as response:
             data = response.read(limit + 1)

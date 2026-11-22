@@ -1,4 +1,5 @@
 """Threat/consistency regressions for the offline release artifact auditor."""
+import gzip
 import importlib.util
 import io
 import json
@@ -17,11 +18,14 @@ SPEC.loader.exec_module(AUDIT)
 
 def tar_bytes(files, root="deckystream-Capture"):
     out = io.BytesIO()
-    with tarfile.open(fileobj=out, mode="w:gz") as archive:
-        for name, data in files.items():
-            info = tarfile.TarInfo(root + "/" + name)
-            info.size = len(data)
-            archive.addfile(info, io.BytesIO(data))
+    # Keep fixture artifact bytes stable across slow-runner clock boundaries,
+    # just like the production packagers' fixed gzip metadata.
+    with gzip.GzipFile(filename="", fileobj=out, mode="wb", mtime=0) as compressed:
+        with tarfile.open(fileobj=compressed, mode="w") as archive:
+            for name, data in files.items():
+                info = tarfile.TarInfo(root + "/" + name)
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
     return out.getvalue()
 
 
@@ -62,7 +66,6 @@ class ReleaseAuditTests(unittest.TestCase):
     def test_oversized_first_member_is_rejected_before_reading_its_body(self):
         # A header claiming a huge body is sufficient to reject the archive.
         # The missing body must not be traversed/decompressed first.
-        import gzip
         member = tarfile.TarInfo("root/oversized")
         member.size = AUDIT.MAX_FILE + 1
         data = gzip.compress(member.tobuf() + b"truncated body")
@@ -158,7 +161,12 @@ class ReleaseAuditTests(unittest.TestCase):
                 return AUDIT.documents(AUDIT.audit(directory, revision))
 
     def test_deterministic_documents_describe_real_selected_artifacts(self):
-        first, second = self.run_fixture(), self.run_fixture()
+        # A timestamp-dependent fixture must fail this test even when both
+        # audit calls happen to execute within one wall-clock second.
+        with patch.object(gzip.time, "time", return_value=1700000000):
+            first = self.run_fixture()
+        with patch.object(gzip.time, "time", return_value=1700000003):
+            second = self.run_fixture()
         self.assertEqual(first, second)
         report = json.loads(first["release-audit.json"])
         self.assertEqual(report["integrity"], "passed")
