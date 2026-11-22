@@ -38,6 +38,13 @@ ROOT = Path(__file__).resolve().parent
 RECOVERY_POLICY_VERSION = 1
 
 
+def app_directories(home, environ=None):
+    try:
+        return _paths.app_directories(home, environ)
+    except ValueError as error:
+        raise RuntimeError(str(error)) from None
+
+
 def owned_directory(path, home):
     try:
         validate_owned_root(path, home)

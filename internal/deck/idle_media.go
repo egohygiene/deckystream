@@ -286,6 +286,9 @@ func PreviewIdle(p Paths, s Settings) IdlePreview {
 // ConfigureIdle changes only the next owned idle scene preferences. It never
 // launches OBS, configures a service, or starts/stops any output.
 func ConfigureIdle(ctx context.Context, p Paths, reader io.Reader) (Result, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return Result{}, err
+	}
 	var input struct {
 		Style              string  `json:"idle_style"`
 		Text               *string `json:"idle_text,omitempty"`

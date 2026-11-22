@@ -1,5 +1,42 @@
 # Current work
 
+## Primary naming and README follow-through
+
+The owner requested replacing active OBSGod naming with lowercase
+**deckystream**. [PR #16](https://github.com/egohygiene/deckystream/pull/16)
+contains the primary CLI/module/plugin/package/default-directory transition,
+explicit legacy readers and the shorter aurora README. The source Go module is
+now `github.com/egohygiene/deckystream`. Original source records, attribution,
+artwork provenance and old helper contracts keep their historical identities.
+
+Existing validated stores retain their paths and control-lock inode; no keys or
+recordings are silently copied. Fresh stores use the new namespace. Ambiguous
+or unsafe layouts refuse. The old OBS profile supports authenticated recovery
+Stop/idle Close; new output, capture, mixer and observer work require the new
+profile. The supported plugin replacement closes and retires the old backend
+before activating the new one. Unconfirmed manager outcomes retain repair state
+instead of racing rollback. See [the naming contract](docs/product-naming.md).
+
+[The focused review](docs/evidence/primary-naming-review.json) binds local Go,
+Python, frontend, native and packaging checks to exact source bytes. A real
+compiled Go/Python namespace probe passed 14 cases including two validated
+Decky maps. Real old/current helper processes passed the authenticated localhost
+rollback fixture; this is not Steam/Decky/device execution. Use the latest PR
+head and actual hosted workflows for final source qualification. The initial
+checkpoint commits used `[skip ci]` and are not CI passes.
+
+The README is 76 lines with the selected light/dark banner, five badges, short
+features and linked setup/development guidance. The active testing booklet was
+regenerated as 13 pages; its original MD/PDF are preserved under `docs/history`.
+[The export receipt](docs/evidence/testing-booklet-naming-export.json) records
+its actual source hash, tools, render checks and limits. Artwork source geometry
+and rights/approval arrays remain unchanged.
+
+Finalization #1 still owns the actual Steam Deck/provider test/fix loop, remaining
+rights and release decisions, and legacy-repository retirement. Optional auth
+research remains separate in #8. No release, deployment or old-repo deletion is
+performed by the naming change.
+
 ## Dependency integration and maintainer protection command
 
 [PR #15](https://github.com/egohygiene/deckystream/pull/15) integrates the exact

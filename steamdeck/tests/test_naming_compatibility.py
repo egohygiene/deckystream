@@ -1,5 +1,4 @@
 """Primary naming, retained legacy stores and one-controller upgrade boundaries."""
-import asyncio
 import fcntl
 import hashlib
 import importlib.util
@@ -28,6 +27,7 @@ B = load("naming_backend", ROOT / "decky/main.py")
 I = load("naming_install", ROOT / "install.py")
 D = load("naming_decky", ROOT / "decky.py")
 R = load("naming_releases", ROOT / "releases.py")
+U = load("naming_uninstall", ROOT / "uninstall.py")
 
 
 class NamespaceSelection(unittest.TestCase):
@@ -80,6 +80,25 @@ class NamespaceSelection(unittest.TestCase):
         self.assertEqual(P.app_namespace(self.home, self.env), "obsgod")
         self.assertTrue((Path(self.env["XDG_STATE_HOME"]) / "obsgod").is_dir())
         self.assertFalse((Path(self.env["XDG_DATA_HOME"]) / "deckystream").exists())
+
+    def test_only_a_present_safe_legacy_plugin_can_anchor_the_namespace(self):
+        loader = self.home / "homebrew"
+        loader.mkdir(mode=0o700)
+        loader.chmod(0o777)
+        self.assertEqual(P.app_namespace(self.home, self.env), "deckystream")
+        plugin = loader / "plugins/obsgod"
+        plugin.mkdir(parents=True, mode=0o700)
+        with self.assertRaisesRegex(ValueError, "writable nonsticky"):
+            P.app_namespace(self.home, self.env)
+        loader.chmod(0o700)
+        identity = plugin / "plugin.json"
+        identity.write_text('{"name":"OBSGod"}')
+        metadata = self.home / "unrelated.json"
+        metadata.write_text('{"name":"obsgod","version":"0.1.0-deck.9"}')
+        (plugin / "package.json").symlink_to(metadata)
+        with self.assertRaisesRegex(ValueError, "identity could not be verified"):
+            P.app_namespace(self.home, self.env)
+        self.assertEqual(metadata.read_text(), '{"name":"obsgod","version":"0.1.0-deck.9"}')
 
     def test_linked_or_foreign_legacy_namespace_is_not_adopted(self):
         parent = Path(self.env["XDG_CONFIG_HOME"])
@@ -300,6 +319,31 @@ class LegacyActivation(unittest.TestCase):
 
             decky.helper_request.side_effect = retire
             self.assertEqual(I.retire_legacy_plugin(decky, bridge, self.home, version), version)
+
+    def test_legacy_uninstall_plans_old_identity_and_removes_only_owned_aliases(self):
+        version = "0.1.0-deck.9"
+        previous = self.plugin_metadata("OBSGod", version)
+        unrelated = self.bin / "another-tool"
+        unrelated.write_bytes(b"keep")
+        decky = Mock()
+
+        def remove(*args, **kwargs):
+            self.assertEqual(args, ("uninstall",))
+            self.assertEqual(kwargs, {"uninstall_existing": True, "legacy_plugin": True, "expected_version": version})
+            for path in previous.iterdir():
+                path.unlink()
+            previous.rmdir()
+            return {"removed": True}
+
+        decky.helper_request.side_effect = remove
+        with patch.dict(os.environ, {"HOME": str(self.home)}, clear=True):
+            plan = U.build_plan(self.home)
+            self.assertEqual(plan["plugin_directory"], str(previous))
+            self.assertEqual(plan["legacy_plugin_version"], version)
+            self.assertIn(str(self.alias), [entry["path"] for entry in plan["entries"]])
+            with patch.object(U, "_sibling", return_value=decky):
+                U.remove_plugin(self.home, plan["plugin_directory"], version)
+        self.assertTrue(unrelated.is_file())
 
 
 class LegacyBackendStatus(unittest.IsolatedAsyncioTestCase):

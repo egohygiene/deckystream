@@ -313,7 +313,7 @@ func mediaActionWith(ctx context.Context, p Paths, action string, deps mediaActi
 	if start && s.CaptureModeName() == "game" {
 		_ = deps.watch(p)
 	}
-	if !after.Recording.Active && !after.ReplayActive {
+	if runtime.Profile != legacyOBSIdentity && !after.Recording.Active && !after.ReplayActive {
 		current, streamErr := c.StreamStatus(ctx)
 		if streamErr == nil && !current.Active {
 			deps.halt(ctx, c)

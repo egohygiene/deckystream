@@ -327,7 +327,7 @@ class RepositoryMigration(unittest.TestCase):
         legacy.mkdir(parents=True)
         (legacy / "keep").write_text("second existing location")
         before = len(self.calls)
-        with self.assertRaisesRegex(ValueError, "Two deckystream installation locations"):
+        with self.assertRaisesRegex(RuntimeError, "Two deckystream installation locations"):
             self.installer(future).install(launch=False)
         self.assert_pair(old_manifest["version"])
         self.assertEqual((legacy / "keep").read_text(), "second existing location")

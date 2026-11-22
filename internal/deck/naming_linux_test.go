@@ -16,6 +16,7 @@ func namingHome(t *testing.T) (string, map[string]string) {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("DECKY_HOME", filepath.Join(home, "homebrew"))
 	roots := map[string]string{"config": filepath.Join(home, "configuration"), "state": filepath.Join(home, "state"), "data": filepath.Join(home, "data"), "cache": filepath.Join(home, "cache"), "flatpak": filepath.Join(home, ".var/app/com.obsproject.Studio/config"), "default-data": filepath.Join(home, ".local/share")}
 	for key, name := range map[string]string{"config": "XDG_CONFIG_HOME", "state": "XDG_STATE_HOME", "data": "XDG_DATA_HOME", "cache": "XDG_CACHE_HOME"} {
 		t.Setenv(name, roots[key])
@@ -142,6 +143,84 @@ func TestLegacyRuntimeRecoveryCannotAuthorizeNewCapture(t *testing.T) {
 	assertNoOutputCommands(t, f)
 }
 
+func TestLegacyMediaAllowsOnlyExplicitStopWithoutSceneOrAudioMutation(t *testing.T) {
+	_, roots := namingHome(t)
+	if err := os.MkdirAll(filepath.Join(roots["config"], legacyNamespace), 0700); err != nil {
+		t.Fatal(err)
+	}
+	p, err := UserPaths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
+		t.Fatal(err)
+	}
+	for _, action := range []string{"record-stop", "record-cancel", "replay-stop", "record-start", "replay-start", "replay-save"} {
+		t.Run(action, func(t *testing.T) {
+			f := &fakeMediaClient{profile: legacyOBSIdentity}
+			f.media.Recording.Active, f.media.ReplayActive = true, true
+			var saved []string
+			result, err := mediaActionWith(context.Background(), p, action, fakeMediaDeps(p, f, &saved))
+			stop := action == "record-stop" || action == "record-cancel" || action == "replay-stop"
+			if stop && (err != nil || !result.OK || f.recordStops+f.replayStops != 1) {
+				t.Fatal("explicit legacy stop failed", result, err)
+			}
+			if !stop && err == nil {
+				t.Fatal("legacy profile accepted a new output/save action")
+			}
+			if f.capture != 0 || f.configs != 0 || f.recordStarts != 0 || f.replayStarts != 0 || f.halts != 0 {
+				t.Fatal("legacy recovery mutated capture/audio or started output", f)
+			}
+		})
+	}
+}
+
+func TestLegacyRetryRecoveryDoesNotLaunchCaptureOrAudioObservers(t *testing.T) {
+	_, roots := namingHome(t)
+	if err := os.MkdirAll(filepath.Join(roots["config"], legacyNamespace), 0700); err != nil {
+		t.Fatal(err)
+	}
+	p, err := UserPaths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := strings.TrimSuffix(fixtureSettings, "}") + `,"capture_mode":"game"}`
+	if _, err := Configure(p, strings.NewReader(settings)); err != nil {
+		t.Fatal(err)
+	}
+	requests := startManagedFixtureIdentity(t, legacyOBSIdentity, false, true, true, "OBSGod Live")
+	state, err := RetryRecovery(context.Background(), p)
+	if err == nil || !state.LegacyRuntime || !state.OutputKnown || !state.Recording || !state.Stream.Active {
+		t.Fatal("legacy active output did not remain observable and recovery-only", state, err)
+	}
+	for _, name := range []string{"capture-watch", "resilience-watch"} {
+		if _, err := os.Lstat(filepath.Join(p.State, name)); !os.IsNotExist(err) {
+			t.Fatal("recovery attempted a renamed observer", name, err)
+		}
+	}
+	for len(requests) > 0 {
+		request := <-requests
+		if !strings.HasPrefix(request.Type, "Get") {
+			t.Fatal("legacy recovery sent a mutating OBS request", request.Type)
+		}
+	}
+	view := readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
+	if view.CanClose || view.CanConfigure {
+		t.Fatal("active legacy output authorized close or settings mutation", view)
+	}
+	state.Stream.Active, state.Recording, state.Runtime.Recording = false, false, false
+	state.Media.Recording.Active, state.Media.ReplayActive = false, false
+	view = readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
+	if !view.CanClose || view.CanConfigure {
+		t.Fatal("known idle legacy output did not permit explicit close only", view)
+	}
+	state.Media.Known = false
+	view = readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
+	if view.CanClose || view.CanConfigure {
+		t.Fatal("unknown legacy output authorized close or settings mutation", view)
+	}
+}
+
 func TestLegacyDeckEnvironmentUsesExplicitFallbackAndPrimaryPresence(t *testing.T) {
 	t.Setenv("OBSGOD_DECK_BITRATE", "3300")
 	old, hadOld := os.LookupEnv("DECKYSTREAM_DECK_BITRATE")
@@ -177,6 +256,7 @@ func TestTrustedHomeAliasNormalizesOnlyTheHomePrefix(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("HOME", alias)
+	t.Setenv("DECKY_HOME", filepath.Join(alias, "homebrew"))
 	for key, variable := range map[string]string{"config": "XDG_CONFIG_HOME", "state": "XDG_STATE_HOME", "data": "XDG_DATA_HOME", "cache": "XDG_CACHE_HOME"} {
 		rel, _ := filepath.Rel(realHome, roots[key])
 		t.Setenv(variable, filepath.Join(alias, rel))

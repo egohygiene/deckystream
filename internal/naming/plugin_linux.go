@@ -56,10 +56,6 @@ func pluginMetadata(path string) (map[string]any, error) {
 	if json.Unmarshal(data, &value) != nil || value == nil {
 		return nil, ErrUnsafe
 	}
-	version, ok := value["version"].(string)
-	if !ok || !legacyVersion.MatchString(version) {
-		return nil, ErrUnsafe
-	}
 	return value, nil
 }
 
@@ -85,6 +81,10 @@ func LegacyPluginPresent(home, deckyHome string) (bool, error) {
 	}
 	metadata, err := pluginMetadata(filepath.Join(path, "package.json"))
 	if err != nil || metadata["name"] != "obsgod" && metadata["name"] != "obsgod-decky" {
+		return false, ErrUnsafe
+	}
+	version, ok := metadata["version"].(string)
+	if !ok || !legacyVersion.MatchString(version) {
 		return false, ErrUnsafe
 	}
 	after, err := pluginDirectory(path)

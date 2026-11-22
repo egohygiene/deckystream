@@ -351,6 +351,13 @@ func ManageStreamProfiles(ctx context.Context, p Paths, reader io.Reader) (Strea
 		return result, errors.New("provide exactly one stream-profile request")
 	}
 	result.Action = input.Action
+	switch input.Action {
+	case "list", "export", "preview", "validate":
+	default:
+		if err := RequirePrimaryBackend(); err != nil {
+			return result, err
+		}
+	}
 	store, err := readStreamProfiles(p)
 	if err != nil {
 		return result, err

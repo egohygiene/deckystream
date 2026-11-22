@@ -49,6 +49,13 @@ class RemovalError(RuntimeError):
         self.export = export
 
 
+def app_directories(home, environ=None):
+    try:
+        return _paths.app_directories(home, environ)
+    except ValueError as error:
+        raise RemovalError(str(error)) from None
+
+
 def exists(path):
     return path.exists() or path.is_symlink()
 
@@ -193,6 +200,13 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
     # unrelated XDG Videos location during a product rename.
     videos = home / "Videos" / ("OBSGod" if _paths.app_namespace(home, environ) == "obsgod" else "deckystream")
     decky = decky_locations(home, environ)
+    previous_plugin = _paths.legacy_plugin_present(home, environ)
+    legacy_plugin_version = None
+    if previous_plugin:
+        if exists(decky["plugin"]):
+            raise RemovalError("Both plugin identities are installed. Run the current migration installer before removing application data; no files were selected for deletion.")
+        decky = _paths.decky_locations(home, environ, legacy=True)
+        legacy_plugin_version = json.loads((decky["plugin"] / "package.json").read_text())["version"]
     decky_root = decky["plugin"].parent.parent
     pending_gates = []
     if mode == "wipe" and not decky_root.is_dir():
@@ -208,22 +222,24 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
             entries.append({"path": str(path), "label": label, "kind": kind})
 
     if mode != "reset":
-        executable = home / ".local/bin/deckystream"
-        if executable.is_symlink() and executable.readlink() == base / "current/deckystream":
-            for parent in [executable.parent, executable.parent.parent]:
-                validate_path(parent, home)
-            if executable.lstat().st_uid != os.getuid():
-                raise RemovalError("The installed command alias belongs to another user")
-            entries.append({"path": str(executable), "label": "Managed command alias", "kind": "alias"})
-        elif exists(executable):
-            preserved.append(str(executable) + " (unrelated command)")
-        for name in ["deckystream-setup.desktop", "deckystream-update.desktop", "deckystream-uninstall.desktop"]:
+        for name in ("deckystream", "obsgod"):
+            executable = home / ".local/bin" / name
+            if executable.is_symlink() and executable.readlink() in {base / "current/deckystream", base / "current/obsgod"}:
+                for parent in [executable.parent, executable.parent.parent]:
+                    validate_path(parent, home)
+                if executable.lstat().st_uid != os.getuid():
+                    raise RemovalError("The installed command alias belongs to another user")
+                entries.append({"path": str(executable), "label": "Managed command alias", "kind": "alias"})
+            elif exists(executable):
+                preserved.append(str(executable) + " (unrelated command)")
+        for name in ["deckystream-setup.desktop", "deckystream-update.desktop", "deckystream-uninstall.desktop", "obsgod-setup.desktop", "obsgod-update.desktop", "obsgod-uninstall.desktop"]:
             shortcut = apps / name
             validate_path(shortcut, home)
             if shortcut.is_file():
                 if shortcut.stat().st_size > 64 * 1024:
                     raise RemovalError("An application shortcut is unexpectedly large")
-                if "X-deckystream-Managed=true" in shortcut.read_text():
+                marker = "X-OBSGod-Managed=true" if name.startswith("obsgod-") else "X-deckystream-Managed=true"
+                if marker in shortcut.read_text():
                     add(shortcut, "Managed Desktop shortcut", "file")
                 else:
                     preserved.append(str(shortcut) + " (unrelated shortcut)")
@@ -273,7 +289,8 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
     plan = {"mode": mode, "legacy_app_only": legacy_app_only,
             "remove_plugin": mode != "reset" and not legacy_app_only, "entries": entries,
             "preserved": preserved, "base": str(base), "state": str(state), "plugin_directory": str(decky["plugin"]),
-            "decky_root": str(decky_root), "pending_gates": pending_gates}
+            "decky_root": str(decky_root), "pending_gates": pending_gates,
+            "legacy_plugin_version": legacy_plugin_version}
     unique = {}
     for entry in entries:
         if entry["path"] in unique:
@@ -602,19 +619,25 @@ def removal_lock(path, home=None):
         yield [info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_nlink]
 
 
-def remove_plugin(home, directory=None):
+def remove_plugin(home, directory=None, expected_legacy_version=None):
     # Use Decky's existing authenticated frontend, never raw-delete root-owned
     # plugin files or restart the shared Decky service.
     decky = _sibling("decky")
     known = Path(directory) if directory is not None else decky_locations(home)["plugin"]
+    legacy = expected_legacy_version is not None
+    if legacy and known != _paths.decky_locations(home, legacy=True)["plugin"]:
+        raise RemovalError("The previous plugin removal path changed; review the inventory again.")
     if exists(known):
         metadata = known / "plugin.json"
         if known.is_symlink() or metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 64 * 1024:
             raise RemovalError("The remaining plugin directory could not be identified safely; inspect Decky before retrying.")
         saved = json.loads(metadata.read_text())
-        if not isinstance(saved, dict) or saved.get("name") != "deckystream":
+        if not isinstance(saved, dict) or saved.get("name") != ("OBSGod" if legacy else "deckystream"):
             raise RemovalError("The remaining plugin directory has an unexpected identity; inspect Decky before retrying.")
-    result = decky.helper_request("uninstall", uninstall_existing=exists(known))
+    if legacy:
+        result = decky.helper_request("uninstall", uninstall_existing=True, legacy_plugin=True, expected_version=expected_legacy_version)
+    else:
+        result = decky.helper_request("uninstall", uninstall_existing=exists(known))
     if result.get("removed") is not True:
         raise RemovalError("Decky plugin removal is unconfirmed; application files were preserved")
     # Decky3.3.1 can swallow a filesystem-removal exception after unloading.
@@ -663,7 +686,10 @@ def apply_plan(plan, home):
                 _check_preview(pinned, home)
                 _check_export(exported, home)
             if plan["remove_plugin"]:
-                remove_plugin(home, plan["plugin_directory"])
+                if plan.get("legacy_plugin_version") is not None:
+                    remove_plugin(home, plan["plugin_directory"], plan["legacy_plugin_version"])
+                else:
+                    remove_plugin(home, plan["plugin_directory"])
             _check_preview(pinned, home)
             for entry in pinned["entries"]:
                 _check_preview(pinned, home, [entry])

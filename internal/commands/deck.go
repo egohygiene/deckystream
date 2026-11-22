@@ -54,7 +54,11 @@ func newDeckCommand() *coral.Command {
 			} else if name == "change-obs-password" {
 				unlock, lockErr := deck.Lock(ctx, paths)
 				if lockErr != nil {
-					err = errors.New("another managed OBS operation is busy; wait and retry")
+					if errors.Is(lockErr, deck.ErrLegacyBackend) {
+						err = lockErr
+					} else {
+						err = errors.New("another managed OBS operation is busy; wait and retry")
+					}
 				} else {
 					defer unlock()
 					result, err = deck.ChangeControlPassword(paths, cmd.InOrStdin())

@@ -239,6 +239,9 @@ func ready(ctx context.Context, p Paths, s Settings, secret Secrets) (*automatio
 }
 
 func readyWithin(ctx context.Context, p Paths, s Settings, secret Secrets, budget time.Duration) (*automation.Client, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	logEvent(p, "obs.connecting")
@@ -441,7 +444,7 @@ func haltCaptureIfIdle(ctx context.Context, c *automation.Client) {
 		return
 	}
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Recording {
+	if err != nil || runtime.Profile != primaryNamespace || runtime.Collection != primaryNamespace || runtime.Recording {
 		return
 	}
 	replay, err := c.ReplayActive(ctx)
@@ -779,6 +782,9 @@ func Restart(ctx context.Context, p Paths) (Result, error) {
 // OBS or starts any output, and game-only privacy remains enforced by its watcher.
 func RetryRecovery(ctx context.Context, p Paths) (Result, error) {
 	state := Status(ctx, p)
+	if state.LegacyRuntime {
+		return state, errors.New("stop the previous managed OBS outputs and close it explicitly before starting renamed capture or audio observers")
+	}
 	if !state.OutputKnown || state.Media == nil || !state.Media.Known {
 		return state, errors.New("confirm managed OBS output before retrying recovery; inspect OBS when its state is unknown")
 	}

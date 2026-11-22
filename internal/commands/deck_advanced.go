@@ -62,7 +62,7 @@ func addDeckAdvancedCommands(root *coral.Command) {
 				result, err = deck.RetryRecovery(ctx, p)
 			} else {
 				lock := deck.Lock
-				if name == "media" {
+				if name == "media" || name == "stream-profiles" {
 					lock = deck.RecoveryLock
 				}
 				unlock, lockErr := lock(ctx, p)
@@ -132,6 +132,9 @@ func runDeckMixer(ctx context.Context, p deck.Paths, reader io.Reader) (any, err
 	if request.Action == "configure" {
 		unlock, err := deck.Lock(ctx, p)
 		if err != nil {
+			if errors.Is(err, deck.ErrLegacyBackend) {
+				return nil, err
+			}
 			return nil, errors.New("another managed OBS operation is busy; wait or cancel it")
 		}
 		defer unlock()

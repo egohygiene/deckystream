@@ -1,5 +1,12 @@
 # Product roadmap
 
+The owner has now approved primary naming **deckystream** across the CLI, module,
+plugin and package surfaces. [PR #16](https://github.com/egohygiene/deckystream/pull/16)
+qualifies that transition and README refresh before the shared device session.
+Read [the naming contract](docs/product-naming.md) for legacy data/control safety.
+This amends earlier frozen-primary-name guidance without changing original
+acceptance dependencies, artwork rights or release gates.
+
 Current destination: **egohygiene/deckystream** (`main`). The first snapshot
 push is verified at `38464de765e913ca977f7e4cdae16dec0884d24b`.
 [Finalization #1](https://github.com/egohygiene/deckystream/issues/1) carries the

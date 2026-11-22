@@ -1,0 +1,74 @@
+{
+  "schema": "deckystream.testing-booklet-naming-export/v1",
+  "source_markdown": "docs/testing-booklet.md",
+  "source_markdown_sha256": "8ff8b28442e570f5ed35918a9b7a13ab1b78e57c9962b1c9a3c7edb4155ff070",
+  "pdf": "docs/testing-booklet.pdf",
+  "pdf_sha256": "25e560fc74550806a1a0dd0bfee5ec17579df62dd08ca2039f1de052d8165415",
+  "bytes": 164260,
+  "pages": 13,
+  "source_date_epoch": "1795365597",
+  "tools": {
+    "pandoc": "pandoc 3.1.11.1",
+    "xelatex": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+    "pypdf": "6.10.0"
+  },
+  "command": [
+    "pandoc",
+    "docs/testing-booklet.md",
+    "--from=gfm",
+    "--pdf-engine=xelatex",
+    "--lua-filter=/workspace/.obsgod-tools/naming-20261122/booklet-export/layout.lua",
+    "--include-in-header=/workspace/.obsgod-tools/naming-20261122/booklet-export/header.tex",
+    "--include-before-body=/workspace/.obsgod-tools/naming-20261122/booklet-export/cover.tex",
+    "--metadata",
+    "title=deckystream: testing together",
+    "--metadata",
+    "date=",
+    "--variable",
+    "papersize=letter",
+    "--variable",
+    "geometry:margin=18mm",
+    "--variable",
+    "fontsize=11pt",
+    "--variable",
+    "mainfont=DejaVu Sans",
+    "--variable",
+    "monofont=DejaVu Sans Mono",
+    "--output",
+    "/workspace/.obsgod-tools/naming-20261122/booklet-export/testing-booklet.pdf"
+  ],
+  "checks": {
+    "visual": {
+      "pages": [
+        1,
+        8,
+        13
+      ],
+      "outcome": "readable, no clipping, each numbered checkpoint on its own page; first-page aurora banner unchanged"
+    },
+    "links": {
+      "external_uri_count": 10,
+      "internal_goto_count": 1,
+      "outcome": "current informational links use ego/deckystream/main; preserved explicit historical links; no old a213 pin"
+    },
+    "step_ids": {
+      "count": 30,
+      "outcome": "all present in extracted PDF text"
+    },
+    "overflow": {
+      "words_checked": 3287,
+      "out_of_page_words": 0,
+      "command": [
+        "pdftotext",
+        "-bbox",
+        "/workspace/.obsgod-tools/naming-20261122/booklet-export/testing-booklet.pdf",
+        "/workspace/.obsgod-tools/naming-20261122/booklet-export/text-bounds.html"
+      ]
+    },
+    "legacy_name": "one OBSGod occurrence, explicitly identified as legacy installation identity"
+  },
+  "historical_pdf": "docs/history/testing-booklet-before-primary-rename.pdf",
+  "historical_pdf_sha256": "9eb762ea02ad192d81f5d184ca3772d062ba07b13ef185a1cca1fd5299bc2c6f",
+  "qualification": "Documentation export only; no product or device acceptance inferred.",
+  "reproducibility": "unrun; fixed source epoch and metadata used, no byte-for-byte claim"
+}

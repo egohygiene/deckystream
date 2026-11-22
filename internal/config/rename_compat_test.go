@@ -170,6 +170,73 @@ func TestGenericDefaultNamespaceUsesEveryExistingApplicationFamily(t *testing.T)
 	}
 }
 
+func TestGenericDefaultRecognizesPluginOnlyLegacyInstallation(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("legacy Decky ownership is Linux-only; other platforms fail closed on an occupied old slot")
+	}
+	home := isolateEnvironment(t)
+	plugin := filepath.Join(home, "homebrew/plugins/obsgod")
+	if err := os.MkdirAll(plugin, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(plugin, "plugin.json"), []byte(`{"name":"OBSGod","api_version":1}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(plugin, "package.json"), []byte(`{"name":"obsgod","version":"0.1.0-deck.9"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path, err := DefaultPath()
+	if err != nil || path != filepath.Join(home, "obsgod/config.json") {
+		t.Fatal("a validated old backend must reserve its namespace before its first write", path, err)
+	}
+	if _, err := os.Lstat(filepath.Join(home, "obsgod")); !os.IsNotExist(err) {
+		t.Fatal("read-only marker discovery created a store")
+	}
+	if err := os.Mkdir(filepath.Join(home, "deckystream"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DefaultPath(); err == nil {
+		t.Fatal("new store plus a live old backend marker must not split controller state")
+	}
+}
+
+func TestGenericDefaultAllowsTrustedHomeAliasButNotApplicationSymlinks(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("real POSIX HOME alias fixture")
+	}
+	home := isolateEnvironment(t)
+	alias := filepath.Join(t.TempDir(), "home-alias")
+	if err := os.Symlink(home, alias); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", alias)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(alias, "configuration"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(alias, "state"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(alias, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(alias, "cache"))
+	t.Setenv("DECKY_HOME", filepath.Join(alias, "homebrew"))
+	if err := os.MkdirAll(filepath.Join(home, "state/obsgod"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	configRoot := filepath.Join(home, "configuration")
+	if runtime.GOOS == "darwin" {
+		configRoot = filepath.Join(home, "Library/Application Support")
+	}
+	path, err := DefaultPath()
+	if err != nil || path != filepath.Join(configRoot, "obsgod/config.json") {
+		t.Fatal("trusted HOME alias must retain the canonical existing store", path, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(configRoot), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(t.TempDir(), configRoot); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DefaultPath(); err == nil {
+		t.Fatal("HOME-prefix normalization must not follow an XDG application subtree symlink")
+	}
+}
+
 func TestLegacyWorkflowAliasesRemainIntentOnlyAndCanonicalOverrides(t *testing.T) {
 	root := isolateEnvironment(t)
 	path := writeConfig(t, root, `{"version":1,"workflow_profiles":{"studio":{"obs_profile":"Studio"},"local":{"starting_scene":"Local"}}}`)

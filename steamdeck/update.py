@@ -36,6 +36,13 @@ class UpdateError(RuntimeError):
     pass
 
 
+def app_directories(home, environ=None):
+    try:
+        return _paths.app_directories(home, environ)
+    except ValueError as error:
+        raise UpdateError(str(error)) from None
+
+
 def private_directory(path, home):
     try:
         validate_owned_root(path, home)

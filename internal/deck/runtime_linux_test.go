@@ -92,6 +92,10 @@ type fixtureRequest struct {
 }
 
 func startManagedFixture(t *testing.T, rejectAuth bool, recording bool, active bool, program ...string) <-chan fixtureRequest {
+	return startManagedFixtureIdentity(t, "deckystream", rejectAuth, recording, active, program...)
+}
+
+func startManagedFixtureIdentity(t *testing.T, identity string, rejectAuth bool, recording bool, active bool, program ...string) <-chan fixtureRequest {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:"+Port)
 	if err != nil {
@@ -132,9 +136,9 @@ func startManagedFixture(t *testing.T, rejectAuth bool, recording bool, active b
 			case "GetVersion":
 				data = map[string]any{"obsVersion": "33.0.1", "obsWebSocketVersion": "5.6.3"}
 			case "GetProfileList":
-				data = map[string]any{"currentProfileName": "deckystream"}
+				data = map[string]any{"currentProfileName": identity}
 			case "GetSceneCollectionList":
-				data = map[string]any{"currentSceneCollectionName": "deckystream"}
+				data = map[string]any{"currentSceneCollectionName": identity}
 			case "GetCurrentProgramScene":
 				data = map[string]any{"sceneName": scene}
 			case "GetRecordStatus":

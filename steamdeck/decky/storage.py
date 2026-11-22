@@ -161,7 +161,11 @@ def _player_environment(provided, environ):
         child["USER"] = child["LOGNAME"] = user
     decky_home = _value(provided, "DECKY_HOME")
     if decky_home is not None:
-        child["DECKY_HOME"] = str(_path(decky_home))
+        decky_home = _path(decky_home)
+        original_home = _value(provided, "DECKY_USER_HOME")
+        if original_home and decky_home.is_relative_to(_path(original_home)):
+            decky_home = Path(child["HOME"]) / decky_home.relative_to(_path(original_home))
+        child["DECKY_HOME"] = str(decky_home)
     return child
 
 

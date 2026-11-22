@@ -146,14 +146,18 @@ func DefaultPath() (string, error) {
 func namespaceDirectory(root, namespace string) (string, bool, error) {
 	path := filepath.Join(root, namespace)
 	info, err := os.Lstat(path)
-	if os.IsNotExist(err) {
-		return path, false, nil
-	}
-	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || !configurationOwner(info, false) {
+	exists := err == nil
+	if err != nil && !os.IsNotExist(err) || exists && (!info.IsDir() || info.Mode()&os.ModeSymlink != 0 || !configurationOwner(info, false)) {
 		return "", false, errors.New("configuration store is unsafe; choose a validated --config path")
 	}
 	for parent := path; ; parent = filepath.Dir(parent) {
 		before, beforeErr := os.Lstat(parent)
+		if os.IsNotExist(beforeErr) {
+			if parent == filepath.Dir(parent) {
+				return "", false, errors.New("configuration store ancestry is unavailable")
+			}
+			continue
+		}
 		target, targetErr := os.Stat(parent)
 		if beforeErr != nil || targetErr != nil || before.Mode()&os.ModeSymlink != 0 || !target.IsDir() || !configurationOwner(before, parent != path) || !configurationOwner(target, parent != path) {
 			return "", false, errors.New("configuration store ancestry is unsafe")
@@ -165,7 +169,7 @@ func namespaceDirectory(root, namespace string) (string, bool, error) {
 			break
 		}
 	}
-	return path, true, nil
+	return path, exists, nil
 }
 
 func ConfigPath(explicit string) (string, bool, error) {

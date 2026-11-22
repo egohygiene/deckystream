@@ -140,6 +140,9 @@ func controlPasswordChallenge(ctx context.Context) (bool, error) {
 // its port are positively absent. The caller holds the shared operation lock.
 // Reconnection is a separate explicit read-only test after opening managed OBS.
 func ChangeControlPassword(p Paths, input io.Reader) (ConnectionDetails, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return ConnectionDetails{}, err
+	}
 	return changeControlPassword(p, input, presence, writeJSON)
 }
 

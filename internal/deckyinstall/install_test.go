@@ -227,11 +227,12 @@ func TestFrontendInstallerBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"install", "reject", "missing-prompt", "no-frontend", "probe", "confirm-timeout", "confirm-timeout-reject", "uninstall", "uninstall-empty", "uninstall-reject", "uninstall-retained", "uninstall-timeout", "uninstall-orphan", "uninstall-unknown-root", "uninstall-legacy", "legacy-invalid-install"} {
+	for _, mode := range []string{"install", "reject", "missing-prompt", "no-frontend", "probe", "confirm-timeout", "confirm-timeout-reject", "uninstall", "uninstall-empty", "uninstall-reject", "uninstall-retained", "uninstall-timeout", "uninstall-orphan", "uninstall-unknown-root", "uninstall-legacy", "uninstall-legacy-version", "legacy-invalid-install", "legacy-present", "legacy-busy"} {
 		command := exec.Command(node, "--input-type=commonjs", "-e", string(script))
 		request, _ := json.Marshal(Input{Operation: map[bool]string{true: "probe", false: "install"}[mode == "probe"], ZIPPath: "/home/deck/space and %20/plugin.zip", SHA256: strings.Repeat("a", 64), Version: "0.1.0-test"})
 		if strings.HasPrefix(mode, "uninstall") {
-			request, _ = json.Marshal(Input{Operation: "uninstall", UninstallExisting: mode != "uninstall-empty" && mode != "uninstall-unknown-root", LegacyPlugin: mode == "uninstall-legacy", Version: map[bool]string{true: "0.1.0-test", false: ""}[mode == "uninstall-legacy"]})
+			legacy := mode == "uninstall-legacy" || mode == "uninstall-legacy-version"
+			request, _ = json.Marshal(Input{Operation: "uninstall", UninstallExisting: mode != "uninstall-empty" && mode != "uninstall-unknown-root", LegacyPlugin: legacy, Version: map[bool]string{true: "0.1.0-test", false: ""}[legacy]})
 		}
 		if mode == "legacy-invalid-install" {
 			request, _ = json.Marshal(Input{Operation: "install", LegacyPlugin: true})

@@ -114,26 +114,43 @@ def namespace_paths(home, namespace, environ=None):
         raise ValueError("Unsupported application namespace")
     original_home = Path(home)
     home = original_home.resolve()
+    values = os.environ if environ is None else environ
     bases = [xdg_root(name, home, environ) for name in DEFAULTS]
     default_data = home / ".local/share"
     if default_data not in bases:
         bases.append(default_data)
     bases.append(home / ".var/app/com.obsproject.Studio/config")
-    return [normalize_home_path(base, original_home, allow_home=True) / namespace
-            if base.is_relative_to(original_home) else base / namespace for base in bases]
+    aliases = [original_home]
+    supplied_home = Path(values.get("HOME") or str(home))
+    if supplied_home.is_absolute() and supplied_home.resolve() == home:
+        aliases.append(supplied_home)
+    paths = []
+    for base in bases:
+        alias = next((value for value in aliases if base.is_relative_to(value)), None)
+        paths.append((normalize_home_path(base, alias, allow_home=True) if alias else base) / namespace)
+    return paths
 
 
 def legacy_plugin_present(home, environ=None):
     """A verified old loader installation anchors even its first control lock."""
     values = os.environ if environ is None else environ
-    home = Path(home).resolve()
+    original_home = Path(home)
+    home = original_home.resolve()
     root = Path(values.get("DECKY_HOME") or home / "homebrew")
-    if not root.is_absolute() or ".." in root.parts or not root.resolve().is_relative_to(home):
+    for alias in (original_home, Path(values.get("HOME") or str(home))):
+        if alias.is_absolute() and alias.resolve() == home and root.is_relative_to(alias):
+            root = normalize_home_path(root, alias, allow_home=True)
+            break
+    if not root.is_absolute() or ".." in root.parts or not root.is_relative_to(home):
         raise ValueError("DECKY_HOME must identify a safe directory inside your home")
     plugin = root / "plugins/obsgod"
-    validate_directory_ancestry(plugin, home)
-    if not plugin.exists() and not plugin.is_symlink():
+    try:
+        before = plugin.lstat()
+    except FileNotFoundError:
         return False
+    validate_directory_ancestry(plugin, home)
+    if before.st_mode & 0o022:
+        raise ValueError("The previous plugin identity could not be verified")
     records = []
     for name in ("plugin.json", "package.json"):
         path = plugin / name
@@ -141,13 +158,25 @@ def legacy_plugin_present(home, environ=None):
         if (not stat.S_ISREG(info.st_mode) or info.st_uid not in (0, os.getuid())
                 or info.st_nlink != 1 or info.st_mode & 0o022 or info.st_size > 65536):
             raise ValueError("The previous plugin identity could not be verified")
-        records.append(json.loads(path.read_text()))
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(descriptor, "rb") as source:
+            opened = os.fstat(source.fileno())
+            if (opened.st_dev, opened.st_ino, opened.st_mode, opened.st_uid, opened.st_nlink) != (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_nlink):
+                raise ValueError("The previous plugin identity changed during inspection")
+            data = source.read(65537)
+        after = path.lstat()
+        if len(data) > 65536 or (after.st_dev, after.st_ino, after.st_mode, after.st_uid, after.st_nlink) != (opened.st_dev, opened.st_ino, opened.st_mode, opened.st_uid, opened.st_nlink):
+            raise ValueError("The previous plugin identity changed during inspection")
+        records.append(json.loads(data))
     identity, package = records
     if (not isinstance(identity, dict) or identity.get("name") != "OBSGod"
             or not isinstance(package, dict) or package.get("name") not in {"obsgod", "obsgod-decky"}
             or not isinstance(package.get("version"), str)
             or not re.fullmatch(r"[0-9][A-Za-z0-9.-]{0,79}", package["version"])):
         raise ValueError("The previous plugin identity could not be verified")
+    after = plugin.lstat()
+    if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+        raise ValueError("The previous plugin identity changed during inspection")
     return True
 
 
@@ -186,15 +215,17 @@ def app_directories(home, environ=None):
     return wanted, data / "applications"
 
 
-def decky_locations(home, environ=None):
+def decky_locations(home, environ=None, *, legacy=False):
     """Resolve only the stable deckystream plugin's Decky roots, never shared parents."""
     values = os.environ if environ is None else environ
     root_value = values.get("DECKY_HOME", "")
     root = Path(root_value) if root_value else Path(home) / "homebrew"
     if not root.is_absolute() or ".." in root.parts or any(c in str(root) for c in "\x00\r\n") or not root.resolve().is_relative_to(Path(home).resolve()):
         raise ValueError("DECKY_HOME must identify a safe absolute directory inside your home")
-    expected = {"plugin": root / "plugins/deckystream", "settings": root / "settings/deckystream",
-                "data": root / "data/deckystream", "logs": root / "logs/deckystream"}
+    root = normalize_home_path(root, home)
+    namespace = LEGACY_NAMESPACE if legacy else PRIMARY_NAMESPACE
+    expected = {"plugin": root / "plugins" / namespace, "settings": root / "settings" / namespace,
+                "data": root / "data" / namespace, "logs": root / "logs" / namespace}
     variables = {"plugin": "DECKY_PLUGIN_DIR", "settings": "DECKY_PLUGIN_SETTINGS_DIR",
                  "data": "DECKY_PLUGIN_RUNTIME_DIR", "logs": "DECKY_PLUGIN_LOG_DIR"}
     for key, name in variables.items():

@@ -21,12 +21,16 @@ type fakeMediaClient struct {
 	startErr                                                                      error
 	savedPath                                                                     string
 	unmanaged                                                                     bool
+	profile                                                                       string
 }
 
 func (f *fakeMediaClient) Close() error { return nil }
 func (f *fakeMediaClient) RuntimeStatus(context.Context) (automation.RuntimeStatus, error) {
 	if f.unmanaged {
 		return automation.RuntimeStatus{Profile: "Ordinary OBS", Collection: "Ordinary"}, nil
+	}
+	if f.profile != "" {
+		return automation.RuntimeStatus{Profile: f.profile, Collection: f.profile}, nil
 	}
 	return automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}, nil
 }

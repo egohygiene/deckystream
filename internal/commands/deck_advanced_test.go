@@ -22,7 +22,13 @@ func isolatedDeckAdvancedConfiguration(t *testing.T) {
 	_ = isolatedCommandConfig(t)
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("APPDATA", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "configuration"))
 	t.Setenv("XDG_STATE_HOME", filepath.Join(home, "state"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(home, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	t.Setenv("DECKY_HOME", filepath.Join(home, "homebrew"))
 	t.Setenv("XDG_VIDEOS_DIR", "")
 	t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(home, "missing-generic-config.json"))
 	for _, key := range []string{"PROFILE", "WIDTH", "HEIGHT", "BITRATE", "FPS", "ENCODER", "CAPTURE_MODE", "MICROPHONE"} {

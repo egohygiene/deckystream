@@ -6,7 +6,7 @@ process.stdin.on("end", async () => {
   const mode = process.env.DECKYSTREAM_TRANSPORT_TEST_MODE;
   const event = "loader/add_plugin_install_prompt";
   const digest = "a".repeat(64);
-  const target = mode === "uninstall-legacy" ? "OBSGod" : "deckystream";
+  const target = ["uninstall-legacy","uninstall-legacy-version","legacy-present"].includes(mode) ? "OBSGod" : "deckystream";
   let order = mode === "uninstall-legacy" ? ["Alpha","OBSGod","deckystream","Beta"] : ["Alpha", "deckystream", "Beta"];
   let confirms = 0;
   let uninstalls = 0;
@@ -32,7 +32,7 @@ process.stdin.on("end", async () => {
     removeEventListener(name, listener) {listeners.get(name)?.delete(listener); if (listeners.get(name)?.size===0) listeners.delete(name);},
     async call(route,...args) {
       if (route === "updater/get_version_info") return {current:"v3.3.1"};
-      if (route === "loader/get_plugins") return [...(removed?[]:[{name:target,version:"0.1.0-test",disabled:false,load_type:1}]),...(mode==="uninstall-legacy"?[{name:"deckystream",version:"0.1.0-test",disabled:false,load_type:1}]:[]),{name:"Other",version:"9"}];
+      if (route === "loader/get_plugins") return [...(removed?[]:[{name:target,version:mode==="uninstall-legacy-version"?"0.2.0-changed":"0.1.0-test",disabled:false,load_type:1}]),...(mode==="uninstall-legacy"?[{name:"deckystream",version:"0.1.0-test",disabled:false,load_type:1}]:[]),{name:"Other",version:"9"}];
       if (route === "utilities/settings/get") return [...order];
       if (route === "utilities/settings/set") {order=args[1];return;}
       if (route === "utilities/uninstall_plugin") {
@@ -61,9 +61,15 @@ process.stdin.on("end", async () => {
     }
   };
   global.window={DeckyBackend:backend};
+  if(mode === "legacy-busy") window.__obsgodInstallerRunning = {};
   const result = JSON.parse(await eval(source));
   assert.equal(backend.ws,socket,"Steam frontend connection replaced");
   assert.deepEqual(Array.from(listeners.get(event)),[original],"event listeners not restored");
+  if(mode === "legacy-present" || mode === "legacy-busy") {
+    assert.deepEqual(result,{ok:false,code:mode==="legacy-present"?"legacy-present":"busy"});
+    assert.equal(confirms,0);assert.equal(uninstalls,0);
+    return;
+  }
   if(mode === "legacy-invalid-install") {
     assert.deepEqual(result,{ok:false,code:"unsupported"});
     assert.equal(confirms,0);assert.equal(uninstalls,0);
@@ -73,6 +79,13 @@ process.stdin.on("end", async () => {
     assert.equal(confirms,0,"removal attempted an installation");
     assert.deepEqual(prompts,[],"removal changed unrelated prompts");
     assert(!JSON.stringify(result).includes("fixture-secret"));
+    if(mode === "uninstall-legacy-version") {
+      assert.deepEqual(result,{ok:false,code:"legacy-version-mismatch"});
+      assert.equal(uninstalls,0,"changed legacy version was removed");
+      assert.equal(window.__deckystreamInstallerRunning,undefined);
+      assert.equal(window.__obsgodInstallerRunning,undefined);
+      return;
+    }
     if (mode === "uninstall-legacy") {
       assert.equal(result.ok,true);assert.equal(result.removed,true);assert.equal(uninstalls,1);
       assert.deepEqual(order,["Alpha","deckystream","Beta"],"legacy removal altered new or unrelated plugin order");
