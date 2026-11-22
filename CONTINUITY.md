@@ -20,6 +20,13 @@ The first integrated head `78fb053682fd5bf024b4dbe673f48b9cab6803c8` passed the
 complete hosted Deck candidate, browser and native harness; its generic snapshot
 audit failed on the implicit renamed project identity, prompting the explicit
 compatibility and canonical-source repairs in that PR.
+The next head `d7f4fea42cad96c42c63f2b7cc71cc780d88c3c0` passed the generic
+snapshot/package workflow. Its candidate run exposed a test scheduling
+assumption: a 0.6-second setup budget need not let OBS installation begin on a
+loaded runner. The repaired fixture keeps that deadline, compares readback to
+persisted installed state, proves retry, and checks noisy output separately.
+Production setup deadlines are unchanged. The focused dependency suite passed
+20 cases with one explicit root-runner skip before the next hosted run.
 
 The requested [protection command](docs/main-branch-protection.md) defaults to
 read-only preview and needs explicit `--apply` with owner administration access.

@@ -32,7 +32,8 @@
     "scripts/protect-main.py": "fe3c94b9997e7ed0dec50237da606bfc72e8a424c75e4cb94eb59ac9f9fa05f0",
     "scripts/tests/test_main_ruleset.py": "1ea37fc12eb8541c52babe65c3e0e9b3b1f5414c2aab95e0b3f079e806980218",
     "steamdeck/decky/rollup.config.js": "23414a547a8f331d97014fcb28bb612a1cece82b0030be72a94cd9762f93bf4d",
-    "steamdeck/tests/test_repository_migration.py": "742c5c789193921271cfa2d84b734810c6ed7fa52fea64f734efbd1459ce5713"
+    "steamdeck/tests/test_repository_migration.py": "742c5c789193921271cfa2d84b734810c6ed7fa52fea64f734efbd1459ce5713",
+    "steamdeck/tests/test_dependency_setup.py": "7a647e57d9cd02de08404a9ac8d570e95f275dd4fcfe2e535f07b5f32aba94a3"
   },
   "go_source_sha256": {
     "internal/commands/deck_advanced_test.go": "eecd779463be682fea5954e5212cbb29d3379b93d38f6e9a7181b1c8ae97b48b",
@@ -123,6 +124,12 @@
       "command": "python3 -m unittest discover -s scripts/tests -p test_*.py",
       "outcome": "passed-after-canonical-provenance-repair",
       "tests": 210
+    },
+    {
+      "command": "python3 -m unittest discover -s steamdeck/tests -p test_dependency_setup.py",
+      "outcome": "passed-after-fixture-scheduling-repair",
+      "tests": 20,
+      "skipped": 1
     }
   ],
   "first_head_hosted": {
@@ -152,5 +159,13 @@
     "No ACT workflow execution; no cache/image cleanup or spending.",
     "Ruleset command has not applied any settings.",
     "Unsigned provenance remains self-reported; no authenticated publisher attestation is claimed."
-  ]
+  ],
+  "second_head_hosted": {
+    "head": "d7f4fea42cad96c42c63f2b7cc71cc780d88c3c0",
+    "generic_snapshot_run": 45040234072,
+    "generic_snapshot_outcome": "passed",
+    "candidate_run": 45040234100,
+    "candidate_outcome": "failed: subsecond test budget could expire before fake OBS installation began; fixture repaired without changing production deadlines"
+  },
+  "test_scheduling_review": "Independent read-only review passed: real0.6-second timeout retained, observed compatibility bound to persisted actual fixture state, retry still required, private large-output checks separate; other barrier-based tests retain deterministic partial-install coverage."
 }

@@ -430,16 +430,18 @@ time.sleep(30)
             release.touch()
             await asyncio.wait_for(worker_released(), 4)
 
-    async def test_setup_budget_and_large_output_are_bounded(self):
-        self.state.update(delay_stage="obs", delay_seconds=10, noise="secret-output-never-publish")
+    async def test_setup_budget_is_bounded_and_retry_reobserves_partial_install(self):
+        self.state.update(delay_stage="obs", delay_seconds=10)
         self.save()
         job = self.job()
         with patch.object(setup, "SETUP_TIMEOUT", 0.6):
             await job.start(True)
             result = await self.finished(job)
         self.assertEqual(result["operation"]["error_code"], "timeout")
-        self.assertTrue(result["dependencies"][0]["compatible"])
-        self.assertNotIn("secret-output", json.dumps(result))
+        # A loaded runner may exhaust the budget during probes, before the
+        # install process starts. Either way, readback must match actual state.
+        observed = json.loads((self.root / "flatpak.json").read_text())
+        self.assertEqual(result["dependencies"][0]["compatible"], OBS_REF in observed["user"])
         self.assertLessEqual(len(result["operation"]["progress"]), setup.MAX_EVENTS)
         self.state = json.loads((self.root / "flatpak.json").read_text())
         self.state.pop("delay_stage")
@@ -447,7 +449,16 @@ time.sleep(30)
         await job.start(True)
         result = await self.finished(job)
         self.assertTrue(result["ready"])
+
+    async def test_large_output_is_bounded_and_never_public(self):
+        self.state.update(noise="secret-output-never-publish")
+        self.save()
+        job = self.job()
+        await job.start(True)
+        result = await self.finished(job)
+        self.assertTrue(result["ready"])
         self.assertNotIn("secret-output", json.dumps(result))
+        self.assertLessEqual(len(result["operation"]["progress"]), setup.MAX_EVENTS)
         self.assertLess((self.root / "jobs/dependencies/receipt.json").stat().st_size, 32768)
 
     async def test_immediate_cancel_before_worker_enters_releases_every_lease(self):
