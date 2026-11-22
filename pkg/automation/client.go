@@ -21,7 +21,7 @@ import (
 	"github.com/andreykaipov/goobs"
 	"github.com/andreykaipov/goobs/api/requests"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/internal/obstransport"
+	"github.com/egohygiene/deckystream/internal/obstransport"
 )
 
 // Config describes an OBS connection. Password must come from a secret source.
@@ -65,7 +65,7 @@ type RequestError struct {
 }
 
 func (e *RequestError) Error() string {
-	return fmt.Sprintf("OBS %s failed (code %d); check OBSGod diagnostics on the device", e.Operation, e.Code)
+	return fmt.Sprintf("OBS %s failed (code %d); check deckystream diagnostics on the device", e.Operation, e.Code)
 }
 
 // ResponseError means a request has lost its response boundary. The SDK uses a

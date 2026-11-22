@@ -8,7 +8,7 @@ the Linux fixtures, source merges or the booklet itself.
 
 ## The build we will test
 
-Use the existing compatible OBSGod installation path and the exact reviewed
+Use the existing compatible deckystream installation path and the exact reviewed
 `0.1.0-deck.9` candidate from source
 `772230a32a8fdb237a58b8a637947b31671ad509`, tree
 `f157ea77d16a1f1ce04bf1e47b584f9183c9c359`.

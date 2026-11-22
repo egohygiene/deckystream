@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type legacyBackend struct {

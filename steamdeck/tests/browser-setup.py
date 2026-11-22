@@ -21,32 +21,32 @@ def main():
     parser.add_argument("archive", type=Path)
     parser.add_argument("--upgrade-from", type=Path, help="Install an earlier real archive and preserve its configured user data")
     parser.add_argument("--browser", default="/usr/bin/chromium")
-    parser.add_argument("--screenshots", type=Path, default=Path("/tmp/obsgod-browser"))
+    parser.add_argument("--screenshots", type=Path, default=Path("/tmp/deckystream-browser"))
     args = parser.parse_args()
     args.screenshots.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="obsgod-browser-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-browser-") as directory:
         base = Path(directory)
         with tarfile.open(args.archive) as archive:
             archive.extractall(base, filter="data")
-        package = next(base.glob("OBSGod-*"))
+        package = next(base.glob("deckystream-*"))
         home = base / "home with spaces"
         home.mkdir()
         env = dict(os.environ, HOME=str(home), XDG_CONFIG_HOME=str(home / ".config"), XDG_DATA_HOME=str(home / ".local/share"), XDG_STATE_HOME=str(home / ".local/state"), XDG_CACHE_HOME=str(home / ".cache"))
-        current = home / ".local/share/obsgod/current"
+        current = home / ".local/share/deckystream/current"
         snapshots = {}
         if args.upgrade_from:
             older = base / "older"
             older.mkdir()
             with tarfile.open(args.upgrade_from) as archive:
                 archive.extractall(older, filter="data")
-            old_package = next(older.glob("OBSGod-*"))
+            old_package = next(older.glob("deckystream-*"))
             subprocess.run(previous_app_install_command(old_package), env=env, check=True)
             fixture = {"server":"rtmps://example.invalid/app","stream_key":"browser-fixture-never-real"}
-            subprocess.run([str(current / "obsgod"), "deck", "configure"], input=json.dumps(fixture), env=env, capture_output=True, text=True, check=True)
-            for path in [home / "Videos/OBSGod/keep.mkv", home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini"]:
+            subprocess.run([str(current / "deckystream"), "deck", "configure"], input=json.dumps(fixture), env=env, capture_output=True, text=True, check=True)
+            for path in [home / "Videos/deckystream/keep.mkv", home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini"]:
                 path.parent.mkdir(parents=True,exist_ok=True)
                 path.write_bytes(b"preserved fixture data")
-            snapshots = {path:path.read_bytes() for path in [home / ".config/obsgod/deck.json",home / ".config/obsgod/secrets.json",home / "Videos/OBSGod/keep.mkv",home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini"]}
+            snapshots = {path:path.read_bytes() for path in [home / ".config/deckystream/deck.json",home / ".config/deckystream/secrets.json",home / "Videos/deckystream/keep.mkv",home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini"]}
         ready = base / "browser-url"
         probe = base / "browser-probe"
         probe.write_text("#!" + sys.executable + "\n" + """
@@ -54,14 +54,14 @@ import os,sys,urllib.request
 from pathlib import Path
 with urllib.request.urlopen(sys.argv[1].split('#')[0],timeout=3) as response:
  assert response.status==200
-Path(os.environ['OBSGOD_TEST_BROWSER_URL']).write_text(sys.argv[1])
+Path(os.environ['DECKYSTREAM_TEST_BROWSER_URL']).write_text(sys.argv[1])
 """)
         probe.chmod(0o700)
-        env.update(BROWSER=str(probe), OBSGOD_TEST_BROWSER_URL=str(ready))
+        env.update(BROWSER=str(probe), DECKYSTREAM_TEST_BROWSER_URL=str(ready))
         # This suite qualifies the actual Desktop entry and browser/setup path.
         # The unmodified pinned Decky frontend/installer is exercised separately
         # by decky-transport-smoke.py against the same runtime archive.
-        process = subprocess.Popen(desktop_command(package / "Install OBSGod.desktop", as_uri=True) + ["--app-only"], cwd=home,
+        process = subprocess.Popen(desktop_command(package / "Install deckystream.desktop", as_uri=True) + ["--app-only"], cwd=home,
                                    env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                    start_new_session=True)
         try:
@@ -123,15 +123,15 @@ Path(os.environ['OBSGOD_TEST_BROWSER_URL']).write_text(sys.argv[1])
                 expect(page.locator("#idle_style")).to_have_value("placeholder")
                 expect(page.locator("#idle_text")).to_have_value("Back soon — <not HTML>")
                 page.get_by_text("Manual repair ZIP", exact=True).click()
-                assert page.locator("#zip-path").inner_text().endswith("obsgod-decky.zip")
-                result = subprocess.run([str(current / "obsgod"), "deck", "status"], env=env, capture_output=True, text=True, check=True)
+                assert page.locator("#zip-path").inner_text().endswith("deckystream-decky.zip")
+                result = subprocess.run([str(current / "deckystream"), "deck", "status"], env=env, capture_output=True, text=True, check=True)
                 configured=json.loads(result.stdout)
                 assert configured["configured"]
                 assert configured["settings"]["capture_mode"] == "game"
                 assert configured["settings"]["idle_style"] == "placeholder"
                 assert configured["settings"]["idle_text"] == "Back soon — <not HTML>"
                 assert "browser-fixture-never-real" not in result.stdout + result.stderr
-                secret = home / ".config/obsgod/secrets.json"
+                secret = home / ".config/deckystream/secrets.json"
                 assert secret.stat().st_mode & 0o777 == 0o600
                 assert json.loads(secret.read_text())["stream_key"] == "browser-fixture-never-real"
                 # A changed destination requires its own explicit key; choosing
@@ -164,7 +164,7 @@ Path(os.environ['OBSGOD_TEST_BROWSER_URL']).write_text(sys.argv[1])
                 # app settings/hash pair; repeat install must preserve that new
                 # pair as well as the original OBS preferences and media.
                 for path in list(snapshots):
-                    if path in {home / ".config/obsgod/deck.json", secret}:
+                    if path in {home / ".config/deckystream/deck.json", secret}:
                         snapshots[path] = path.read_bytes()
                 page.set_viewport_size({"width": 800, "height": 1280})
                 page.screenshot(path=str(args.screenshots / "desktop-setup-portrait.png"), full_page=True)
@@ -200,7 +200,7 @@ Path(os.environ['OBSGOD_TEST_BROWSER_URL']).write_text(sys.argv[1])
             assert removal.returncode!=0, "App-only fixture unexpectedly removed files without a verified Decky frontend"
             failed=json.loads(removal.stdout)
             assert not failed["ok"] and "Decky" in failed["message"]
-            assert current.is_dir() and (home / ".local/bin/obsgod").exists()
+            assert current.is_dir() and (home / ".local/bin/deckystream").exists()
             assert secret.read_bytes()==before_secret
             assert "browser-fixture-never-real" not in inventory.stdout+inventory.stderr+removal.stdout+removal.stderr
             print("PASS: actual desktop launcher in explicit app-only test mode, foreground startup, browser provider guides with explicit server/key binding, private control-password rotation with no broadcast, setup/reload with preserved game-only/fallback settings, private credentials, terminal hold, repeat install, removal inventory and fail-closed preservation without Decky; actual Decky installation/removal qualified separately; fixture credentials only" + ("; actual earlier-preview upgrade preserves all user data" if snapshots else ""))

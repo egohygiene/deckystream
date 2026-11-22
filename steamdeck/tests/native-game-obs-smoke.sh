@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Actual OBS output/controller integration with synthetic Gamescope/game facts.
-# Requires disposable /work, read-only /src, candidate dist/obsgod + capture lib,
+# Requires disposable /work, read-only /src, candidate dist/deckystream + capture lib,
 # and /work/gstreamer-source.tar.gz. Never mount user data here.
 set -euo pipefail
 ulimit -c 0
 test -f /.dockerenv || { echo 'Run only in the disposable native test container.' >&2; exit 2; }
-test -x /src/dist/obsgod
-test -f /src/dist/libgstobsgodcapture.so
+test -x /src/dist/deckystream
+test -f /src/dist/libgstdeckystreamcapture.so
 rm -rf /work/home /work/runtime /work/output /work/plugin-src
 export HOME=/work/home XDG_CONFIG_HOME=/work/home/.config XDG_RUNTIME_DIR=/work/runtime
 export DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 QT_X11_NO_MITSHM=1
@@ -46,9 +46,9 @@ for n in {1..50}; do
   sleep .1
 done
 timeout 1 pactl info >/dev/null
-pactl load-module module-null-sink sink_name=obsgod_scene_audio >/dev/null
-pactl set-default-sink obsgod_scene_audio
-gst-launch-1.0 --no-fault -q audiotestsrc is-live=true wave=sine freq=440 volume=.3 ! audioconvert ! pulsesink device=obsgod_scene_audio >/work/audio-producer.log 2>&1 &
+pactl load-module module-null-sink sink_name=deckystream_scene_audio >/dev/null
+pactl set-default-sink deckystream_scene_audio
+gst-launch-1.0 --no-fault -q audiotestsrc is-live=true wave=sine freq=440 volume=.3 ! audioconvert ! pulsesink device=deckystream_scene_audio >/work/audio-producer.log 2>&1 &
 
 cat > /work/bin/flatpak <<'PY'
 #!/usr/bin/env python3
@@ -72,7 +72,7 @@ printf '%s  %s\n' '566d547e83140d53a0aa22ed152cebc436725b47e4ead452e79cf250da531
 mkdir -p /work/plugin-src
 tar xf /work/gstreamer-source.tar.gz -C /work/plugin-src --strip-components=1
 printf '%s\n' 'const char *obs_gstreamer_version = "v0.4.1-game-smoke";' > /work/plugin-src/version.c
-plugin="$HOME/.var/app/com.obsproject.Studio/config/obsgod/obs-studio/plugins/obs-gstreamer/bin/64bit"
+plugin="$HOME/.var/app/com.obsproject.Studio/config/deckystream/obs-studio/plugins/obs-gstreamer/bin/64bit"
 mkdir -p "$plugin"
 gcc -shared -fPIC -O2 -o "$plugin/obs-gstreamer.so" /work/plugin-src/gstreamer*.c /work/plugin-src/version.c $(pkg-config --cflags --libs libobs gstreamer-app-1.0 gstreamer-audio-1.0 gstreamer-video-1.0 gstreamer-net-1.0)
 gcc -O2 -Wall -Wextra -Werror -o /work/capture-fixture /src/steamdeck/tests/capture-fixture.c $(pkg-config --cflags --libs libpipewire-0.3)
@@ -114,9 +114,9 @@ assert [x.name for x in ordinary.iterdir()]==['preserve.txt']
 assert (ordinary/'preserve.txt').read_text()=='ordinary OBS scene/setting marker\n'
 q['decoded_media']=media
 q['ordinary_obs']='unchanged'
-q['source_revision']=os.environ.get('OBSGOD_QUALIFIED_REVISION','unrecorded development run')
-q['binary_sha256']=hashlib.sha256(pathlib.Path('/src/dist/obsgod').read_bytes()).hexdigest()
-q['capture_library_sha256']=hashlib.sha256(pathlib.Path('/src/dist/libgstobsgodcapture.so').read_bytes()).hexdigest()
+q['source_revision']=os.environ.get('DECKYSTREAM_QUALIFIED_REVISION','unrecorded development run')
+q['binary_sha256']=hashlib.sha256(pathlib.Path('/src/dist/deckystream').read_bytes()).hexdigest()
+q['capture_library_sha256']=hashlib.sha256(pathlib.Path('/src/dist/libgstdeckystreamcapture.so').read_bytes()).hexdigest()
 (p/'game-obs-qualification.json').write_text(json.dumps(q,indent=2)+'\n')
 print('PASS: actual OBS game/idle/game/unsupported/black scenes and advancing local RTMP; decoded scene pixels and440Hz audible at every phase; local10sclip; no implicit output restart; legacy sources hidden; ordinary OBS preserved. Synthetic game producer, not Steam Deck qualification.')
 PY

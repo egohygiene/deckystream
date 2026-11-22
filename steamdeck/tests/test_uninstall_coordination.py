@@ -45,9 +45,9 @@ class CleanupCoordination(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name) / "player"
         self.home.mkdir(mode=0o700)
-        self.base = self.home / ".local/share/obsgod"
-        self.state = self.home / ".local/state/obsgod"
-        self.config = self.home / ".config/obsgod"
+        self.base = self.home / ".local/share/deckystream"
+        self.state = self.home / ".local/state/deckystream"
+        self.config = self.home / ".config/deckystream"
         self.enterContext(patch.dict(os.environ, {"HOME": str(self.home), **{k: "" for k in paths.DEFAULTS}}))
         self.cli = self.enterContext(patch.object(uninstall, "run_cli", return_value=IDLE))
         self.plugin = self.enterContext(patch.object(uninstall, "remove_plugin"))
@@ -68,22 +68,22 @@ class CleanupCoordination(unittest.TestCase):
         return path
 
     def fixture(self):
-        self.write(".local/share/obsgod/releases/v1/obsgod")
+        self.write(".local/share/deckystream/releases/v1/deckystream")
         (self.base / "current").symlink_to(self.base / "releases/v1")
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         alias.parent.mkdir(parents=True)
-        alias.symlink_to(self.base / "current/obsgod")
+        alias.symlink_to(self.base / "current/deckystream")
         for name in ("setup", "update", "uninstall"):
-            self.write(".local/share/applications/obsgod-" + name + ".desktop", "X-OBSGod-Managed=true")
-        self.write(".local/share/obsgod/backups/old/secrets.json", "private old fixture")
-        self.write(".config/obsgod/secrets.json", "private current fixture")
-        self.write(".local/state/obsgod/history.json")
-        self.write(".cache/obsgod/keep")
-        self.write("Videos/OBSGod/2026-11-14 00-00-00.mkv", "media sentinel")
+            self.write(".local/share/applications/deckystream-" + name + ".desktop", "X-deckystream-Managed=true")
+        self.write(".local/share/deckystream/backups/old/secrets.json", "private old fixture")
+        self.write(".config/deckystream/secrets.json", "private current fixture")
+        self.write(".local/state/deckystream/history.json")
+        self.write(".cache/deckystream/keep")
+        self.write("Videos/deckystream/2026-11-14 00-00-00.mkv", "media sentinel")
         self.write(".var/app/com.obsproject.Studio/config/obs-studio/ordinary.json", "ordinary sentinel")
-        self.write(".var/app/com.obsproject.Studio/config/obsgod/managed.json")
+        self.write(".var/app/com.obsproject.Studio/config/deckystream/managed.json")
         for kind in ("plugins", "settings", "data", "logs"):
-            self.write("homebrew/" + kind + "/obsgod/keep", "active plugin sentinel")
+            self.write("homebrew/" + kind + "/deckystream/keep", "active plugin sentinel")
             self.write("homebrew/" + kind + "/OtherPlugin/keep", "unrelated sentinel")
         for lock in (self.base / "update.lock", self.base / "install.lock", self.state / "control.lock"):
             lock.touch(mode=0o600)
@@ -142,7 +142,7 @@ class CleanupCoordination(unittest.TestCase):
             self.assertTrue(self.probe(lock)["acquired"])
         uninstall.apply_plan(uninstall.build_plan(self.home, "wipe"), self.home)
         self.assertEqual({str(lock): lock.stat().st_ino for lock in locks}, inodes)
-        self.assertTrue((self.home / "Videos/OBSGod/2026-11-14 00-00-00.mkv").exists())
+        self.assertTrue((self.home / "Videos/deckystream/2026-11-14 00-00-00.mkv").exists())
         self.assertTrue((self.home / "homebrew/settings/OtherPlugin/keep").exists())
         self.assertTrue((self.home / ".var/app/com.obsproject.Studio/config/obs-studio/ordinary.json").exists())
 
@@ -159,14 +159,14 @@ class CleanupCoordination(unittest.TestCase):
         self.assertFalse((self.state / "control.lock").exists())
         self.plugin.assert_not_called()
         self.assertTrue((self.config / "secrets.json").exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
 
     def test_changed_ancestor_or_tree_refuses_before_locks_and_helpers(self):
         for mutation in ("mode", "inode", "file", "symlink", "new-file"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
                 home = Path(tmp) / "player"
                 home.mkdir(mode=0o700)
-                config = home / ".config/obsgod"
+                config = home / ".config/deckystream"
                 config.mkdir(parents=True)
                 (config / "secrets.json").write_text("preserve")
                 (home / "homebrew").mkdir()
@@ -183,7 +183,7 @@ class CleanupCoordination(unittest.TestCase):
                         config.symlink_to(config.parent / "saved")
                     else:(config / "added-after-preview").write_text("unapproved")
                     with self.assertRaises(uninstall.RemovalError):uninstall.apply_plan(plan, home)
-                    self.assertFalse((home / ".local/share/obsgod/update.lock").exists())
+                    self.assertFalse((home / ".local/share/deckystream/update.lock").exists())
                     self.assertTrue((config / "secrets.json").exists())
         self.cli.assert_not_called()
         self.plugin.assert_not_called()
@@ -217,15 +217,15 @@ class CleanupCoordination(unittest.TestCase):
         with self.assertRaisesRegex(uninstall.RemovalError, "changed"):
             uninstall.apply_plan(plan, self.home)
         self.assertTrue((self.config / "original-preserved.json").exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
-        self.assertTrue((self.home / ".local/bin/obsgod").is_symlink())
+        self.assertTrue((self.base / "current/deckystream").exists())
+        self.assertTrue((self.home / ".local/bin/deckystream").is_symlink())
 
     def test_created_and_preexisting_coordination_roots_and_locks_are_pinned(self):
         for mutation in ("fresh-root", "existing-root", "existing-lock"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
                 home = Path(tmp) / "player"
                 home.mkdir(mode=0o700)
-                state = home / ".local/state/obsgod"
+                state = home / ".local/state/deckystream"
                 if mutation != "fresh-root":
                     state.mkdir(parents=True)
                     (state / "sentinel").write_text("preserved")
@@ -251,7 +251,7 @@ class CleanupCoordination(unittest.TestCase):
         self.fixture()
         plan = uninstall.build_plan(self.home, "wipe")
         original_unlink = Path.unlink
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         def replace_after_alias(path, *args, **kwargs):
             original_unlink(path, *args, **kwargs)
             if path == alias:
@@ -261,13 +261,13 @@ class CleanupCoordination(unittest.TestCase):
         with patch.object(Path, "unlink", replace_after_alias), self.assertRaisesRegex(uninstall.RemovalError, "changed"):
             uninstall.apply_plan(plan, self.home)
         self.assertTrue((self.config / "secrets.json").exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
 
     def test_safe_alias_sticky_xdg_and_coincident_coordination_roots(self):
         root = self.home / "shared-data"
         root.mkdir(mode=0o1777)
         root.chmod(0o1777)
-        base = root / "obsgod"
+        base = root / "deckystream"
         base.mkdir(mode=0o700)
         (base / "owned.json").write_text("selected fixture")
         (self.home / "homebrew").mkdir()
@@ -286,13 +286,13 @@ class CleanupCoordination(unittest.TestCase):
         plan = uninstall.build_plan(self.home, legacy_app_only=True)
         self.assertFalse(plan["remove_plugin"])
         selected = {entry["path"] for entry in plan["entries"]}
-        self.assertEqual(selected, {str(self.home / ".local/bin/obsgod"), str(self.base / "current"), str(self.base / "releases"),
-                                  *[str(self.home / (".local/share/applications/obsgod-" + name + ".desktop")) for name in ("setup", "update", "uninstall")]})
+        self.assertEqual(selected, {str(self.home / ".local/bin/deckystream"), str(self.base / "current"), str(self.base / "releases"),
+                                  *[str(self.home / (".local/share/applications/deckystream-" + name + ".desktop")) for name in ("setup", "update", "uninstall")]})
         uninstall.apply_plan(plan, self.home)
         self.assertFalse((self.base / "current").exists())
         self.assertFalse((self.base / "releases").exists())
-        for sentinel in ("homebrew/plugins/obsgod/keep", ".config/obsgod/secrets.json", ".local/state/obsgod/history.json", ".cache/obsgod/keep",
-                         ".local/share/obsgod/backups/old/secrets.json", "Videos/OBSGod/2026-11-14 00-00-00.mkv"):
+        for sentinel in ("homebrew/plugins/deckystream/keep", ".config/deckystream/secrets.json", ".local/state/deckystream/history.json", ".cache/deckystream/keep",
+                         ".local/share/deckystream/backups/old/secrets.json", "Videos/deckystream/2026-11-14 00-00-00.mkv"):
             self.assertTrue((self.home / sentinel).exists(), sentinel)
         self.plugin.assert_not_called()
         self.assertEqual([call.args[0] for call in self.cli.call_args_list], ["status", "status", "status"])
@@ -305,7 +305,7 @@ class CleanupCoordination(unittest.TestCase):
             self.cli.return_value = state
             with self.assertRaises(uninstall.RemovalError):
                 uninstall.apply_plan(uninstall.build_plan(self.home, legacy_app_only=True), self.home)
-            self.assertTrue((self.base / "current/obsgod").exists())
+            self.assertTrue((self.base / "current/deckystream").exists())
         self.assertTrue(all(call.args[0] == "status" for call in self.cli.call_args_list))
         self.plugin.assert_not_called()
 
@@ -328,7 +328,7 @@ class CleanupCoordination(unittest.TestCase):
         def cli(action, **_kwargs):
             nonlocal process
             if action == "restart":
-                self.write(".local/state/obsgod/diagnostics/close.json", "owned close observation")
+                self.write(".local/state/deckystream/diagnostics/close.json", "owned close observation")
                 process = "absent"
                 return {"ok": True}
             return {**IDLE, "process": process}

@@ -14,7 +14,7 @@ import (
 )
 
 func TestLegacyControlLockRequiresProtectedAncestorsWithoutStorageMap(t *testing.T) {
-	t.Setenv("OBSGOD_DECKY_STORAGE_MAP", "")
+	t.Setenv("DECKYSTREAM_DECKY_STORAGE_MAP", "")
 	for _, sticky := range []bool{false, true} {
 		t.Run(map[bool]string{false: "unsafe", true: "sticky"}[sticky], func(t *testing.T) {
 			parent := filepath.Join(t.TempDir(), "public-parent")
@@ -57,10 +57,10 @@ func TestUserPathsRespectXDGAndRejectRelativeRoots(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "configuration"))
 	t.Setenv("XDG_STATE_HOME", filepath.Join(home, "state"))
 	p, err := UserPaths()
-	if err != nil || p.Config != filepath.Join(home, "configuration/obsgod/deck.json") || p.State != filepath.Join(home, "state/obsgod") {
+	if err != nil || p.Config != filepath.Join(home, "configuration/deckystream/deck.json") || p.State != filepath.Join(home, "state/deckystream") {
 		t.Fatal("XDG context was not retained", err)
 	}
-	if p.Videos != filepath.Join(home, "Videos/OBSGod") {
+	if p.Videos != filepath.Join(home, "Videos/deckystream") {
 		t.Fatal("existing recordings location changed without migration")
 	}
 	for _, key := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_STATE_HOME"} {
@@ -88,10 +88,10 @@ func deckyPathsFixture(t *testing.T) (Paths, string, deckyStorageMap) {
 		t.Fatal(err)
 	}
 	var mapping deckyStorageMap
-	mapping.Schema, mapping.Version, mapping.UID, mapping.Home = "obsgod.decky-storage-map/v1", 1, os.Getuid(), home
+	mapping.Schema, mapping.Version, mapping.UID, mapping.Home = "deckystream.decky-storage-map/v1", 1, os.Getuid(), home
 	mapping.Shared.Config, mapping.Shared.Secrets, mapping.Shared.State = paths.Config, paths.Secrets, paths.State
 	mapping.Decky.Settings, mapping.Decky.Runtime, mapping.Decky.Logs = filepath.Join(home, "decky-settings"), filepath.Join(home, "decky-data"), filepath.Join(home, "decky-logs")
-	mapping.Compatibility.CLI, mapping.Compatibility.Plugin, mapping.Compatibility.Namespace = "obsgod", "OBSGod", "obsgod"
+	mapping.Compatibility.CLI, mapping.Compatibility.Plugin, mapping.Compatibility.Namespace = "deckystream", "deckystream", "deckystream"
 	for _, directory := range []string{filepath.Join(mapping.Decky.Settings, "storage-v1"), mapping.Decky.Runtime, mapping.Decky.Logs} {
 		if err = os.MkdirAll(directory, 0700); err != nil {
 			t.Fatal(err)
@@ -166,7 +166,7 @@ func TestDeckyStorageMapRejectsChangedIdentityRootsAndSchema(t *testing.T) {
 		func(m *deckyStorageMap) { m.Version = 2 },
 		func(m *deckyStorageMap) { m.Shared.State = m.Decky.Runtime },
 		func(m *deckyStorageMap) { m.Shared.Secrets = filepath.Join(m.Home, "another-private-fixture") },
-		func(m *deckyStorageMap) { m.Compatibility.Namespace = "deckystream" },
+		func(m *deckyStorageMap) { m.Compatibility.Namespace = "foreign-app" },
 	} {
 		changed := original
 		mutate(&changed)
@@ -232,7 +232,7 @@ func TestDeckyStorageRejectsRenameableAncestorBeforeSecondController(t *testing.
 	legacy, path, mapping := deckyPathsFixture(t)
 	ancestor := filepath.Join(mapping.Home, "shared-ancestor")
 	private := filepath.Join(ancestor, "private-grandchild")
-	legacy.State = filepath.Join(private, "obsgod")
+	legacy.State = filepath.Join(private, "deckystream")
 	if err := os.MkdirAll(legacy.State, 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestDeckyStorageRejectsRenameableAncestorBeforeSecondController(t *testing.
 	if _, err = UserPaths(); err == nil {
 		t.Fatal("private grandchild concealed a non-sticky writable ancestor")
 	}
-	moved := filepath.Join(private, "previous-obsgod")
+	moved := filepath.Join(private, "previous-deckystream")
 	if err = os.Rename(legacy.State, moved); err != nil {
 		t.Fatal(err)
 	}
@@ -281,7 +281,7 @@ func TestDeckyStorageSupportsTrustedStickyAncestor(t *testing.T) {
 	legacy, path, mapping := deckyPathsFixture(t)
 	ancestor := filepath.Join(mapping.Home, "sticky-shared")
 	private := filepath.Join(ancestor, "private-grandchild")
-	legacy.State = filepath.Join(private, "obsgod")
+	legacy.State = filepath.Join(private, "deckystream")
 	if err := os.MkdirAll(legacy.State, 0700); err != nil {
 		t.Fatal(err)
 	}

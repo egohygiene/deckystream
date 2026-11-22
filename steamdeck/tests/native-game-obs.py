@@ -14,13 +14,13 @@ import time
 import websockets
 
 
-LIVE = "OBSGod Live"
-GAME = "OBSGod Game"
-IDLE = "OBSGod Idle"
-DISPLAY = "OBSGod Gamescope"
-GAME_INPUT = "OBSGod Game Window"
-AUDIO = "OBSGod Game Audio"
-TEXT = "OBSGod Idle Message"
+LIVE = "deckystream Live"
+GAME = "deckystream Game"
+IDLE = "deckystream Idle"
+DISPLAY = "deckystream Gamescope"
+GAME_INPUT = "deckystream Game Window"
+AUDIO = "deckystream Game Audio"
+TEXT = "deckystream Idle Message"
 SENTINEL = "Legacy private display sentinel"
 OUT = Path("/work/output")
 
@@ -31,7 +31,7 @@ class OBSNotReady(AssertionError):
 
 async def cli(action, settings=None, timeout=100):
     process = await asyncio.create_subprocess_exec(
-        "/src/dist/obsgod", "deck", action,
+        "/src/dist/deckystream", "deck", action,
         stdin=asyncio.subprocess.PIPE if settings is not None else asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
     try:
@@ -59,7 +59,7 @@ class OBS:
 
     @classmethod
     async def connect(cls):
-        password = json.loads((Path.home() / ".config/obsgod/secrets.json").read_text())["obs_password"]
+        password = json.loads((Path.home() / ".config/deckystream/secrets.json").read_text())["obs_password"]
         last = None
         for _ in range(100):
             try:
@@ -144,11 +144,11 @@ async def screenshot(obs, label, scene, expected):
 
 async def seed_old_items(obs):
     collections = await obs.wait_frontend()
-    if collections["currentSceneCollectionName"] != "OBSGod":
-        if "OBSGod" in collections["sceneCollections"]:
-            await obs.request("SetCurrentSceneCollection", {"sceneCollectionName": "OBSGod"})
+    if collections["currentSceneCollectionName"] != "deckystream":
+        if "deckystream" in collections["sceneCollections"]:
+            await obs.request("SetCurrentSceneCollection", {"sceneCollectionName": "deckystream"})
         else:
-            await obs.request("CreateSceneCollection", {"sceneCollectionName": "OBSGod"})
+            await obs.request("CreateSceneCollection", {"sceneCollectionName": "deckystream"})
         await obs.wait_frontend()
     names = {x["sceneName"] for x in (await obs.request("GetSceneList"))["scenes"]}
     for scene in (IDLE, GAME, LIVE):

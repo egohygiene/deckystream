@@ -13,9 +13,9 @@ type presentation struct{ verbose, noColor bool }
 
 func diagnosticPrefix(noColor, terminal bool) string {
 	if terminal && !noColor && os.Getenv("NO_COLOR") == "" && os.Getenv("TERM") != "" && os.Getenv("TERM") != "dumb" {
-		return "\x1b[36mobsgod diagnostic\x1b[0m"
+		return "\x1b[36mdeckystream diagnostic\x1b[0m"
 	}
-	return "obsgod diagnostic"
+	return "deckystream diagnostic"
 }
 
 func diagnosticMetadata(cmd *coral.Command, options presentation, stage string) {
@@ -47,7 +47,7 @@ func newReferenceCommand() *coral.Command {
 func writeReference(root *coral.Command, output io.Writer) error {
 	root.InitDefaultHelpCmd()
 	root.InitDefaultHelpFlag()
-	if _, err := fmt.Fprint(output, "# obsgod command reference\n\nGenerated from the current command tree. Built-in defaults are shown; use `config show` for effective settings. Commands marked JSON keep that format. Other commands retain their existing human output.\n\n"); err != nil {
+	if _, err := fmt.Fprint(output, "# deckystream command reference\n\nGenerated from the current command tree. Built-in defaults are shown; use `config show` for effective settings. Commands marked JSON keep that format. Other commands retain their existing human output.\n\n"); err != nil {
 		return err
 	}
 	var walk func(*coral.Command) error

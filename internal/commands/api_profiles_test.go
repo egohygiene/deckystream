@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/internal/config"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	"github.com/egohygiene/deckystream/internal/config"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 func TestPublicProfileListKeepsJSONShapeWithOnlyProfileRead(t *testing.T) {

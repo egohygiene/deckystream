@@ -7,6 +7,7 @@ persistent runtime data is for plugin jobs, not XDG_RUNTIME_DIR/session sockets.
 import datetime
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -15,11 +16,23 @@ import re
 import stat
 import tempfile
 
-MAP_ENV = "OBSGOD_DECKY_STORAGE_MAP"
-SCHEMA = "obsgod.decky-storage-map/v1"
+MAP_ENV = "DECKYSTREAM_DECKY_STORAGE_MAP"
+SCHEMA = "deckystream.decky-storage-map/v1"
 ERROR = "Decky storage context is unsafe or unavailable. Reload or repair the plugin."
 MISMATCH = "Decky storage map does not match the current player paths. Restore the original context before retrying."
 LIMIT = 65536
+
+
+def _namespace(child, home):
+    # Source uses steamdeck/paths.py; the complete plugin ships it alongside
+    # this module. Never import a helper from an older package on sys.path.
+    path = Path(__file__).resolve().parent / "paths.py"
+    if not path.is_file():
+        path = path.parent.parent / "paths.py"
+    spec = importlib.util.spec_from_file_location("deckystream_storage_paths", path)
+    policy = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(policy)
+    return policy.app_namespace(home, child)
 
 
 def _value(provided, name):
@@ -116,7 +129,8 @@ def _write_new(path, value):
 def _player_environment(provided, environ):
     child = dict(environ)
     # Only a newly validated loader context can activate this bridge.
-    for name in (MAP_ENV, "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR"):
+    for name in (MAP_ENV, "DECKYSTREAM_DECKY_RUNTIME_DIR", "DECKYSTREAM_DECKY_LOG_DIR",
+                 "OBSGOD_DECKY_STORAGE_MAP", "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR"):
         child.pop(name, None)
     value = _value(provided, "DECKY_USER_HOME")
     if value is not None:
@@ -145,6 +159,9 @@ def _player_environment(provided, environ):
     user = _value(provided, "DECKY_USER")
     if isinstance(user, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]{0,63}", user):
         child["USER"] = child["LOGNAME"] = user
+    decky_home = _value(provided, "DECKY_HOME")
+    if decky_home is not None:
+        child["DECKY_HOME"] = str(_path(decky_home))
     return child
 
 
@@ -152,9 +169,10 @@ def _derived(child):
     home = _checked(_path(child.get("HOME")))
     config_root = _path(child.get("XDG_CONFIG_HOME") or str(home / ".config"))
     state_root = _path(child.get("XDG_STATE_HOME") or str(home / ".local/state"))
-    config = config_root / "obsgod/deck.json"
-    secrets = config_root / "obsgod/secrets.json"
-    state = state_root / "obsgod"
+    namespace = _namespace(child, home)
+    config = config_root / namespace / "deck.json"
+    secrets = config_root / namespace / "secrets.json"
+    state = state_root / namespace
     _checked(config.parent, missing=True)
     _checked(config, directory=False, missing=True)
     _checked(secrets, directory=False, private=True, missing=True)
@@ -208,7 +226,7 @@ def _layout(plugin_root, provided, child):
     map_path = map_root / "map.json"
     expected = {"schema": SCHEMA, "version": 1, "uid": os.getuid(), "home": str(home),
                 "shared": shared, "decky": {"settings": str(settings), "runtime": str(runtime), "logs": str(logs)},
-                "compatibility": {"cli": "obsgod", "plugin": "OBSGod", "storage_namespace": "obsgod"}}
+                "compatibility": {"cli": "deckystream", "plugin": "deckystream", "storage_namespace": Path(shared["state"]).name}}
     return {"mode": "decky", "home": str(home), "settings_dir": str(settings), "runtime_dir": str(runtime),
             "log_dir": str(logs), "jobs_dir": str(runtime / "jobs"), "map_path": str(map_path),
             "shared_state": shared["state"]}, expected
@@ -236,11 +254,11 @@ def _prepare(layout, expected):
         digest = hashlib.sha256(map_path.read_bytes()).hexdigest()
         if receipt_path.exists():
             receipt = _json(receipt_path)
-            if (not isinstance(receipt, dict) or receipt.get("schema") != "obsgod.decky-storage-receipt/v1" or receipt.get("map_sha256") != digest
+            if (not isinstance(receipt, dict) or receipt.get("schema") != "deckystream.decky-storage-receipt/v1" or receipt.get("map_sha256") != digest
                     or receipt.get("uid") != os.getuid() or receipt.get("transition") != "retained-shared-xdg"):
                 raise OSError(MISMATCH)
         else:
-            _write_new(receipt_path, {"schema": "obsgod.decky-storage-receipt/v1", "version": 1, "uid": os.getuid(),
+            _write_new(receipt_path, {"schema": "deckystream.decky-storage-receipt/v1", "version": 1, "uid": os.getuid(),
                 "transition": "retained-shared-xdg", "map_sha256": digest,
                 "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "observation": "receipt-repair" if existed else "initial-adoption",
@@ -272,8 +290,8 @@ def child_environment(plugin_root, provided, environ=None):
         _prepare(layout, expected)
         if expected is not None:
             child[MAP_ENV] = layout["map_path"]
-            child["OBSGOD_DECKY_RUNTIME_DIR"] = layout["runtime_dir"]
-            child["OBSGOD_DECKY_LOG_DIR"] = layout["log_dir"]
+            child["DECKYSTREAM_DECKY_RUNTIME_DIR"] = layout["runtime_dir"]
+            child["DECKYSTREAM_DECKY_LOG_DIR"] = layout["log_dir"]
         return child
     except (OSError, ValueError, RuntimeError) as error:
         raise OSError(MISMATCH if str(error) == MISMATCH else ERROR) from None

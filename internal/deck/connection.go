@@ -83,7 +83,7 @@ func TestControlConnection(ctx context.Context, p Paths) ConnectionDetails {
 		return r
 	}
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || !managedForRecovery(p, runtime.Profile, runtime.Collection) {
 		r.OK, r.OutputKnown = false, false
 		r.Message = "The listener did not verify as the managed OBS profile and collection. Its settings were not changed"
 		return r

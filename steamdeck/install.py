@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install or repair OBSGod and its Decky plugin, preserving private user data."""
+"""Install or repair deckystream and its Decky plugin, preserving private user data."""
 import argparse
 import asyncio
 import hashlib
@@ -23,7 +23,7 @@ from contextlib import contextmanager
 def _sibling(name):
     # Published older updaters load a downloaded installer with importlib while
     # sys.path still points at the old package. Never import its old helpers.
-    spec = importlib.util.spec_from_file_location("obsgod_install_" + name, Path(__file__).resolve().parent / (name + ".py"))
+    spec = importlib.util.spec_from_file_location("deckystream_install_" + name, Path(__file__).resolve().parent / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -31,7 +31,7 @@ def _sibling(name):
 
 _paths = _sibling("paths")
 app_directories, xdg_root, validate_owned_root = _paths.app_directories, _paths.xdg_root, _paths.validate_owned_root
-DISPLAY_NAME = _sibling("product").DISPLAY_NAME if (Path(__file__).resolve().parent / "product.py").is_file() else "OBSGod"
+DISPLAY_NAME = _sibling("product").DISPLAY_NAME if (Path(__file__).resolve().parent / "product.py").is_file() else "deckystream"
 _releases = _sibling("releases") if (Path(__file__).resolve().parent / "releases.py").is_file() else None
 
 ROOT = Path(__file__).resolve().parent
@@ -57,7 +57,7 @@ def quote_exec(value):
 
 def verify_payload():
     if not (ROOT / "manifest.json").is_file():
-        raise RuntimeError("Extract the entire OBSGod archive to a folder first, then run Install OBSGod.desktop from that extracted folder")
+        raise RuntimeError("Extract the entire deckystream archive to a folder first, then run Install deckystream.desktop from that extracted folder")
     manifest = json.loads((ROOT / "manifest.json").read_text())
     version = manifest["version"]
     if not version or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-" for c in version):
@@ -68,10 +68,10 @@ def verify_payload():
             raise RuntimeError("Unsafe or missing package file")
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise RuntimeError("Package checksum mismatch: " + name)
-    required = {"obsgod", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "obsgod-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
-    unified = {"decky-install", "decky.py", "install.py", "Install OBSGod.desktop", "update.py", "releases.py", "Update OBSGod.desktop", "Update OBSGod.sh"}
-    capture = {"libgstobsgodcapture.so", "CAPTURE-SOURCE.tar.gz"}
-    product = {"paths.py", "product.py", "Uninstall OBSGod.desktop"}
+    required = {"deckystream", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "deckystream-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
+    unified = {"decky-install", "decky.py", "install.py", "Install deckystream.desktop", "update.py", "releases.py", "Update deckystream.desktop", "Update deckystream.sh"}
+    capture = {"libgstdeckystreamcapture.so", "CAPTURE-SOURCE.tar.gz"}
+    product = {"paths.py", "product.py", "Uninstall deckystream.desktop"}
     # Historical archives remain repairable. New native-capture archives must
     # contain the complete unified payload and both binary and preferred source;
     # accepting a single arbitrary extra file would weaken the exact schema.
@@ -88,20 +88,20 @@ def _installation_lease(path, home, busy_message):
         info = os.fstat(lock.fileno())
         if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
                 or info.st_nlink != 1 or info.st_mode & 0o077):
-            raise RuntimeError("The OBSGod installation/control lease is unsafe. Existing data was preserved.")
+            raise RuntimeError("The deckystream installation/control lease is unsafe. Existing data was preserved.")
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError(busy_message) from None
         current = path.lstat()
         if (current.st_dev, current.st_ino) != (info.st_dev, info.st_ino):
-            raise RuntimeError("The OBSGod installation/control lease changed. Existing data was preserved.")
+            raise RuntimeError("The deckystream installation/control lease changed. Existing data was preserved.")
         yield
 
 
 @contextmanager
 def installation_lock(base):
-    with _installation_lease(base / "install.lock", Path.home(), "Another OBSGod installer is running. Let it finish, then retry"):
+    with _installation_lease(base / "install.lock", Path.home(), "Another deckystream installer is running. Let it finish, then retry"):
         yield
 
 
@@ -129,7 +129,7 @@ def prepare_release(releases, manifest):
     if current.is_symlink() and current.resolve().parent == releases:
         if matching_release(current.resolve(), manifest):
             for name in manifest["files"]:
-                (current / name).chmod(0o700 if name in {"obsgod", "decky-install", "Install OBSGod.desktop", "Update OBSGod.desktop", "Update OBSGod.sh", "Uninstall OBSGod.desktop"} else 0o600)
+                (current / name).chmod(0o700 if name in {"deckystream", "decky-install", "Install deckystream.desktop", "Update deckystream.desktop", "Update deckystream.sh", "Uninstall deckystream.desktop"} else 0o600)
             return current.resolve()
     release = releases / manifest["version"]
     if release.exists() or release.is_symlink():
@@ -138,7 +138,7 @@ def prepare_release(releases, manifest):
         if matching_release(release, manifest):
             # ZIP/filesystem tools can drop mode bits. Repair a verified copy.
             for name in manifest["files"]:
-                (release / name).chmod(0o700 if name in {"obsgod", "decky-install", "Install OBSGod.desktop", "Update OBSGod.desktop", "Update OBSGod.sh", "Uninstall OBSGod.desktop"} else 0o600)
+                (release / name).chmod(0o700 if name in {"deckystream", "decky-install", "Install deckystream.desktop", "Update deckystream.desktop", "Update deckystream.sh", "Uninstall deckystream.desktop"} else 0o600)
             return release
         # Preserve an older/damaged copy, including files mapped by a running
         # process. A fresh directory allows repair and same-version replacement.
@@ -147,7 +147,7 @@ def prepare_release(releases, manifest):
     try:
         for name in manifest["files"]:
             shutil.copyfile(ROOT / name, staging / name)
-            (staging / name).chmod(0o700 if name in {"obsgod", "decky-install", "Install OBSGod.desktop", "Update OBSGod.desktop", "Update OBSGod.sh", "Uninstall OBSGod.desktop"} else 0o600)
+            (staging / name).chmod(0o700 if name in {"deckystream", "decky-install", "Install deckystream.desktop", "Update deckystream.desktop", "Update deckystream.sh", "Uninstall deckystream.desktop"} else 0o600)
         shutil.copyfile(ROOT / "manifest.json", staging / "manifest.json")
         staging.rename(release)
     finally:
@@ -160,11 +160,11 @@ def validate_activation_paths(base, releases, bin_dir, apps, manifest):
     current = base / "current"
     if current.exists() or current.is_symlink():
         if not current.is_symlink() or not current.resolve().is_relative_to(releases):
-            raise RuntimeError("OBSGod current path is not an owned release link")
-    executable = bin_dir / "obsgod"
-    desktop = apps / "obsgod-setup.desktop"
-    updater_desktop = apps / "obsgod-update.desktop" if "update.py" in manifest["files"] else None
-    uninstaller_desktop = apps / "obsgod-uninstall.desktop" if "Uninstall OBSGod.desktop" in manifest["files"] else None
+            raise RuntimeError("deckystream current path is not an owned release link")
+    executable = bin_dir / "deckystream"
+    desktop = apps / "deckystream-setup.desktop"
+    updater_desktop = apps / "deckystream-update.desktop" if "update.py" in manifest["files"] else None
+    uninstaller_desktop = apps / "deckystream-uninstall.desktop" if "Uninstall deckystream.desktop" in manifest["files"] else None
     for path in [executable, desktop] + [item for item in [updater_desktop, uninstaller_desktop] if item]:
         if path.exists() and not (path.is_file() or path.is_symlink()):
             raise RuntimeError("Refusing to replace a non-file application entry")
@@ -173,37 +173,53 @@ def validate_activation_paths(base, releases, bin_dir, apps, manifest):
 def activate_release(base, releases, bin_dir, apps, home, manifest):
     validate_activation_paths(base, releases, bin_dir, apps, manifest)
     current = base / "current"
-    executable = bin_dir / "obsgod"
-    desktop = apps / "obsgod-setup.desktop"
-    updater_desktop = apps / "obsgod-update.desktop" if "update.py" in manifest["files"] else None
-    uninstaller_desktop = apps / "obsgod-uninstall.desktop" if "Uninstall OBSGod.desktop" in manifest["files"] else None
+    executable = bin_dir / "deckystream"
+    desktop = apps / "deckystream-setup.desktop"
+    updater_desktop = apps / "deckystream-update.desktop" if "update.py" in manifest["files"] else None
+    uninstaller_desktop = apps / "deckystream-uninstall.desktop" if "Uninstall deckystream.desktop" in manifest["files"] else None
     release = prepare_release(releases, manifest)
     launch_code = "import subprocess,sys; result=subprocess.run([sys.executable,sys.argv[1]]); input('Press Enter to close this window.'); sys.exit(result.returncode)"
-    content = "[Desktop Entry]\nType=Application\nName=" + DISPLAY_NAME + " Setup\nComment=Configure Steam Deck streaming locally\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "setup.py")) + "\nIcon=video-display\nTerminal=true\nCategories=AudioVideo;\nX-OBSGod-Managed=true\n"
+    content = "[Desktop Entry]\nType=Application\nName=" + DISPLAY_NAME + " Setup\nComment=Configure Steam Deck streaming locally\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "setup.py")) + "\nIcon=video-display\nTerminal=true\nCategories=AudioVideo;\nX-deckystream-Managed=true\n"
     backup = base / "backups" / str(time.time_ns())
     changes = []
     # Each entry is replaced atomically. Switch current last: any failure before
     # activation restores the old entry points and leaves the old release live.
     with tempfile.TemporaryDirectory(prefix=".activate-", dir=base) as temporary:
         staging = Path(temporary)
-        (staging / "executable").symlink_to(current / "obsgod")
+        (staging / "executable").symlink_to(current / "deckystream")
         (staging / "desktop").write_text(content)
         (staging / "desktop").chmod(0o600)
         (staging / "current").symlink_to(release)
         entries = [(staging / "executable", executable), (staging / "desktop", desktop)]
+        # Retain an already-managed old command for existing shell automation,
+        # pointing it at the new binary. Never replace an unrelated command.
+        previous_alias = bin_dir / "obsgod"
+        if (previous_alias.is_symlink() and previous_alias.lstat().st_uid == os.getuid()
+                and previous_alias.readlink() in {current / "obsgod", current / "deckystream"}):
+            (staging / "legacy-executable").symlink_to(current / "deckystream")
+            entries.append((staging / "legacy-executable", previous_alias))
         if updater_desktop:
-            updater_content = "[Desktop Entry]\nType=Application\nName=Update " + DISPLAY_NAME + "\nComment=Check and apply verified updates\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "update.py")) + "\nIcon=system-software-update\nTerminal=true\nCategories=AudioVideo;\nX-OBSGod-Managed=true\n"
+            updater_content = "[Desktop Entry]\nType=Application\nName=Update " + DISPLAY_NAME + "\nComment=Check and apply verified updates\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "update.py")) + "\nIcon=system-software-update\nTerminal=true\nCategories=AudioVideo;\nX-deckystream-Managed=true\n"
             (staging / "updater-desktop").write_text(updater_content)
             (staging / "updater-desktop").chmod(0o600)
             entries.append((staging / "updater-desktop", updater_desktop))
         if uninstaller_desktop:
-            uninstall_content = "[Desktop Entry]\nType=Application\nName=Uninstall " + DISPLAY_NAME + "\nComment=Review removal, reset and owned-data wipe\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "uninstall.py")) + "\nIcon=edit-delete\nTerminal=true\nCategories=AudioVideo;\nX-OBSGod-Managed=true\n"
+            uninstall_content = "[Desktop Entry]\nType=Application\nName=Uninstall " + DISPLAY_NAME + "\nComment=Review removal, reset and owned-data wipe\nExec=python3 -c " + quote_exec(launch_code) + " " + quote_exec(str(current / "uninstall.py")) + "\nIcon=edit-delete\nTerminal=true\nCategories=AudioVideo;\nX-deckystream-Managed=true\n"
             (staging / "uninstaller-desktop").write_text(uninstall_content)
             (staging / "uninstaller-desktop").chmod(0o600)
             entries.append((staging / "uninstaller-desktop", uninstaller_desktop))
+        # Old menu entries are retired as part of the same recoverable
+        # activation. Saved copies remain in the private backup directory.
+        for name in ("obsgod-setup.desktop", "obsgod-update.desktop", "obsgod-uninstall.desktop"):
+            previous = apps / name
+            if previous.exists() and not previous.is_symlink():
+                info = previous.lstat()
+                if (stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid() and info.st_nlink == 1
+                        and info.st_size <= 65536 and "X-OBSGod-Managed=true" in previous.read_text()):
+                    entries.append((None, previous))
         try:
             for source, destination in entries:
-                if destination == executable and destination.is_symlink() and destination.readlink() == current / "obsgod":
+                if destination == executable and destination.is_symlink() and destination.readlink() == current / "deckystream":
                     continue
                 if destination == desktop and not destination.is_symlink() and destination.is_file() and destination.read_text() == content:
                     continue
@@ -214,7 +230,10 @@ def activate_release(base, releases, bin_dir, apps, home, manifest):
                     # Copy links themselves, including dangling links; never
                     # write through somebody else's application/menu symlink.
                     shutil.copy2(destination, saved, follow_symlinks=False)
-                source.replace(destination)
+                if source is None:
+                    destination.unlink()
+                else:
+                    source.replace(destination)
                 changes.append((destination, saved))
             (staging / "current").replace(current)
         except (OSError, RuntimeError):
@@ -259,17 +278,53 @@ def require_idle(bridge, close=False):
             or state.get("output_known") is not True
             or state.get("process") not in ("absent", "running")
             or state.get("operation") not in (None, "", "idle")):
-        raise RuntimeError("OBS output is active, busy or unconfirmed. Stop streaming, recording and replay in OBSGod first, then retry. For an older app, close managed OBS before upgrading. The installer will not stop a broadcast or local output for you.")
+        raise RuntimeError("OBS output is active, busy or unconfirmed. Stop streaming, recording and replay in deckystream first, then retry. For an older app, close managed OBS before upgrading. The installer will not stop a broadcast or local output for you.")
     if close and state.get("configured"):
         result = bridge.run_cli("restart", timeout=20)
         if not isinstance(result, dict) or not result.get("ok"):
             raise RuntimeError("Idle managed OBS could not be closed safely. Inspect OBS in Desktop Mode and retry; nothing was force-killed.")
 
 
+def retire_legacy_plugin(decky, bridge, home, expected_version=None):
+    """Only the authenticated manager may remove the positively closed preimage."""
+    version = _releases.installed_plugin_version(home, legacy=True)
+    if version is None:
+        return None
+    if version != expected_version:
+        raise RuntimeError("The previous plugin changed after inspection. No plugin was replaced; review the installed versions and retry.")
+    require_idle(bridge)
+    current = bridge.run_cli("status", timeout=6)
+    if not isinstance(current, dict) or current.get("process") != "absent" or current.get("output_known") is not True:
+        raise RuntimeError("Close the previous managed OBS instance before retiring its old plugin. Saved settings and media were preserved.")
+    decky.helper_request("uninstall", uninstall_existing=True, legacy_plugin=True, expected_version=version)
+    if _releases.installed_plugin_version(home, legacy=True) is not None:
+        raise RuntimeError("Decky did not confirm previous-plugin retirement. No new plugin was installed; inspect Decky and retry.")
+    return version
+
+
+def adopt_legacy_store_for_upgrade(home):
+    """Anchor an empty pre-rename install to its old control namespace.
+
+    A legacy backend can create its first lock at any time. Seed that same
+    state root before this installer creates app data or schedules any worker;
+    every later participant will then select the retained old namespace.
+    """
+    version = _releases.installed_plugin_version(home, legacy=True)
+    if version is None:
+        return version
+    selected = _paths.app_namespace(home)
+    if selected != "obsgod" and any(path.exists() or path.is_symlink() for path in _paths.namespace_paths(home, "deckystream")):
+        raise RuntimeError("The previous OBSGod plugin and a current application store coexist. Stop its outputs, uninstall only that old plugin through Decky, then rerun this installer. Existing stores were preserved.")
+    owned_directory(xdg_root("XDG_STATE_HOME", home) / "obsgod", home)
+    if _paths.app_namespace(home) != "obsgod":
+        raise RuntimeError("The naming migration changed during inspection. No plugin was replaced.")
+    return version
+
+
 @contextmanager
 def control_lock(home):
-    state = xdg_root("XDG_STATE_HOME", home) / "obsgod"
-    with _installation_lease(state / "control.lock", home, "Another OBSGod control operation is busy. Let it finish before installing."):
+    state = xdg_root("XDG_STATE_HOME", home) / _paths.app_namespace(home)
+    with _installation_lease(state / "control.lock", home, "Another deckystream control operation is busy. Let it finish before installing."):
         yield
 
 
@@ -304,7 +359,7 @@ def dependency_policy(manifest):
     Historical archives without native setup remain usable for app-only repair.
     They cannot fall back to the old unguarded dependency transaction.
     """
-    path = ROOT / "obsgod-decky.zip"
+    path = ROOT / "deckystream-decky.zip"
     try:
         if path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024 * 1024:
             raise ValueError()
@@ -312,23 +367,23 @@ def dependency_policy(manifest):
         if hashlib.sha256(payload).hexdigest() != manifest["files"][path.name]:
             raise ValueError()
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-            names = [item for item in archive.infolist() if item.filename == "obsgod/dependency_setup.py"]
+            names = [item for item in archive.infolist() if item.filename == "deckystream/dependency_setup.py"]
             if len(names) != 1 or names[0].file_size > 128 * 1024:
                 raise ValueError()
             source = archive.read(names[0])
     except (OSError, ValueError, KeyError, zipfile.BadZipFile):
         raise RuntimeError("This recovery package cannot use verified native dependency setup. Use the current Decky plugin's Setup controls, or install app files only; no Flatpak dependencies were changed.") from None
-    with tempfile.TemporaryDirectory(prefix="obsgod-dependency-policy-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-dependency-policy-") as temporary:
         module_path = Path(temporary) / "dependency_setup.py"
         module_path.write_bytes(source)
         module_path.chmod(0o600)
-        yield load_module("obsgod_install_dependencies", module_path)
+        yield load_module("deckystream_install_dependencies", module_path)
 
 
 async def run_dependency_setup(policy, bridge, home):
     """Join the native leased transaction while the caller holds install.lock."""
     jobs = _paths.decky_locations(home)["data"] / "jobs"
-    state = xdg_root("XDG_STATE_HOME", home) / "obsgod"
+    state = xdg_root("XDG_STATE_HOME", home) / _paths.app_namespace(home)
 
     async def preflight():
         # Native setup owns the canonical control lease before this fresh read.
@@ -373,7 +428,7 @@ def ensure_dependencies(bridge=None, manifest=None, home=None):
         # than keeping a second dependency-installation implementation.
         home = Path.home()
         manifest = verify_payload()
-        bridge = load_module("obsgod_install_bridge", ROOT / "bridge.py")
+        bridge = load_module("deckystream_install_bridge", ROOT / "bridge.py")
         base, _ = app_directories(home)
         owned_directory(base, home)
         with installation_lock(base):
@@ -383,7 +438,7 @@ def ensure_dependencies(bridge=None, manifest=None, home=None):
     print(result["message"], flush=True)
 
 
-def recover_previous_plugin(decky, previous, original_plugin_version, candidate_version, home):
+def recover_previous_plugin(decky, previous, original_plugin_version, candidate_version, home, bridge=None):
     if previous is None or original_plugin_version is None:
         return False
     try:
@@ -398,20 +453,37 @@ def recover_previous_plugin(decky, previous, original_plugin_version, candidate_
                 manifest.get("version") != original_plugin_version or
                 _releases.installed_plugin_version(home) != candidate_version):
             return False
-        archive_path = previous / "obsgod-decky.zip"
+        legacy = "obsgod-decky.zip" in manifest["files"]
+        archive_path = previous / ("obsgod-decky.zip" if legacy else "deckystream-decky.zip")
         if archive_path.is_symlink() or not archive_path.is_file() or archive_path.stat().st_size > 32 * 1024 * 1024:
             return False
         payload = archive_path.read_bytes()
         if hashlib.sha256(payload).hexdigest() != manifest.get("files", {}).get(archive_path.name):
             return False
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-            packages = [item for item in archive.infolist() if item.filename == "obsgod/package.json"]
+            packages = [item for item in archive.infolist() if item.filename == ("obsgod/package.json" if legacy else "deckystream/package.json")]
             if len(packages) != 1 or packages[0].file_size > 16384:
                 return False
             package = json.loads(archive.read(packages[0]))
             if not isinstance(package, dict) or package.get("version") != original_plugin_version:
                 return False
-        decky.helper_request("install", previous, manifest)
+        if legacy:
+            # Execute only the hash-verified old helper from this retained
+            # package. It keeps its own strict old ZIP identity validator.
+            decky.verify_legacy_recovery(previous, manifest)
+            if bridge is None:
+                return False
+            require_idle(bridge)
+            observed = bridge.run_cli("status", timeout=6)
+            if not isinstance(observed, dict) or observed.get("process") != "absent" or observed.get("output_known") is not True:
+                return False
+            decky.helper_request("uninstall", uninstall_existing=True)
+            decky.helper_request("install", previous, manifest, legacy_package=True)
+            if (_releases.installed_plugin_version(home) is not None
+                    or _releases.installed_plugin_version(home, legacy=True) != original_plugin_version):
+                return False
+        else:
+            decky.helper_request("install", previous, manifest)
         return True
     except (OSError, ValueError, KeyError, TypeError, RuntimeError, zipfile.BadZipFile):
         return False
@@ -443,7 +515,7 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
     if with_decky:
         if not {"decky.py", "decky-install"} <= set(manifest["files"]):
             raise RuntimeError("This older package cannot install Decky automatically. Use its documented manual ZIP path or download the current unified package.")
-        decky = load_module("obsgod_install_decky", ROOT / "decky.py")
+        decky = load_module("deckystream_install_decky", ROOT / "decky.py")
         print("Checking Decky's authenticated service and existing Steam connection…", flush=True)
         report = decky.status()
         if not report["ok"]:
@@ -451,12 +523,15 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
                 offer_decky_guide("https://decky.xyz/")
             raise RuntimeError(report["message"] + " No app or plugin was replaced. Install/start Decky using its official instructions, keep normal Steam open in Desktop Mode, and rerun this installer.")
         print("Decky " + report["version"] + " is ready.", flush=True)
-        bridge = load_module("obsgod_install_bridge", ROOT / "bridge.py")
+        bridge = load_module("deckystream_install_bridge", ROOT / "bridge.py")
     home = Path.home()
     if with_decky:
         if _releases is None or not hasattr(_releases, "require_plugin_replacement"):
             raise RuntimeError("This installer cannot verify the current Decky plugin version. Use the current recovery package or install app files only.")
+        legacy_version = adopt_legacy_store_for_upgrade(home)
         _releases.require_plugin_replacement(manifest["version"], home, recovery_plugin_version, expected_plugin_version)
+        if legacy_version is not None:
+            _releases.require_plugin_replacement(manifest["version"], home, recovery_plugin_version, expected_plugin_version, legacy=True)
     base, apps = app_directories(home)
     releases = base / "releases"
     bin_dir = home / ".local/bin"
@@ -476,9 +551,12 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
                 previous = current_path.resolve() if current_path.is_symlink() and current_path.resolve().parent == releases else None
                 validate_activation_paths(base, releases, bin_dir, apps, manifest)
                 candidate = prepare_release(releases, manifest)
+                legacy_plugin_version = retire_legacy_plugin(decky, bridge, home, legacy_version)
+                if original_plugin_version is None:
+                    original_plugin_version = legacy_plugin_version
                 plugin_verified = False
                 try:
-                    print("Installing the verified OBSGod plugin through Decky…", flush=True)
+                    print("Installing the verified deckystream plugin through Decky…", flush=True)
                     decky.helper_request("install", candidate, manifest)
                     plugin_verified = True
                     current = activate_release(base, releases, bin_dir, apps, home, manifest)
@@ -486,7 +564,7 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
                     # An interrupted/timeout request can still be running in
                     # Decky. Never race it with a second rollback request. Only
                     # restore after confirmed plugin completion + app failure.
-                    recovered = recover_previous_plugin(decky, previous, original_plugin_version, manifest["version"], home) if plugin_verified else False
+                    recovered = recover_previous_plugin(decky, previous, original_plugin_version, manifest["version"], home, bridge) if plugin_verified else False
                     record = {"version": manifest["version"], "previous_version": previous.name if previous else None, "app_activation_changed": current_path.is_symlink() and current_path.resolve() == candidate, "plugin_rollback_confirmed": recovered}
                     recovery_path = base / "installation-recovery.json"
                     if not recovery_path.is_symlink():
@@ -504,12 +582,12 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
         print("Check and apply updates from Applications → Multimedia → Update " + DISPLAY_NAME + ".")
     print("Settings, keys, recordings, diagnostic history and unrelated plugins are preserved.")
     if not with_decky:
-        print("Manual Decky ZIP: " + str(current / "obsgod-decky.zip"))
+        print("Manual Decky ZIP: " + str(current / "deckystream-decky.zip"))
     if launch:
-        print("Keep this terminal open while configuring OBSGod. Finish setup in the browser when done.", flush=True)
+        print("Keep this terminal open while configuring deckystream. Finish setup in the browser when done.", flush=True)
         result = subprocess.run([sys.executable, str(current / "setup.py")])
         if result.returncode:
-            raise RuntimeError("Files were installed, but the setup page failed to start. The error is shown above; rerun OBSGod Setup after correcting it")
+            raise RuntimeError("Files were installed, but the setup page failed to start. The error is shown above; rerun deckystream Setup after correcting it")
     return current
 
 

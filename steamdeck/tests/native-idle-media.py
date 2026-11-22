@@ -17,8 +17,8 @@ spec = importlib.util.spec_from_file_location("game_fixture", "/src/steamdeck/te
 game = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(game)
 OUT = game.OUT
-IMAGE = "OBSGod Idle Image"
-VIDEO = "OBSGod Idle Video"
+IMAGE = "deckystream Idle Image"
+VIDEO = "deckystream Idle Video"
 
 
 def ffmpeg(*args):
@@ -100,7 +100,7 @@ async def main():
                 assert (await obs.request("GetInputMute", {"inputName": VIDEO}))["inputMuted"], "Imported video soundtrack is not muted"
                 settings = (await obs.request("GetInputSettings", {"inputName": VIDEO}))["inputSettings"]
                 assert settings["is_local_file"] and settings["looping"], "Video did not use bounded local loop playback"
-                owned = Path.home() / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/obsgod-media" / stored
+                owned = Path.home() / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/deckystream-media" / stored
                 assert owned.is_file() and str(owned) == settings["local_file"]
                 owned.unlink()
                 phases["idle-missing-media-black"] = await observe_phase(obs, "black", "idle-missing-media-black", None)
@@ -121,7 +121,7 @@ async def main():
         # Leave a portable safe style for the following native M3 tool checks.
         await game.cli("set-idle-media", {"idle_style": "black"})
         proof["state"] = "passed"
-        proof["binary_sha256"] = hashlib.sha256(Path("/src/dist/obsgod").read_bytes()).hexdigest()
+        proof["binary_sha256"] = hashlib.sha256(Path("/src/dist/deckystream").read_bytes()).hexdigest()
         (OUT / "idle-media-qualification.json").write_text(json.dumps(proof, indent=2) + "\n")
         print("PASS native idle PNG and moving muted MP4; decoded local RTMP picture/440Hz audio; missing asset→black without restarting output; explicit Stop preserved")
     finally:

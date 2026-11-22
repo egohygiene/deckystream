@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 // Only event identifiers and numeric OBS/exit codes reach disk. Never store
@@ -30,7 +30,7 @@ var diagnosticMessages = map[string]string{
 	"test-recording.requested":      "Local test requested. This does not broadcast; the streaming dot stays red. Usable capture is checked after OBS readiness.",
 	"open-obs.requested":            "Open the managed OBS recovery window requested. No stream or recording is started.",
 	"obs.ownership-unknown":         "An owned OBS process could not be identified safely. Inspect its existing window before launching another instance.",
-	"obs.open-visible":              "Launching the isolated OBSGod profile visibly for Desktop recovery.",
+	"obs.open-visible":              "Launching the isolated deckystream profile visibly for Desktop recovery.",
 	"restart.requested":             "Close idle managed OBS requested.",
 	"configure.requested":           "Saving local settings.",
 	"set-capture-mode.requested":    "Changing the next capture mode after confirming output is idle.",
@@ -40,13 +40,13 @@ var diagnosticMessages = map[string]string{
 	"operation.cancelled":           "Operation cancelled; checking or cleaning up output.",
 	"operation.timeout":             "Operation exceeded its time limit; output must be checked before retrying.",
 	"obs.request-failed":            "OBS request failed with status code",
-	"obs.conflict":                  "Port 4457 is already in use or OBSGod credentials do not match; stop the conflicting instance in Desktop Mode.",
-	"obs.unmanaged":                 "The OBS instance is not using the managed OBSGod profile; refusing to change it.",
-	"settings.missing":              "Complete OBSGod Desktop setup first.",
+	"obs.conflict":                  "Port 4457 is already in use or deckystream credentials do not match; stop the conflicting instance in Desktop Mode.",
+	"obs.unmanaged":                 "The OBS instance is not using the managed deckystream profile; refusing to change it.",
+	"settings.missing":              "Complete deckystream Desktop setup first.",
 	"dependencies.checking":         "Checking user-installed OBS and GStreamer Flatpaks.",
 	"dependencies.missing":          "OBS or GStreamer is unavailable. Run Install / check OBS in Desktop setup.",
 	"obs.connecting":                "Connecting to the managed OBS instance on localhost.",
-	"obs.launching":                 "Launching OBS with the isolated OBSGod profile.",
+	"obs.launching":                 "Launching OBS with the isolated deckystream profile.",
 	"obs.waiting":                   "Waiting for OBS and its authenticated control connection.",
 	"obs.listener-unavailable":      "OBS did not expose its local control listener. Check launch/display failures, recovery dialogs and the enabled built-in WebSocket server.",
 	"obs.authentication-waiting":    "The control port is open but authenticated readiness was not confirmed. Check the managed instance and local credentials.",
@@ -66,7 +66,7 @@ var diagnosticMessages = map[string]string{
 	"audio.discovering":             "Finding the current game or default system output monitor and selected microphone.",
 	"audio.ready":                   "OBS verified the selected audio device, volume, track 1 and monitoring-off settings.",
 	"audio.unavailable":             "Audio routing could not be verified. Check the SteamOS output and the device visible inside OBS.",
-	"audio.system-muted":            "The selected system output is muted or has zero volume. OBSGod does not change system volume.",
+	"audio.system-muted":            "The selected system output is muted or has zero volume. deckystream does not change system volume.",
 	"audio.signal":                  "OBS detected audio signal on the selected output. Verify sound in the saved clip or on your channel.",
 	"audio.silent":                  "No sound was detected during the short audio check. Play game audio and inspect the local clip; silence does not stop output.",
 	"audio.meters-unavailable":      "OBS audio meters could not be observed. Current sound is unconfirmed.",
@@ -82,7 +82,7 @@ var diagnosticMessages = map[string]string{
 	"stream.stopped":                "OBS confirmed streaming is stopped.",
 	"recording.starting":            "Starting the local recording and waiting for encoded output.",
 	"recording.running":             "Recording ten seconds locally. Nothing is being broadcast.",
-	"recording.saved":               "Local test clip saved to Videos/OBSGod. Watch it before broadcasting.",
+	"recording.saved":               "Local test clip saved to Videos/deckystream. Watch it before broadcasting.",
 }
 
 type diagnosticEvent struct {
@@ -173,11 +173,11 @@ func RecordOutcome(p Paths, err error, ok bool) {
 	} else if err != nil || !ok {
 		if err != nil {
 			switch err.Error() {
-			case "port 4457 is already in use or OBSGod credentials do not match; stop the conflicting instance in Desktop Mode":
+			case "port 4457 is already in use or deckystream credentials do not match; stop the conflicting instance in Desktop Mode":
 				logEvent(p, "obs.conflict")
 			case errUnmanaged.Error():
 				logEvent(p, "obs.unmanaged")
-			case "complete OBSGod Desktop setup first":
+			case "complete deckystream Desktop setup first":
 				logEvent(p, "settings.missing")
 			}
 		}

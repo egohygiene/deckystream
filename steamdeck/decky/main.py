@@ -49,7 +49,7 @@ if __name__ == "__main__":
 def _bundled_module(name):
     """Load only our fixed packaged modules, including in source-only tests."""
     path = Path(__file__).resolve().parent / (name + ".py")
-    spec = importlib.util.spec_from_file_location("obsgod_plugin_" + name, path)
+    spec = importlib.util.spec_from_file_location("deckystream_plugin_" + name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -65,6 +65,11 @@ DESTINATION_FIELDS = {"server", "stream_key", "replace_key", "bitrate", "fps", "
 PASSWORD_FIELDS = {"password", "confirm", "generate"}
 PRIVATE_FIELDS = {"stream_key", "password"}
 CONFIGURATION_UNAVAILABLE = "Configuration readiness is unavailable. Refresh settings before changing your destination or local OBS password. No stream was started."
+LEGACY_PLUGIN_MESSAGE = "The previous OBSGod plugin is still installed. Stop its outputs and use the current Desktop migration installer, or uninstall that old plugin through Decky and reload deckystream. Saved keys and recordings are retained; a second controller was not started."
+
+
+class LegacyPluginInstalled(OSError):
+    pass
 # A capture edit includes fresh preflight, Go's action/post-action observation,
 # and a final independent read. Even three timeout cleanups fit below the UI's
 # fifteen-second budget; Start/Stop and microphone leases retain their budgets.
@@ -252,7 +257,7 @@ async def _readonly_thread(function, *args, **kwargs):
         except RuntimeError:
             pass  # The backend event loop already closed; no result is cached.
 
-    threading.Thread(target=run, daemon=True, name="obsgod-update-read").start()
+    threading.Thread(target=run, daemon=True, name="deckystream-update-read").start()
     return await future
 
 
@@ -321,7 +326,15 @@ class Plugin:
 
     def _child_environment(self):
         """Retain one managed store; prepare only Decky-owned metadata/jobs."""
+        self._legacy_backend_guard()
         return storage.child_environment(self._plugin_root(), self._provided)
+
+    def _legacy_backend_guard(self):
+        root = self._plugin_root()
+        if root.name == "deckystream" and root.parent.name == "plugins":
+            previous = root.parent / "obsgod"
+            if previous.exists() or previous.is_symlink():
+                raise LegacyPluginInstalled(LEGACY_PLUGIN_MESSAGE)
 
     @property
     def _dependency_busy(self):
@@ -354,6 +367,7 @@ class Plugin:
                 not current.get("recording") and (media_idle or absent_legacy))
 
     def _dependency_controller(self):
+        self._legacy_backend_guard()
         if self._dependency_job is None:
             context = storage.context(self._plugin_root(), self._provided)
             if context["mode"] != "decky":
@@ -370,6 +384,8 @@ class Plugin:
             return self._setup_unavailable("closing", "The plugin is closing. Reload it before checking dependency setup.")
         try:
             return await self._dependency_controller().status()
+        except LegacyPluginInstalled:
+            return self._setup_unavailable("legacy-plugin", LEGACY_PLUGIN_MESSAGE)
         except (OSError, ValueError):
             return self._setup_unavailable()
 
@@ -384,6 +400,8 @@ class Plugin:
         self._setup_requested = True
         try:
             return await self._dependency_controller().start(consent=True)
+        except LegacyPluginInstalled:
+            return self._setup_unavailable("legacy-plugin", LEGACY_PLUGIN_MESSAGE)
         except (OSError, ValueError):
             return self._setup_unavailable()
         finally:
@@ -591,7 +609,7 @@ class Plugin:
         if action == "set-capture-mode" and deadline is None:
             deadline = asyncio.get_running_loop().time() + CAPTURE_MODE_BUDGET["command"]
         cleanup_budget = CAPTURE_MODE_BUDGET["cleanup"] if deadline is not None else 1 if private_configuration else 8
-        binary = self._plugin_root() / "bin/obsgod"
+        binary = self._plugin_root() / "bin/deckystream"
         if not os.access(binary, os.X_OK):
             binary.chmod(0o700)
         interpreter, environment = dependency_setup.python_process(self._child_environment())
@@ -707,8 +725,10 @@ class Plugin:
         snapshot_id = self._snapshot_id
         try:
             result = await self._run("status")
+        except LegacyPluginInstalled:
+            result = self._unknown(LEGACY_PLUGIN_MESSAGE)
         except OSError:
-            result = self._unknown("OBSGod's backend or player storage is unavailable. Reload or repair the Decky plugin; existing settings were not reset.")
+            result = self._unknown("deckystream's backend or player storage is unavailable. Reload or repair the Decky plugin; existing settings were not reset.")
         result["snapshot_id"] = snapshot_id
         return result
 
@@ -802,7 +822,7 @@ class Plugin:
                 if command is None:
                     command = await self._run(action, payload) if payload is not None else await self._run(action)
             except OSError:
-                command = self._unknown("OBSGod's backend or player storage is unavailable. Reload or repair the Decky plugin; existing settings were not reset.")
+                command = self._unknown("deckystream's backend or player storage is unavailable. Reload or repair the Decky plugin; existing settings were not reset.")
         self._invalidate_configuration()
         # Command success/error is not an output snapshot. Re-query actual OBS
         # rather than allowing a failed Start to replace an active stream with
@@ -839,7 +859,7 @@ class Plugin:
                 return await self._configuration_rejection(action, "The plugin is closing. Wait for it to reload before changing settings.")
             result = await self.status()
             result["action_result"] = {"ok": False, "action": action,
-                                       "message": "OBSGod is shutting down. Wait for the plugin to reload."}
+                                       "message": "deckystream is shutting down. Wait for the plugin to reload."}
             return result
         if self._control_task and not self._control_task.done():
             if self._control_action == action and self._control_payload == payload and not self.cancel_requested:
@@ -1025,7 +1045,7 @@ class Plugin:
         async def check():
             try:
                 path = self._plugin_root() / "releases.py"
-                spec = importlib.util.spec_from_file_location("obsgod_releases", path)
+                spec = importlib.util.spec_from_file_location("deckystream_releases", path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 versions = module.current_versions(self._version(), environ=self._child_environment())

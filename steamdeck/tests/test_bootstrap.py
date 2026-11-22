@@ -55,7 +55,7 @@ class DesktopBootstrap(unittest.TestCase):
         self.package.mkdir()
         self.home = self.base / "home"
         self.home.mkdir()
-        for name in ["install.py", "paths.py", "Install OBSGod.desktop"]:
+        for name in ["install.py", "paths.py", "Install deckystream.desktop"]:
             shutil.copyfile(ROOT / name, self.package / name)
         self.env = dict(os.environ, HOME=str(self.home), XDG_CONFIG_HOME=str(self.home / ".config"))
 
@@ -63,14 +63,14 @@ class DesktopBootstrap(unittest.TestCase):
         self.temp.cleanup()
 
     def fake_payload(self):
-        files = {"obsgod", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "obsgod-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
+        files = {"deckystream", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "deckystream-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
         for name in files:
             (self.package / name).write_text("fixture")
         (self.package / "setup.py").write_text("raise RuntimeError('visible setup startup failure')\n")
         (self.package / "manifest.json").write_text(json.dumps({"version": "0.1.0-bootstrap-test", "files": {name: hashlib.sha256((self.package / name).read_bytes()).hexdigest() for name in files}}))
 
     def launch(self, as_uri=False):
-        return subprocess.Popen(desktop_command(self.package / "Install OBSGod.desktop", as_uri) + ["--app-only"], cwd=self.home,
+        return subprocess.Popen(desktop_command(self.package / "Install deckystream.desktop", as_uri) + ["--app-only"], cwd=self.home,
                                 env=self.env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     def finish(self, process):
@@ -83,7 +83,7 @@ class DesktopBootstrap(unittest.TestCase):
         process = self.launch()
         try:
             output = read_until(process, b"Press Enter to close")
-            self.assertIn(b"Extract the entire OBSGod archive", output)
+            self.assertIn(b"Extract the entire deckystream archive", output)
             self.assertIsNone(process.poll())
         finally:
             self.finish(process)

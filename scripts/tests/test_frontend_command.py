@@ -38,6 +38,7 @@ print(json.dumps({'arguments':sys.argv[1:],'uid':os.getuid(),'gid':os.getgid(),
   'temp_mode':pathlib.Path(os.environ['TMPDIR']).stat().st_mode&511,
   'sudo_present':any(k.startswith('SUDO_') for k in os.environ),
   'xdg_present':any(k in os.environ for k in ['XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_STATE_HOME','XDG_CACHE_HOME','XDG_RUNTIME_DIR']),
+  'output_override_present':any(k in os.environ for k in ['DECKYSTREAM_FRONTEND_OUT','OBSGOD_FRONTEND_OUT']),
   'registry':os.environ.get('npm_config_registry')}))
 raise SystemExit(int(os.environ.get('FRONTEND_FIXTURE_EXIT','0')))
 """)
@@ -64,6 +65,8 @@ raise SystemExit(int(os.environ.get('FRONTEND_FIXTURE_EXIT','0')))
     def test_absent_then_reused_output_stays_owned_by_real_child(self):
         preserved_env = {"SUDO_UID": "0", "SUDO_COMMAND": "fixture", "XDG_CACHE_HOME": "/root/fixture",
                          "XDG_RUNTIME_DIR": "/root/runtime-fixture",
+                         "DECKYSTREAM_FRONTEND_OUT": "/unvalidated-primary-output",
+                         "OBSGOD_FRONTEND_OUT": "/unvalidated-legacy-output",
                          "npm_config_registry": "https://registry.example.invalid"}
         hashes = []
         with patch.dict(os.environ, preserved_env):
@@ -77,6 +80,7 @@ raise SystemExit(int(os.environ.get('FRONTEND_FIXTURE_EXIT','0')))
                 self.assertEqual(child["temp_mode"], 0o700)
                 self.assertFalse(child["sudo_present"])
                 self.assertFalse(child["xdg_present"])
+                self.assertFalse(child["output_override_present"])
                 self.assertEqual(child["registry"], preserved_env["npm_config_registry"])
                 for path in (self.frontend / "dist", self.frontend / "dist/index.js"):
                     self.assertEqual(path.stat().st_uid, self.uid)

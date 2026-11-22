@@ -17,9 +17,9 @@ from bridge import private_process, run_cli
 from product import DISPLAY_NAME
 
 ROOT = Path(__file__).resolve().parent
-# The ordinary Decky ZIP carries this optional browser UI beside bin/obsgod.
+# The ordinary Decky ZIP carries this optional browser UI beside bin/deckystream.
 # Its lifecycle belongs to Decky, not the legacy paired Desktop installer.
-PLUGIN_BUNDLE = (ROOT / "plugin.json").is_file() and (ROOT / "bin/obsgod").is_file()
+PLUGIN_BUNDLE = (ROOT / "plugin.json").is_file() and (ROOT / "bin/deckystream").is_file()
 if not PLUGIN_BUNDLE:
     import decky
     import install as installer
@@ -69,7 +69,7 @@ class SetupServer(ThreadingHTTPServer):
         with self.job_lock:
             if self.job["running"]:
                 return dict(self.job)
-            self.job = {"running": True, "message": "Checking output, preserving your settings and installing OBSGod through Decky…"}
+            self.job = {"running": True, "message": "Checking output, preserving your settings and installing deckystream through Decky…"}
         threading.Thread(target=self.finish_plugin_install, daemon=True).start()
         return dict(self.job)
 
@@ -78,7 +78,7 @@ class SetupServer(ThreadingHTTPServer):
             return
         try:
             installer.install(launch=False)
-            result = {"running": False, "ok": True, "message": "The OBSGod app and Decky plugin are installed and verified. Return to Gaming Mode to make a local clip before streaming."}
+            result = {"running": False, "ok": True, "message": "The deckystream app and Decky plugin are installed and verified. Return to Gaming Mode to make a local clip before streaming."}
         except RuntimeError as error:
             result = {"running": False, "ok": False, "message": str(error)}
         except (OSError, ValueError, KeyError, subprocess.SubprocessError):
@@ -88,7 +88,7 @@ class SetupServer(ThreadingHTTPServer):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "OBSGodSetup"
+    server_version = "deckystreamSetup"
 
     def log_message(self, *_):
         pass  # No HTTP URLs, request payloads or credentials enter logs.
@@ -124,7 +124,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_data(200, (ROOT / file).read_bytes(), content_type)
             return
         if not self.authorized():
-            self.send_data(403, {"ok": False, "message": "Reopen OBSGod Setup from the application menu."})
+            self.send_data(403, {"ok": False, "message": "Reopen deckystream Setup from the application menu."})
             return
         self.server.last_used = time.monotonic()
         if path == "/api/status":
@@ -135,7 +135,7 @@ class Handler(BaseHTTPRequestHandler):
                 "message": "Configuration is provided by this Decky plugin bundle. Manage dependencies and plugin replacement in Decky."}
                 if PLUGIN_BUNDLE else decky.status())
             result["decky"] = result["decky_status"]["ok"]
-            result["plugin_zip"] = None if PLUGIN_BUNDLE else str(ROOT / "obsgod-decky.zip")
+            result["plugin_zip"] = None if PLUGIN_BUNDLE else str(ROOT / "deckystream-decky.zip")
             result["product_name"] = DISPLAY_NAME
             self.send_data(200, result)
         elif path == "/api/connection":
@@ -151,7 +151,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if not self.authorized():
-            self.send_data(403, {"ok": False, "message": "Setup authorization expired. Reopen OBSGod Setup."})
+            self.send_data(403, {"ok": False, "message": "Setup authorization expired. Reopen deckystream Setup."})
             return
         self.server.last_used = time.monotonic()
         if urlsplit(self.path).path != "/api/action":
@@ -214,7 +214,7 @@ def main():
     # Serve first so those launchers cannot block their own HTTP response.
     thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.5}, daemon=True)
     thread.start()
-    print("OBSGod Setup is running locally. Keep this terminal open until you finish setup.", flush=True)
+    print("deckystream Setup is running locally. Keep this terminal open until you finish setup.", flush=True)
     print("If the browser does not open, open this link on this Deck:", flush=True)
     print(url, flush=True)
     try:

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type fakeMediaClient struct {
@@ -28,7 +28,7 @@ func (f *fakeMediaClient) RuntimeStatus(context.Context) (automation.RuntimeStat
 	if f.unmanaged {
 		return automation.RuntimeStatus{Profile: "Ordinary OBS", Collection: "Ordinary"}, nil
 	}
-	return automation.RuntimeStatus{Profile: "OBSGod", Collection: "OBSGod"}, nil
+	return automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}, nil
 }
 func (f *fakeMediaClient) StreamStatus(context.Context) (automation.StreamStatus, error) {
 	return f.stream, nil
@@ -149,7 +149,7 @@ func TestXDGVideoPreferenceIsParsedWithoutShell(t *testing.T) {
 		t.Fatal(e)
 	}
 	dir, e := DefaultVideosDirectory(home, config)
-	if e != nil || dir != filepath.Join(home, "My Videos", "OBSGod") {
+	if e != nil || dir != filepath.Join(home, "My Videos", "deckystream") {
 		t.Fatal(dir, e)
 	}
 	for _, bad := range []string{"$(touch /tmp/no)", "`touch /tmp/no`", "relative", "$OTHER/Videos"} {

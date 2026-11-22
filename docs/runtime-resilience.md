@@ -11,7 +11,7 @@ actions. Unknown observations permit no route mutation. Three failed cycles, wit
 bounded backoff, stop automatic recovery and expose an escalation message.
 Connection restoration never launches OBS or starts/restarts broadcasting.
 
-**Retry bounded audio/capture recovery** in the panel (or `obsgod deck
+**Retry bounded audio/capture recovery** in the panel (or `deckystream deck
 retry-recovery`) explicitly reattaches observation to already-active output.
 For game-only video, the independent capture observer keeps the selected idle
 screen on unsupported/ambiguous capture; it never substitutes the entire display.

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/egohygiene/deckystream/internal/deck"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/deck"
 )
 
 func newDeckCommand() *coral.Command {
@@ -110,9 +110,17 @@ func newDeckCommand() *coral.Command {
 			} else if name == "doctor" {
 				result = deck.Doctor(ctx, paths)
 			} else {
-				unlock, err := deck.Lock(ctx, paths)
+				lock := deck.Lock
+				if name == "stop" || name == "restart" {
+					lock = deck.RecoveryLock
+				}
+				unlock, err := lock(ctx, paths)
 				if err != nil {
-					e = errors.New("another OBSGod operation is busy; wait and try again")
+					if errors.Is(err, deck.ErrLegacyBackend) {
+						e = err
+					} else {
+						e = errors.New("another deckystream operation is busy; wait and try again")
+					}
 				} else {
 					defer unlock()
 					switch name {

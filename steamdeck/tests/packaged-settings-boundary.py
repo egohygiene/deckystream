@@ -70,14 +70,14 @@ def held_lock(path):
 
 
 def saved_pair(home):
-    return tuple((home / ".config/obsgod" / name).read_bytes()
+    return tuple((home / ".config/deckystream" / name).read_bytes()
                  for name in ("deck.json", "secrets.json"))
 
 
 def bound_credentials(home, key, password=None):
     settings, encoded = saved_pair(home)
     secret = json.loads(encoded)
-    path = home / ".config/obsgod/secrets.json"
+    path = home / ".config/deckystream/secrets.json"
     require("credential store remains private", stat.S_IMODE(path.stat().st_mode) == 0o600)
     require("synthetic key binding is preserved", secret["stream_key"] == key)
     require("managed password remains distinct", isinstance(secret["obs_password"], str) and
@@ -122,7 +122,7 @@ def all_reaped():
 
 
 async def exercise(plugin_root, home, fixture):
-    roots = {name: home / "homebrew" / directory / "obsgod"
+    roots = {name: home / "homebrew" / directory / "deckystream"
              for name, directory in (("settings", "settings"), ("runtime", "data"), ("logs", "logs"))}
     for path in roots.values():
         path.mkdir(parents=True, mode=0o700)
@@ -142,7 +142,7 @@ async def exercise(plugin_root, home, fixture):
     ordinary.write_bytes(b"ordinary OBS fixture remains untouched\n")
     before_ordinary = ordinary.read_bytes()
     environment = dict(os.environ)
-    for name in ("OBSGOD_DECKY_STORAGE_MAP", "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR",
+    for name in ("DECKYSTREAM_DECKY_STORAGE_MAP", "DECKYSTREAM_DECKY_RUNTIME_DIR", "DECKYSTREAM_DECKY_LOG_DIR",
                  "FLATPAK_USER_DIR", "FLATPAK_SYSTEM_DIR", "PYTHONHOME", "PYTHONPATH"):
         environment.pop(name, None)
     environment.update(HOME=str(home), DECKY_HOME=str(home / "homebrew"),
@@ -157,7 +157,7 @@ async def exercise(plugin_root, home, fixture):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     real_spawn = asyncio.create_subprocess_exec
-    binary = plugin_root / "bin/obsgod"
+    binary = plugin_root / "bin/deckystream"
     allowed = {"configuration", "configure-fields", "status", "set-capture-mode", "stop"}
 
     async def observe_spawn(*args, **kwargs):
@@ -201,7 +201,7 @@ async def exercise(plugin_root, home, fixture):
             password = bound_credentials(home, key)
             require("actual packaged bootstrap saves privately", public(saved)["action_result"]["ok"])
             require("private bootstrap payload clears", plugin._control_payload is None)
-            control = home / ".local/state/obsgod/control.lock"
+            control = home / ".local/state/deckystream/control.lock"
             watcher = control.parent / "capture-watch/control.lock"
 
             async def prepare():
@@ -344,7 +344,7 @@ def main():
                 info.st_uid in (0, os.getuid()) and (not info.st_mode & 0o022 or bool(info.st_mode & stat.S_ISVTX)))
     require("evidence parent belongs to the test user", output.parent.stat().st_uid == os.getuid())
     output.mkdir(mode=0o700)
-    receipt = {"schema": "obsgod.packaged-settings-boundary/v1", "revision": args.revision,
+    receipt = {"schema": "deckystream.packaged-settings-boundary/v1", "revision": args.revision,
                "recorded_at_utc": datetime.now(timezone.utc).isoformat(), "status": "failed",
                "platform": platform.platform(), "python": platform.python_version(), "uid": os.getuid(),
                "harness_sha256": digest(Path(__file__).read_bytes()), "checks": CHECKS,
@@ -367,7 +367,7 @@ def main():
             with zipfile.ZipFile(args.plugin_zip) as archive:
                 names = archive.namelist()
                 require("ZIP has unique safe plugin paths", len(names) == len(set(names)) and all(
-                    name.startswith("obsgod/") and "\\" not in name and not PurePosixPath(name).is_absolute() and
+                    name.startswith("deckystream/") and "\\" not in name and not PurePosixPath(name).is_absolute() and
                     ".." not in PurePosixPath(name).parts and str(PurePosixPath(name)) == name for name in names))
                 require("ZIP extraction has a bounded total size", sum(member.file_size for member in archive.infolist()) <= 128 * 1024 * 1024)
                 for member in archive.infolist():
@@ -375,8 +375,8 @@ def main():
                     target = plugins / member.filename
                     target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
                     target.write_bytes(archive.read(member))
-                    target.chmod(0o700 if member.filename.startswith("obsgod/bin/") else 0o600)
-            plugin_root = plugins / "obsgod"
+                    target.chmod(0o700 if member.filename.startswith("deckystream/bin/") else 0o600)
+            plugin_root = plugins / "deckystream"
             manifest = json.loads((plugin_root / "manifest.json").read_text())
             require("ZIP declares exact clean qualification source", manifest.get("revision") == args.revision and manifest.get("dirty") is False)
             files = manifest.get("files")
@@ -385,7 +385,7 @@ def main():
                 "\\" not in name and str(PurePosixPath(name)) == name and isinstance(value, str) and
                 re.fullmatch(r"[0-9a-f]{64}", value) for name, value in files.items()))
             require("every manifest payload matches packaged bytes", all(digest((plugin_root / name).read_bytes()) == value for name, value in files.items()))
-            receipt["payload_sha256"] = {name: digest((plugin_root / name).read_bytes()) for name in ("main.py", "storage.py", "dependency_setup.py", "bin/obsgod")}
+            receipt["payload_sha256"] = {name: digest((plugin_root / name).read_bytes()) for name in ("main.py", "storage.py", "dependency_setup.py", "bin/deckystream")}
             asyncio.run(exercise(plugin_root, home, fixture))
         receipt["status"] = "passed"
     except Exception as error:

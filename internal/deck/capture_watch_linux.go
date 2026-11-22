@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type captureWatchDeps struct {
@@ -28,7 +28,7 @@ const captureDiscoveryTimeout = time.Second
 
 func observeCaptureOutput(ctx context.Context, c *automation.Client) (automation.RuntimeStatus, bool, error) {
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		return runtime, false, err
 	}
 	stream, err := c.StreamStatus(ctx)
@@ -103,7 +103,7 @@ func mutateCaptureUnderLease(ctx context.Context, p Paths, deps captureWatchDeps
 	if err != nil {
 		return result
 	}
-	result.unmanaged = runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod"
+	result.unmanaged = runtime.Profile != "deckystream" || runtime.Collection != "deckystream"
 	result.stopped = !result.unmanaged && (!active || requireRecording && !runtime.Recording)
 	if result.unmanaged || result.stopped {
 		return result
@@ -256,7 +256,7 @@ func watchCaptureWith(ctx context.Context, p Paths, deps captureWatchDeps) error
 			runtime, active, observeErr := observeCaptureOutput(cycle, c)
 			result.err = observeErr
 			if observeErr == nil {
-				result.unmanaged = runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod"
+				result.unmanaged = runtime.Profile != "deckystream" || runtime.Collection != "deckystream"
 				result.stopped = !result.unmanaged && !active
 				if !result.unmanaged && active {
 					// Read-only readiness lets Start finish while it still holds

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 const mixerTalkLease = 1200 * time.Millisecond
@@ -65,7 +65,7 @@ func openMixerControl(ctx context.Context, p Paths) (*automation.Client, error) 
 		return nil, errors.New("managed OBS control is unavailable; microphone state is unconfirmed")
 	}
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		_ = c.Close()
 		return nil, errUnmanaged
 	}

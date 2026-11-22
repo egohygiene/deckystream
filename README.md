@@ -17,7 +17,7 @@
   <a href="https://github.com/egohygiene/deckystream/actions/workflows/steam-deck.yml"><img src="https://github.com/egohygiene/deckystream/actions/workflows/steam-deck.yml/badge.svg?branch=main" alt="Deck candidate checks"></a>
   <a href="https://github.com/egohygiene/deckystream/actions/workflows/build.yml"><img src="https://github.com/egohygiene/deckystream/actions/workflows/build.yml/badge.svg?branch=main" alt="Cross-platform CLI checks"></a>
   <a href="https://decky.xyz/"><img src="https://img.shields.io/badge/Decky-plugin-b4a1f3?style=flat-square&labelColor=101d2a" alt="Decky plugin"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-72f3ed?style=flat-square&labelColor=101d2a" alt="MIT license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/code_license-MIT-72f3ed?style=flat-square&labelColor=101d2a" alt="Code license: MIT"></a>
   <a href="https://github.com/egohygiene/deckystream/issues/1"><img src="https://img.shields.io/badge/status-development_preview-b4a1f3?style=flat-square&labelColor=101d2a" alt="Development preview"></a>
 </p>
 

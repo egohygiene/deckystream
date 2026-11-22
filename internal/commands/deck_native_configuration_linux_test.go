@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/internal/deck"
+	"github.com/egohygiene/deckystream/internal/deck"
 )
 
 func executeNativeConfigurationCLI(t *testing.T, ctx context.Context, action, input string) ([]byte, error) {
@@ -32,7 +32,7 @@ func executeNativeConfigurationCLI(t *testing.T, ctx context.Context, action, in
 
 func TestNativeConfigurationCLIPrivateFirstRunAndPartialMerge(t *testing.T) {
 	isolatedDeckAdvancedConfiguration(t)
-	t.Setenv("OBSGOD_DECKY_STORAGE_MAP", "")
+	t.Setenv("DECKYSTREAM_DECKY_STORAGE_MAP", "")
 	data, err := executeNativeConfigurationCLI(t, context.Background(), "configuration", "")
 	var view deck.ConfigurationView
 	if err != nil || json.Unmarshal(data, &view) != nil || !view.OK || !view.CanConfigure || view.Configured || view.KeyConfigured || view.SchemaVersion != 1 {
@@ -70,7 +70,7 @@ func TestNativeConfigurationCLIPrivateFirstRunAndPartialMerge(t *testing.T) {
 
 func TestNativeConfigurationCLICancelledSharedLeaseDoesNotSave(t *testing.T) {
 	isolatedDeckAdvancedConfiguration(t)
-	t.Setenv("OBSGOD_DECKY_STORAGE_MAP", "")
+	t.Setenv("DECKYSTREAM_DECKY_STORAGE_MAP", "")
 	p, err := deck.UserPaths()
 	if err != nil {
 		t.Fatal(err)

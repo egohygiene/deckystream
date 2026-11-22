@@ -23,13 +23,13 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive",type=Path,nargs="?")
     parser.add_argument("--browser",default="/usr/bin/chromium")
-    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/obsgod-mixer-setup"))
+    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/deckystream-mixer-setup"))
     args=parser.parse_args();args.screenshots.mkdir(parents=True,exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="obsgod-mixer-setup-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-mixer-setup-") as temporary:
         root=Path(__file__).resolve().parents[1]
         if args.archive:
             with tarfile.open(args.archive) as archive:archive.extractall(temporary,filter="data")
-            root=next(Path(temporary).glob("OBSGod-*"))
+            root=next(Path(temporary).glob("deckystream-*"))
         fixture={"known":True,"obs_absent":False,"available":True,"system_muted":False,"talk_until":0,"notice":None,"calls":[],"active":True,"prefs":{"version":1,"microphone_enabled":False,"microphone_device":"default","microphone_muted":True,"microphone_gain_percent":100,"game_gain_percent":100,"push_to_talk":False},"profile":{"version":1,"width":1280,"height":720,"fps":30,"bitrate":4500,"encoder":"vaapi","microphone":False,"capture_mode":"game"}}
         def snapshot():
             now=time.time();prefs=dict(fixture["prefs"]);known=fixture["known"] and not fixture["obs_absent"]

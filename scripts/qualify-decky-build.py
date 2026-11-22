@@ -111,13 +111,14 @@ def build_environment(output, uid):
     context.mkdir(mode=0o700)
     for name in ("home", "tmp"):
         (context / name).mkdir(mode=0o700)
-    scratch = os.environ.get("OBSGOD_LOCAL_SCRATCH")
+    # Existing maintainer presets remain readable; explicit primary values win.
+    scratch = os.environ.get("DECKYSTREAM_LOCAL_SCRATCH", os.environ.get("OBSGOD_LOCAL_SCRATCH"))
     if scratch:
         parent = Path(scratch)
         private_directory(parent, uid)
         require(not parent.is_relative_to(ROOT) and not ROOT.is_relative_to(parent),
                 "Keep local build caches outside the checkout")
-        declared = os.environ.get("OBSGOD_LOCAL_OWNER_UID", str(uid))
+        declared = os.environ.get("DECKYSTREAM_LOCAL_OWNER_UID", os.environ.get("OBSGOD_LOCAL_OWNER_UID", str(uid)))
         require(declared == str(uid), "Local scratch owner does not match the checkout owner")
         compiler = parent / f"go-build-user-{uid}"
         modules = parent / f"go-mod-user-{uid}"
@@ -137,7 +138,7 @@ def inspect_build(output, revision, version, source_files):
     """Read bounded artifacts, never execute archive members or extract them."""
     receipt_bytes = safe_read(output / "build-receipt.json", limit=4 * 1024 * 1024)
     receipt = json.loads(receipt_bytes)
-    archive = output / "obsgod-decky.zip"
+    archive = output / "deckystream-decky.zip"
     archive_bytes = safe_read(archive)
     checksum = sha(archive_bytes)
     require(receipt.get("revision") == revision and receipt.get("version") == version
@@ -151,7 +152,7 @@ def inspect_build(output, revision, version, source_files):
             (checksum + "  " + archive.name + "\n").encode(),
             "Primary checksum list does not match its canonical ZIP")
     root, files = AUDIT.archive_files(archive_bytes, "zip")
-    require(root == "obsgod" and set(files) == AUDIT.STANDARD_PLUGIN_FILES,
+    require(root == "deckystream" and set(files) == AUDIT.STANDARD_PLUGIN_FILES,
             "Primary payload inventory differs; private state and extra files are forbidden")
     manifest = json.loads(files["manifest.json"])
     AUDIT.verify_manifest(files, manifest)
@@ -161,7 +162,7 @@ def inspect_build(output, revision, version, source_files):
         "Primary manifest has inconsistent source, platform or tool identity")
     require(receipt.get("payload_files") == len(files), "Primary payload count differs")
     plugin = json.loads(files["plugin.json"])
-    require(plugin.get("name") == "OBSGod" and plugin.get("flags") == []
+    require(plugin.get("name") == "deckystream" and plugin.get("flags") == []
             and plugin.get("api_version") == 1, "Primary plugin identity or privileges changed")
     expected_sources = {p.name: p for p in (ROOT / "steamdeck/decky").glob("*.py")}
     expected_sources.update({name: ROOT / "steamdeck" / name for name in SHARED_FILES})
@@ -172,8 +173,8 @@ def inspect_build(output, revision, version, source_files):
     require(all(files.get(name) == safe_read(path) for name, path in expected_sources.items()),
             "Primary source, setup or notice bytes differ from the checked-out source")
     native = json.loads(files["build/capture-build.json"])
-    require(native.get("sha256") == sha(files["bin/libgstobsgodcapture.so"])
-            and native.get("source_sha256") == sha(safe_read(ROOT / "steamdeck/capture/gstobsgodcapture.c"))
+    require(native.get("sha256") == sha(files["bin/libgstdeckystreamcapture.so"])
+            and native.get("source_sha256") == sha(safe_read(ROOT / "steamdeck/capture/gstdeckystreamcapture.c"))
             and native.get("dockerfile_sha256") == sha(safe_read(ROOT / "steamdeck/capture/build.Dockerfile"))
             and native.get("network_during_compile") is False,
             "Primary native build receipt differs from its source or library")
@@ -202,7 +203,7 @@ def qualify(args):
                               extra_groups=docker_groups(gid)).returncode
     args.output.mkdir(mode=0o700)
     os.umask(0o077)
-    record = {"schema": "obsgod.primary-build-qualification/v1", "revision": args.revision,
+    record = {"schema": "deckystream.primary-build-qualification/v1", "revision": args.revision,
               "version": args.version, "observed_revision": git("rev-parse", "HEAD"),
               "source_tree": git("rev-parse", "HEAD^{tree}"),
               "dirty": bool(git("status", "--porcelain")), "uid": os.getuid(),
@@ -244,13 +245,13 @@ def qualify(args):
                 return result.returncode if result.returncode > 0 else 1
             build["inspection"] = inspect_build(args.output / name, args.revision, args.version, before)
             save()
-        require(safe_read(args.output / "first/obsgod-decky.zip") ==
-                safe_read(args.output / "second/obsgod-decky.zip"),
+        require(safe_read(args.output / "first/deckystream-decky.zip") ==
+                safe_read(args.output / "second/deckystream-decky.zip"),
                 "Repeated primary canonical ZIP bytes differ")
         require(record["observed_revision"] == args.revision == git("rev-parse", "HEAD")
                 and record["dirty"] is False and not git("status", "--porcelain")
                 and PRIMARY.source_snapshot() == before, "Source changed during primary qualification")
-        record.update(status="passed", archive=str(args.output / "second/obsgod-decky.zip"),
+        record.update(status="passed", archive=str(args.output / "second/deckystream-decky.zip"),
                       sha256=record["builds"][1]["inspection"]["sha256"],
                       finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
         save()

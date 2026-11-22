@@ -11,8 +11,9 @@ import {generateSupport} from "../../scripts/generate-support.mjs";
 const require=createRequire(import.meta.url);
 // Packaging builds use an owned private staging directory. Reject links and
 // foreign output rather than changing permissions or repairing existing files.
-const output=process.env.OBSGOD_FRONTEND_OUT??"dist";
-if(process.env.OBSGOD_FRONTEND_OUT!==undefined){
+const outputOverride=process.env.DECKYSTREAM_FRONTEND_OUT??process.env.OBSGOD_FRONTEND_OUT;
+const output=outputOverride??"dist";
+if(outputOverride!==undefined){
   if(!isAbsolute(output)||resolve(output)!==output)throw new Error("Unsafe frontend output override");
   const parent=dirname(output),owner=lstatSync(parent),uid=process.getuid();
   if(!owner.isDirectory()||owner.isSymbolicLink()||owner.uid!==uid||(owner.mode&0o077))throw new Error("Frontend output requires a private owned parent");
@@ -35,7 +36,7 @@ const apiPath=require.resolve("@decky/api");
 mkdirSync(output,{recursive:true});
 writeFileSync(join(output,"decky-api.js"),readFileSync(apiPath,"utf8").replace("'@decky/manifest'","'./manifest.js'").replace('"./types"','"./types.js"'));
 copyFileSync(join(dirname(apiPath),"types.js"),join(output,"types.js"));
-writeFileSync(join(output,"manifest.js"),'export default {name:"OBSGod"};\n');
+writeFileSync(join(output,"manifest.js"),'export default {name:"deckystream"};\n');
 copyFileSync("LICENSE.qrcode-generator.txt",join(output,"LICENSE.qrcode-generator.txt"));
 
 export default {

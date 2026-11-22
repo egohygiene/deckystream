@@ -1,11 +1,10 @@
 # deckystream: our step-by-step testing booklet
 
-> **Sequence update, 2026-11-22:** The owner now plans to migrate the repository
-> before the hands-on test session. Follow the [active roadmap](../ROADMAP.md#active-journey-polish-prepare-migrate-then-test).
-> This booklet retains the exact current-identity `772230a` / `430cc391` reference
-> and reusable test cases. Before testing the migrated installation, bind its
-> actual new candidate/downloads in the finalization checklist; these older
-> receipts do not qualify a new repository or build. No device case has passed yet.
+> **Current session:** Use the qualified deckystream candidate recorded in
+> [finalization #1](https://github.com/egohygiene/deckystream/issues/1).
+> Its exact source, artifact and checksum must agree before installation.
+> The naming transition needs fresh automated and device evidence; older
+> receipts are historical and no manual case is prefilled as passed.
 
 We will use this together in chat. **Do one small step, report what happened,
 then wait for the next step.** We can pause between any two steps.
@@ -16,7 +15,8 @@ in this booklet is already marked passed.
 
 The exact test download is on the [candidate card](#candidate-card). The display
 name is **deckystream**; an existing Decky entry, folder or saved clip may still
-say **OBSGod**. Keep your existing settings and recordings.
+say **OBSGod** as a legacy identity. Keep your existing settings and recordings.
+Read [naming and upgrades](product-naming.md) before replacing that installation.
 
 For each checkpoint, reply in this short form:
 
@@ -53,11 +53,13 @@ replacing files or changing protected settings.
 
 ---
 
-## Page 2 — Install the verified compatible plugin
+## Page 2 — Install the verified plugin
 
 **2.1 — Prepare:** Keep the current settings/media and a reviewed, verified prior
-ZIP if one is available for rollback. We will confirm all three outputs are
-stopped and the status is fresh before replacement.
+ZIP if one is available for rollback. Confirm all outputs stopped, close managed
+OBS and wait for fresh confirmation before replacing an older plugin. Unknown
+output or a busy dependency worker pauses the upgrade. Do not leave both plugin
+backends active.
 
 **2.2 — Download and verify:** Use the standard **plugin ZIP** on the candidate
 card, not GitHub's source-code ZIP or a historical installer. We will compare its
@@ -130,7 +132,7 @@ its state and saved-file result. This action never broadcasts; the streaming dot
 stays stopped rather than becoming green just because a clip saved.
 
 **4.3 — Play the new file.** Use the actual saved path/name, with the documented
-fallback **Videos/OBSGod**. **Browse saved clips** can help identify it. A saved
+fallback **Videos/deckystream**. **Browse saved clips** can help identify it. A saved
 notification alone is not a playback result. After the clip has finalized and
 all outputs are confirmed stopped, we can switch to Desktop Mode, open the file
 in Dolphin and play it. Return to Gaming Mode and observe fresh status afterward.
@@ -319,7 +321,7 @@ replacement, close/reopen, supported reload/restart and fresh backend reconnecti
 An explicit later plugin-only uninstall/reinstall checks unload/removal and data
 preservation. Opening the panel alone does not complete #82-C1. Report duplicate
 entries or conflicting controller behavior; ordinary OBS and shared helper
-processes are not proof of a duplicate OBSGod controller.
+processes are not proof of a duplicate deckystream controller.
 
 **10.3 — Rollback only when needed and reviewed:** We choose a verified compatible
 prior ZIP, record before/after source and use Decky's supported controls. A retained
@@ -349,47 +351,44 @@ report is not independent/new-user adoption evidence.
 
 ## Candidate card
 
-This card binds the current existing review download. If a replacement candidate
-is supplied, we will update the card and record which steps need repeating before
-continuing. Use the exact link, not the repository's latest prerelease button.
+Before the session, record the exact qualified build from
+[finalization #1](https://github.com/egohygiene/deckystream/issues/1). A GitHub
+Actions bundle must be extracted; the contained plugin ZIP is the install input,
+not the source archive or the outer bundle.
 
-| Item | Current review build |
+| Item | Record before installing |
 | --- | --- |
-| Source | [`772230a`](https://github.com/szmyty/obsgod/tree/772230a32a8fdb237a58b8a637947b31671ad509) |
-| Package version | `0.1.0-deck.9` |
-| Standard ZIP | [obsgod-decky.zip](https://raw.githubusercontent.com/szmyty/obsgod/430cc391cb63f080214aacc279e5c04b1092c7a5/obsgod-decky.zip) |
-| ZIP size | 4,570,722 bytes |
-| Checksums | [SHA256SUMS](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/SHA256SUMS) |
-| Full evidence and limits | [Owner packet](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/OWNER-PACKET.md) |
+| Source | Full selected SHA from the successful candidate run and manifest |
+| Package version | Version in that candidate's manifest |
+| Standard ZIP | Contained `deckystream-decky.zip` |
+| ZIP size and SHA256 | Match that build's `SHA256SUMS` and qualification receipt |
+| Automated evidence | Exact run links and passed/failed/skipped/unavailable/unrun checks |
+| Previous version | Known-good verified package and rollback helper, if available |
 
-Full source revision: `772230a32a8fdb237a58b8a637947b31671ad509`.
-
-ZIP SHA256:
-
-```text
-fa206d93fcca0dd32b6dbebd1a641c40177f6a0acd7e635f68307a3bd2745e8a
-```
-
-For the default Desktop Downloads filename, this read-only command prints the
-ZIP checksum without executing it:
+This read-only command prints the downloaded plugin ZIP checksum:
 
 ```bash
-sha256sum "$HOME/Downloads/obsgod-decky.zip"
+sha256sum "$HOME/Downloads/deckystream-decky.zip"
 ```
 
-If that file is elsewhere or the command is unavailable, report that and wait for
-one suitable next instruction. No maintainer toolchain is needed on the Deck.
+Compare the whole value with the checksum supplied for that exact candidate.
+If the file is elsewhere or the command is unavailable, report it so we can
+choose one suitable next instruction. No maintainer toolchain is needed.
 
-This source's completed available software checks are not actual Deck results.
-Remaining ACT/hosted/service checks, rights, independent adoption and later
-migration/publication decisions are tracked separately. None is silently checked
-off by reading or following this booklet. Newer source merge/documentation
-revisions are not relabeled as this exact packaged candidate.
+The [original pre-rename booklet](history/testing-booklet-before-primary-rename.md)
+and [its PDF](history/testing-booklet-before-primary-rename.pdf) preserve the old
+exact-source card unchanged. They are historical rollback/reference material;
+the old filenames, pins and checksums are not relabeled as the renamed build.
+
+Software checks are separate from actual Deck observations. Rights, independent
+adoption and release decisions remain explicit gates. A successful local clip
+or OBS transmission is not proof of a separate provider viewer receiving it.
 
 ## Coverage and later work
 
-The [full acceptance checklist](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/OWNER-TESTS.md)
-remains the detailed record. This shorter booklet supplies the order for our
+The [current finalization checklist](https://github.com/egohygiene/deckystream/issues/1)
+is the active record. Original acceptance criteria and historical receipts remain
+preserved in the carry-forward ledger. This shorter booklet supplies the order for our
 conversation; a compound acceptance case passes only after all its parts are
 observed.
 

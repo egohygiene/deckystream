@@ -35,7 +35,7 @@ state, err := client.StartStream(ctx, obs.Approval{Streaming: true})
 The [buildable example](../examples/api-client/main.go) also queries and stops
 the output. Connecting never starts OBS, configures a destination or broadcasts.
 Use an existing OBS 28+ with its bundled WebSocket server and matching private
-password. Managed Steam Deck startup remains `obsgod deck`, which owns its
+password. Managed Steam Deck startup remains `deckystream deck`, which owns its
 isolated graphical OBS; this public connection does not assume process ownership.
 
 Every network operation accepts a context. Connection attempts default to 3s;
@@ -87,19 +87,19 @@ validation; use the managed workflow for that responsibility.
 
 ## JSON interoperability
 
-The new `obsgod api` family uses this same facade and writes one JSON result to
+The new `deckystream api` family uses this same facade and writes one JSON result to
 stdout. `--json` is accepted and always enabled. Build metadata/help/completions
 and capability discovery remain offline. Verbose metadata/diagnostics use stderr.
 
 ```sh
-obsgod api capabilities
-obsgod api snapshot
-obsgod api profile list
-obsgod api scene-items list 'Game'
-obsgod api stream start --approve
-obsgod api stream stop --approve
-obsgod api replay save --approve
-obsgod api workflow gaming --approve --allow-recording --allow-replay-buffer
+deckystream api capabilities
+deckystream api snapshot
+deckystream api profile list
+deckystream api scene-items list 'Game'
+deckystream api stream start --approve
+deckystream api stream stop --approve
+deckystream api replay save --approve
+deckystream api workflow gaming --approve --allow-recording --allow-replay-buffer
 ```
 
 Results use `schema_version:1`, `ok`, `operation`, and `result` or `error`.
@@ -108,7 +108,7 @@ partial stage result; the error remains separately classified. A failure is not
 an empty successful result. Parsing/unknown-command/help errors are conventional
 CLI usage diagnostics; commands that run provide the JSON result contract.
 
-`obsgod api profile list` uses the narrow `Profiles` read. Its existing response
+`deckystream api profile list` uses the narrow `Profiles` read. Its existing response
 remains `operation:"snapshot"` with a name-array result; the Go method also returns
 the current profile name. This avoids making profile listing depend on unrelated
 stream/recording/replay/camera/scene queries. `profile.list` is an additive offline
@@ -155,7 +155,7 @@ operations. Independent `LegacyRequest`, `LegacyResult`, `LegacyOutputStatus`,
 `LegacySpecialSources` and `LegacyItemVisibility` types carry the documented
 inputs/results without exposing `goobs`, arbitrary OBS request names or raw
 protocol JSON. Unknown operations fail before reaching the backend. This method
-is not a new `obsgod api legacy` command or part of that family's JSON discovery
+is not a new `deckystream api legacy` command or part of that family's JSON discovery
 surface. Prefer the normal typed v1 methods for new integrations.
 
 Existing legacy `stream`, `recording`, `profile`, `scene`, and related commands

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 var updateConfigurationCorpus = flag.Bool("update-configuration-corpus", false, "Refresh the shared public configuration wire fixtures")
@@ -76,7 +76,7 @@ func TestConfigurationSharedWireCorpus(t *testing.T) {
 	add("configured-closed", p, configurationStopped(), true, true, false, true)
 	running := configurationStopped()
 	running.Process, running.Connected = "running", true
-	running.Runtime = &automation.RuntimeStatus{Profile: "OBSGod", Collection: "OBSGod"}
+	running.Runtime = &automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}
 	add("running-idle-presence-only-connection", p, running, true, false, true, false)
 	running.State, running.Stream.Active = "streaming", true
 	add("streaming", p, running, true, false, false, false)

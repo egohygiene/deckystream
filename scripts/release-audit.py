@@ -34,17 +34,17 @@ SDK_SOURCE = {
     "src/types.ts": "93e5ecece4cde0d92bc2d2e77efcc5d4d9b1091211586aec83ce44d484daa51f"}
 SDK_RUNTIME_SHA256 = "9fdcc09e2a9596e05a71dd2ac758f1d0d9c69a18ff74a04862eac150312f3f17"
 SDK_TYPES_SHA256 = "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
-RUNTIME_FILES = frozenset({"setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "install.py", "Install OBSGod.desktop",
-    "decky.py", "update.py", "releases.py", "Update OBSGod.desktop", "Update OBSGod.sh", "paths.py", "product.py", "Uninstall OBSGod.desktop",
-    "obsgod", "decky-install", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md", "obsgod-decky.zip", "libgstobsgodcapture.so", "CAPTURE-SOURCE.tar.gz"})
-PLUGIN_FILES = frozenset({"main.py", "releases.py", "paths.py", "product.py", "plugin.json", "package.json", "bin/obsgod", "bin/libgstobsgodcapture.so",
+RUNTIME_FILES = frozenset({"setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "install.py", "Install deckystream.desktop",
+    "decky.py", "update.py", "releases.py", "Update deckystream.desktop", "Update deckystream.sh", "paths.py", "product.py", "Uninstall deckystream.desktop",
+    "deckystream", "decky-install", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md", "deckystream-decky.zip", "libgstdeckystreamcapture.so", "CAPTURE-SOURCE.tar.gz"})
+PLUGIN_FILES = frozenset({"main.py", "releases.py", "paths.py", "product.py", "plugin.json", "package.json", "bin/deckystream", "bin/libgstdeckystreamcapture.so",
     "CAPTURE-SOURCE.tar.gz", "LICENSE", "LICENSE.LGPL-2.1", "LICENSE.qrcode-generator.txt", "THIRD_PARTY_NOTICES.md", "dist/index.js", "dist/decky-api.js",
     "dist/manifest.js", "dist/types.js", "dist/LICENSE.qrcode-generator.txt", "source/decky-api/BUILDING.md"})
 STANDARD_PLUGIN_FILES = PLUGIN_FILES | frozenset({
     "storage.py", "dependency_setup.py", "bridge.py", "setup.py", "setup.html", "setup.js", "setup.css",
     "README.md", "pnpm-lock.yaml", "build/verify.mjs", "build/capture-build.json", "manifest.json",
     "source/decky-api/package.json", "source/decky-api/SOURCE.tar.gz"})
-UPDATER_FILES = frozenset({"update.py", "releases.py", "paths.py", "product.py", "decky.py", "decky-install", "Update OBSGod.desktop", "Update OBSGod.sh", "LICENSE", "THIRD_PARTY_NOTICES.md"})
+UPDATER_FILES = frozenset({"update.py", "releases.py", "paths.py", "product.py", "decky.py", "decky-install", "Update deckystream.desktop", "Update deckystream.sh", "LICENSE", "THIRD_PARTY_NOTICES.md"})
 
 
 def sha(data):
@@ -147,8 +147,8 @@ def verify_checksum_list(data, artifacts):
 
 def go_inventory(binary, revision, allow_no_dependencies=False):
     # `go version -m` parses build metadata; it never executes the package.
-    with tempfile.TemporaryDirectory(prefix="obsgod-audit-") as temporary:
-        path = Path(temporary) / "obsgod"
+    with tempfile.TemporaryDirectory(prefix="deckystream-audit-") as temporary:
+        path = Path(temporary) / "deckystream"
         path.write_bytes(binary)
         output = subprocess.check_output(["go", "version", "-m", str(path)], text=True)
     require(output.splitlines()[0].endswith(": go1.27.4"), "Artifact Go toolchain mismatch")
@@ -178,15 +178,15 @@ def audit(directory, expected_revision):
     require(re.fullmatch(r"[0-9][A-Za-z0-9.-]{0,79}", version), "Unsafe artifact version")
     require(manifest.get("dirty") is False and manifest.get("platform") == "linux/amd64", "Clean Linux amd64 candidate required")
     require((manifest.get("go"), manifest.get("node"), manifest.get("npm")) == ("go1.27.4", "24.19.0", "11.9.0"), "Pinned toolchain mismatch")
-    names = [f"obsgod-deck_{version}_linux_amd64.tar.gz", "obsgod-decky.zip", "manifest.json"]
+    names = [f"deckystream-deck_{version}_linux_amd64.tar.gz", "deckystream-decky.zip", "manifest.json"]
     artifacts = {name: (directory / name).read_bytes() for name in names}
     verify_checksum_list((directory / "SHA256SUMS").read_bytes(), artifacts)
     root, payload = archive_files(artifacts[names[0]], "tar")
-    require(root == "OBSGod-" + version and payload["manifest.json"] == manifest_bytes, "Runtime manifest/root mismatch")
+    require(root == "deckystream-" + version and payload["manifest.json"] == manifest_bytes, "Runtime manifest/root mismatch")
     verify_manifest(payload, manifest)
     require(set(payload) == RUNTIME_FILES | {"manifest.json"}, "Runtime required payload inventory mismatch")
-    require(payload["obsgod-decky.zip"] == artifacts["obsgod-decky.zip"], "Nested Decky ZIP mismatch")
-    _, plugin = archive_files(artifacts["obsgod-decky.zip"], "zip")
+    require(payload["deckystream-decky.zip"] == artifacts["deckystream-decky.zip"], "Nested Decky ZIP mismatch")
+    _, plugin = archive_files(artifacts["deckystream-decky.zip"], "zip")
     standard = "manifest.json" in plugin
     required_plugin = STANDARD_PLUGIN_FILES if standard else PLUGIN_FILES | {"source/decky-api/" + name for name in SDK_SOURCE}
     require(set(plugin) == required_plugin, "Decky required payload inventory mismatch")
@@ -197,7 +197,7 @@ def audit(directory, expected_revision):
             "format": "decky-plugin", "revision": revision, "version": version, "dirty": False,
             "platform": "linux/amd64", "source_tools": {"go": "go1.27.4", "node": "24.19.0", "npm": "11.9.0"}}.items()),
             "Decky manifest identity/toolchain mismatch")
-        require(json.loads(plugin["package.json"]) == {"name": "obsgod", "version": version, "license": "MIT",
+        require(json.loads(plugin["package.json"]) == {"name": "deckystream", "version": version, "license": "MIT",
             "type": "module", "scripts": {"build": "node build/verify.mjs"}}, "Decky package metadata mismatch")
         # Parse fixed literals without executing build code from the revision.
         build_source = ast.parse(git(revision, "scripts/decky_package.py"))
@@ -205,7 +205,7 @@ def audit(directory, expected_revision):
                     for target in node.targets if isinstance(target, ast.Name) and target.id in {"STAGE_BUILD", "STAGE_LOCK"}}
         require(plugin["build/verify.mjs"] == literals.get("STAGE_BUILD") and plugin["pnpm-lock.yaml"] == literals.get("STAGE_LOCK"),
                 "Decky staged build differs from source")
-    for name in ("obsgod", "libgstobsgodcapture.so"):
+    for name in ("deckystream", "libgstdeckystreamcapture.so"):
         require(plugin["bin/" + name] == payload[name], "Decky runtime differs: " + name)
     for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "CAPTURE-SOURCE.tar.gz"):
         require(plugin[name] == payload[name], "Decky notices/preferred source differ: " + name)
@@ -231,7 +231,7 @@ def audit(directory, expected_revision):
     original_module = plugin["dist/decky-api.js"].replace(b"'./manifest.js'", b"'@decky/manifest'").replace(b'"./manifest.js"', b'"@decky/manifest"').replace(b'"./types.js"', b'"./types"')
     require(sha(original_module) == SDK_RUNTIME_SHA256 and sha(plugin["dist/types.js"]) == SDK_TYPES_SHA256, "LGPL runtime differs from documented import-only modifications")
     _, capture = archive_files(payload["CAPTURE-SOURCE.tar.gz"], "tar")
-    require(set(capture) == {"gstobsgodcapture.c", "Makefile", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "build.Dockerfile"}, "Capture preferred-source inventory mismatch")
+    require(set(capture) == {"gstdeckystreamcapture.c", "Makefile", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "build.Dockerfile"}, "Capture preferred-source inventory mismatch")
     for name, content in capture.items():
         require(content == git(revision, "steamdeck/capture/" + name), "Capture preferred source differs from revision: " + name)
     source_map = {name: "steamdeck/" + name for name in manifest["files"] if name.endswith((".py", ".desktop", ".sh", ".html", ".js", ".css"))}
@@ -247,17 +247,17 @@ def audit(directory, expected_revision):
         for name in ("bridge.py", "setup.py", "setup.html", "setup.js", "setup.css"):
             require(plugin[name] == payload[name], "Decky setup differs from runtime: " + name)
         require(plugin["README.md"] == git(revision, "docs/decky-package.md"), "Decky package README differs from revision")
-    modules = go_inventory(payload["obsgod"], revision)
+    modules = go_inventory(payload["deckystream"], revision)
     helper_modules = go_inventory(payload["decky-install"], revision, allow_no_dependencies=True)
     modules = sorted({(module["name"], module["version"]): module for module in [*modules, *helper_modules]}.values(), key=lambda item: item["name"])
     notices = payload["THIRD_PARTY_NOTICES.md"].decode()
     require(all(module["name"] + " " + module["version"] in notices for module in modules), "Missing shipped Go dependency notices")
-    updater_name = f"obsgod-one-click-update_{version}_linux_amd64.zip"
+    updater_name = f"deckystream-one-click-update_{version}_linux_amd64.zip"
     updater_bytes = (directory / updater_name).read_bytes()
     verify_checksum_list((directory / "UPDATER-SHA256SUMS").read_bytes(), {updater_name: updater_bytes})
     updater_root, updater = archive_files(updater_bytes, "zip")
     updater_manifest = json.loads(updater["manifest.json"])
-    require(updater_root == "OBSGod-Updater" and updater["manifest.json"] == (directory / "updater-manifest.json").read_bytes(), "Updater manifest/root mismatch")
+    require(updater_root == "deckystream-Updater" and updater["manifest.json"] == (directory / "updater-manifest.json").read_bytes(), "Updater manifest/root mismatch")
     require(all(updater_manifest.get(key) == value for key, value in {"kind": "updater", "revision": revision, "runtime_revision": revision, "version": version, "updater_version": version, "platform": "linux/amd64"}.items()), "Updater identity mismatch")
     verify_manifest(updater, updater_manifest)
     require(set(updater) == UPDATER_FILES | {"manifest.json"}, "Updater required payload inventory mismatch")
@@ -265,7 +265,7 @@ def audit(directory, expected_revision):
         require(updater[name] == payload[name], "Updater source differs from runtime: " + name)
     artifacts.update({updater_name: updater_bytes, "updater-manifest.json": updater["manifest.json"]})
     receipt = json.loads((directory / "capture-build.json").read_bytes())
-    require(receipt["sha256"] == sha(payload["libgstobsgodcapture.so"]) and receipt["source_sha256"] == sha(capture["gstobsgodcapture.c"]) and receipt["dockerfile_sha256"] == sha(capture["build.Dockerfile"]) and receipt["network_during_compile"] is False, "Capture build receipt mismatch")
+    require(receipt["sha256"] == sha(payload["libgstdeckystreamcapture.so"]) and receipt["source_sha256"] == sha(capture["gstdeckystreamcapture.c"]) and receipt["dockerfile_sha256"] == sha(capture["build.Dockerfile"]) and receipt["network_during_compile"] is False, "Capture build receipt mismatch")
     if standard:
         require(json.loads(plugin["build/capture-build.json"]) == receipt, "Decky capture build receipt mismatch")
     artifacts["capture-build.json"] = (directory / "capture-build.json").read_bytes()
@@ -288,7 +288,7 @@ def documents(result):
     repository_url = "https://github.com/" + repository
     subjects = [{"name": name, "digest": {"sha256": sha(data)}} for name, data in sorted(artifacts.items())]
     identity = sha(canonical(subjects))
-    packages = [{"SPDXID": "SPDXRef-Application", "name": "OBSGod", "versionInfo": version,
+    packages = [{"SPDXID": "SPDXRef-Application", "name": "deckystream", "versionInfo": version,
                  "downloadLocation": repository_url + "/tree/" + revision,
                  "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "MIT",
                  "copyrightText": "NOASSERTION", "sourceInfo": "Git revision " + revision}]
@@ -315,16 +315,16 @@ def documents(result):
         identifier = "SPDXRef-File-" + sha(name.encode())[:20]
         files.append({"SPDXID": identifier, "fileName": name, "checksums": [{"algorithm": "SHA256", "checksumValue": sha(data)}], "licenseConcluded": "NOASSERTION", "licenseInfoInFiles": ["NOASSERTION"], "copyrightText": "NOASSERTION"})
         relationships.append({"spdxElementId": "SPDXRef-Application", "relationshipType": "CONTAINS", "relatedSpdxElement": identifier})
-    sbom = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": "OBSGod-" + version,
+    sbom = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": "deckystream-" + version,
             "documentNamespace": repository_url + "/sbom/" + revision + "/" + identity,
-            "creationInfo": {"creators": ["Tool: obsgod-release-audit"], "created": created, "comment": "Deterministic inventory. Build inputs are distinguished from redistributed components; external OBS/Flatpak/GStreamer/Steam/Decky libraries are separately installed and outside this package inventory."},
+            "creationInfo": {"creators": ["Tool: deckystream-release-audit"], "created": created, "comment": "Deterministic inventory. Build inputs are distinguished from redistributed components; external OBS/Flatpak/GStreamer/Steam/Decky libraries are separately installed and outside this package inventory."},
             "packages": packages, "files": files, "relationships": relationships}
     provenance = {"_type": "https://in-toto.io/Statement/v1", "subject": subjects, "predicateType": "https://slsa.dev/provenance/v1",
                   "predicate": {"buildDefinition": {"buildType": repository_url + "/blob/" + revision + "/scripts/package-deck.py",
                     "externalParameters": {"version": version, "revision": revision, "repository": repository, "platform": manifest["platform"]},
                     "internalParameters": {"go": manifest["go"], "node": manifest["node"], "npm": manifest["npm"], "capture_builder_image": capture["image_id"]},
                     "resolvedDependencies": materials},
-                    "runDetails": {"builder": {"id": "urn:obsgod:local-self-reported-unsigned"}, "metadata": {"invocationId": "urn:sha256:" + identity},
+                    "runDetails": {"builder": {"id": "urn:deckystream:local-self-reported-unsigned"}, "metadata": {"invocationId": "urn:sha256:" + identity},
                      "byproducts": [{"name": "trust-boundary", "annotations": {"status": "UNSIGNED", "claim": "Offline self-reported inventory only; no authenticated publisher or trusted builder identity; source and build receipts require independent review."}}]}}}
     report = {"schema_version": 1, "revision": revision, "repository": repository, "version": version, "artifact_identity_sha256": identity,
               "integrity": "passed", "source_inventory": "passed", "preferred_source": "passed", "unsigned_provenance": "generated",

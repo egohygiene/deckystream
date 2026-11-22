@@ -52,17 +52,17 @@ class NativeStorage(unittest.TestCase):
                     "XDG_CONFIG_HOME": str(self.root / "shared-config"), "XDG_DATA_HOME": str(self.root / "data"),
                     "XDG_CACHE_HOME": str(self.root / "cache"), "XDG_RUNTIME_DIR": str(self.root / "run/user"),
                     "DBUS_SESSION_BUS_ADDRESS": "unix:path=fixture-bus"}
-        self.config_dir = Path(self.env["XDG_CONFIG_HOME"]) / "obsgod"
+        self.config_dir = Path(self.env["XDG_CONFIG_HOME"]) / "deckystream"
         self.config_dir.mkdir(parents=True, mode=0o700)
         self.config = self.config_dir / "deck.json"
         self.secrets = self.config_dir / "secrets.json"
         self.config.write_bytes(b'{"version":1,"server":"rtmps://fixture.invalid/live"}\n')
         self.secrets.write_bytes(b'{"stream_key":"synthetic-private-key","obs_password":"synthetic-obs-password","settings_hash":"retained-binding"}\n')
         self.secrets.chmod(0o600)
-        self.state = Path(self.env["XDG_STATE_HOME"]) / "obsgod"
+        self.state = Path(self.env["XDG_STATE_HOME"]) / "deckystream"
         self.state.mkdir(parents=True, mode=0o700)
         (self.state / "control.lock").write_bytes(b"same-controller-inode")
-        self.video = self.home / "Videos/OBSGod/keep.mkv"
+        self.video = self.home / "Videos/deckystream/keep.mkv"
         self.video.parent.mkdir(parents=True)
         self.video.write_bytes(b"retained-media")
 
@@ -207,7 +207,7 @@ class NativeStorage(unittest.TestCase):
         private = ancestor / "private-grandchild"
         private.mkdir(parents=True, mode=0o700)
         ancestor.chmod(0o700)
-        state = private / "obsgod"
+        state = private / "deckystream"
         state.mkdir(mode=0o700)
         lock = state / "control.lock"
         lock.write_bytes(b"held-original-controller")
@@ -219,7 +219,7 @@ class NativeStorage(unittest.TestCase):
             ancestor.chmod(0o777)
             with self.assertRaises(OSError):
                 S.context(self.plugin, self.provided, env)
-            moved = private / "previous-obsgod"
+            moved = private / "previous-deckystream"
             state.rename(moved)
             state.mkdir(mode=0o700)
             with self.assertRaises(OSError):
@@ -235,7 +235,7 @@ class NativeStorage(unittest.TestCase):
         ancestor.chmod(0o1777)
         env = {**self.env, "XDG_STATE_HOME": str(private)}
         native = S.context(self.plugin, self.provided, env)
-        self.assertEqual(native["shared_state"], str(private / "obsgod"))
+        self.assertEqual(native["shared_state"], str(private / "deckystream"))
         self.assertEqual(stat.S_IMODE(ancestor.stat().st_mode), 0o1777)
         self.assertEqual(S.context(self.plugin, self.provided, env), native)
 

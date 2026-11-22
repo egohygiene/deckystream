@@ -13,7 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/internal/naming"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 // Connection contains references to credentials, never inline credentials.
@@ -76,21 +77,102 @@ func (r Resolved) Public() Public {
 var profileName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 var environmentName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-// DefaultPath preserves the obsgod namespace through the display-name change.
+// DefaultPath uses the primary namespace, retaining an existing legacy store.
 // UserConfigDir honors XDG_CONFIG_HOME on Unix and the native equivalent elsewhere.
 func DefaultPath() (string, error) {
 	root, err := os.UserConfigDir()
 	if err != nil || !filepath.IsAbs(root) {
 		return "", errors.New("configuration directory is unavailable; set an absolute XDG_CONFIG_HOME or use --config")
 	}
-	return filepath.Join(root, "obsgod", "config.json"), nil
+	originalHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", errors.New("home directory is unavailable; use an explicit --config path")
+	}
+	home, err := naming.NormalizeHome(originalHome)
+	if err != nil {
+		return "", err
+	}
+	root, err = naming.NormalizeHomePath(root, originalHome, home)
+	if err != nil {
+		return "", err
+	}
+	roots := []string{root, filepath.Join(home, ".var/app/com.obsproject.Studio/config")}
+	for _, entry := range []struct{ key, fallback string }{
+		{"XDG_STATE_HOME", ".local/state"},
+		{"XDG_DATA_HOME", ".local/share"},
+		{"XDG_CACHE_HOME", ".cache"},
+	} {
+		value := os.Getenv(entry.key)
+		if value == "" {
+			value = filepath.Join(home, entry.fallback)
+		}
+		value, err = naming.NormalizeHomePath(value, originalHome, home)
+		if err != nil {
+			return "", err
+		}
+		roots = append(roots, value)
+	}
+	// Include the pre-XDG Desktop installation when XDG_DATA_HOME changed.
+	roots = append(roots, filepath.Join(home, ".local/share"))
+	currentExists, legacyExists := false, false
+	for _, candidate := range roots {
+		if !filepath.IsAbs(candidate) || filepath.Clean(candidate) != candidate || strings.ContainsAny(candidate, "\x00\r\n") {
+			return "", errors.New("application directory is unavailable; use an explicit --config path")
+		}
+		_, current, err := namespaceDirectory(candidate, "deckystream")
+		if err != nil {
+			return "", err
+		}
+		_, legacy, err := namespaceDirectory(candidate, "obsgod")
+		if err != nil {
+			return "", err
+		}
+		currentExists, legacyExists = currentExists || current, legacyExists || legacy
+	}
+	plugin, err := naming.LegacyPluginPresent(originalHome, os.Getenv("DECKY_HOME"))
+	if err != nil {
+		return "", err
+	}
+	legacyExists = legacyExists || plugin
+	if currentExists && legacyExists {
+		return "", errors.New("both current and legacy configuration stores exist; choose --config explicitly before changing either")
+	}
+	if legacyExists {
+		return filepath.Join(root, "obsgod", "config.json"), nil
+	}
+	return filepath.Join(root, "deckystream", "config.json"), nil
+}
+
+func namespaceDirectory(root, namespace string) (string, bool, error) {
+	path := filepath.Join(root, namespace)
+	info, err := os.Lstat(path)
+	if os.IsNotExist(err) {
+		return path, false, nil
+	}
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || !configurationOwner(info, false) {
+		return "", false, errors.New("configuration store is unsafe; choose a validated --config path")
+	}
+	for parent := path; ; parent = filepath.Dir(parent) {
+		before, beforeErr := os.Lstat(parent)
+		target, targetErr := os.Stat(parent)
+		if beforeErr != nil || targetErr != nil || before.Mode()&os.ModeSymlink != 0 || !target.IsDir() || !configurationOwner(before, parent != path) || !configurationOwner(target, parent != path) {
+			return "", false, errors.New("configuration store ancestry is unsafe")
+		}
+		if runtime.GOOS != "windows" && target.Mode().Perm()&0o022 != 0 && (parent == path || target.Mode()&os.ModeSticky == 0) {
+			return "", false, errors.New("configuration store ancestry is writable by another user")
+		}
+		if parent == filepath.Dir(parent) {
+			break
+		}
+	}
+	return path, true, nil
 }
 
 func ConfigPath(explicit string) (string, bool, error) {
 	if explicit != "" {
 		return explicit, true, nil
 	}
-	if value := os.Getenv("OBSGOD_CONFIG"); value != "" {
+	if value := environmentValue("DECKYSTREAM_CONFIG"); value != "" {
 		return value, true, nil
 	}
 	path, err := DefaultPath()
@@ -116,7 +198,7 @@ func Resolve(base Config, options Options) (Resolved, error) {
 	connection := document.Connection
 	selected := options.Profile
 	if selected == "" {
-		selected = os.Getenv("OBSGOD_CONNECTION_PROFILE")
+		selected = environmentValue("DECKYSTREAM_CONNECTION_PROFILE")
 	}
 	if selected == "" {
 		selected = document.DefaultProfile
@@ -139,10 +221,10 @@ func Resolve(base Config, options Options) (Resolved, error) {
 	if connection.Port != nil {
 		result.Config.Port = *connection.Port
 	}
-	if value, ok := nonemptyEnv("OBSGOD_HOST", "OBS_HOST"); ok {
+	if value, ok := nonemptyEnv("DECKYSTREAM_HOST", "OBS_HOST"); ok {
 		result.Config.Host = value
 	}
-	if value, ok := nonemptyEnv("OBSGOD_PORT", "OBS_PORT"); ok && options.Port == nil {
+	if value, ok := nonemptyEnv("DECKYSTREAM_PORT", "OBS_PORT"); ok && options.Port == nil {
 		port, parseErr := strconv.ParseUint(value, 10, 32)
 		if parseErr != nil {
 			return Resolved{}, errors.New("OBS port environment value must be an integer from 1 to 65535")
@@ -187,7 +269,7 @@ func ProfileNames(explicit string) ([]string, error) {
 
 func nonemptyEnv(keys ...string) (string, bool) {
 	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
+		if value := environmentValue(key); value != "" {
 			return value, true
 		}
 	}
@@ -287,12 +369,12 @@ func resolvePassword(base, configPath string, connection Connection, options Opt
 	if options.PasswordFile != "" {
 		return passwordFile(options.PasswordFile)
 	}
-	for _, name := range []string{"OBSGOD_PASSWORD", "OBS_PASSWORD"} {
-		if value, exists := os.LookupEnv(name); exists {
+	for _, name := range []string{"DECKYSTREAM_PASSWORD", "OBS_PASSWORD"} {
+		if value, exists := lookupEnvironment(name); exists {
 			return value, "environment", nil
 		}
 	}
-	if path, ok := nonemptyEnv("OBSGOD_PASSWORD_FILE", "OBS_PASSWORD_FILE"); ok {
+	if path, ok := nonemptyEnv("DECKYSTREAM_PASSWORD_FILE", "OBS_PASSWORD_FILE"); ok {
 		return passwordFile(path)
 	}
 	if connection.PasswordEnv != "" {

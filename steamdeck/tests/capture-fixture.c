@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT
- * Synthetic PipeWire video source for OBSGod capture tests, not Gamescope.
+ * Synthetic PipeWire video source for deckystream capture tests, not Gamescope.
  * The pw_stream lifecycle follows PipeWire's MIT-licensed video-src example:
  * https://github.com/PipeWire/pipewire/blob/1.4.2/src/examples/video-src.c
  * Copyright (c) 2018 Wim Taymans; test patterns and protocol cases are original.
@@ -234,7 +234,7 @@ int main(int argc, char **argv)
         f.result = 1;
         goto done;
     }
-    f.stream = pw_stream_new(f.core, "OBSGod protocol fixture",
+    f.stream = pw_stream_new(f.core, "deckystream protocol fixture",
         pw_properties_new(PW_KEY_NODE_NAME, argv[1],
             PW_KEY_MEDIA_CLASS, "Video/Source",
             PW_KEY_NODE_SUPPORTS_REQUEST, "1", NULL));

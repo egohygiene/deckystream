@@ -19,7 +19,7 @@ For the normal plugin, use the maintained [standard Decky package entry](decky-p
 `python3 scripts/qualify-decky-build.py --revision FULL_SOURCE_COMMIT --output NEW_PRIVATE_DIRECTORY`.
 Replace both markers with the exact clean source and a new absolute private
 output directory. It runs two complete primary builds and verifies canonical
-`obsgod-decky.zip` bytes, source, native payload and licenses. It does not install
+`deckystream-decky.zip` bytes, source, native payload and licenses. It does not install
 on the Deck. Optional official CLI assembly is a separate prepared-byte check,
 not source compilation or reproducibility of its raw ZIP.
 
@@ -30,9 +30,9 @@ clean revision and compare `SHA256SUMS` and `UPDATER-SHA256SUMS`. Then run:
 
 ```sh
 python3 scripts/release-audit.py --revision "$(git rev-parse HEAD)" --output dist/supply-chain
-cp dist/supply-chain/AUDIT-SHA256SUMS /tmp/obsgod-audit-first
+cp dist/supply-chain/AUDIT-SHA256SUMS /tmp/deckystream-audit-first
 python3 scripts/release-audit.py --revision "$(git rev-parse HEAD)" --output dist/supply-chain
-diff -u /tmp/obsgod-audit-first dist/supply-chain/AUDIT-SHA256SUMS
+diff -u /tmp/deckystream-audit-first dist/supply-chain/AUDIT-SHA256SUMS
 ```
 
 The audit works offline using Git objects at the explicit revision and the

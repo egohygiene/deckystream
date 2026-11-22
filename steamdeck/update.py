@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check official OBSGod releases and explicitly apply an idle Desktop update."""
+"""Check official deckystream releases and explicitly apply an idle Desktop update."""
 import argparse
 import ast
 from contextlib import contextmanager
@@ -19,7 +19,7 @@ import tarfile
 import tempfile
 import time
 def _sibling(name):
-    spec = importlib.util.spec_from_file_location("obsgod_update_" + name, Path(__file__).resolve().parent / (name + ".py"))
+    spec = importlib.util.spec_from_file_location("deckystream_update_" + name, Path(__file__).resolve().parent / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -75,7 +75,7 @@ def update_lock(base, home):
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            raise UpdateError("Another OBSGod updater is running. Let it finish, then retry.") from None
+            raise UpdateError("Another deckystream updater is running. Let it finish, then retry.") from None
         _check_update_lock(lock, path)
         yield lock
 
@@ -83,12 +83,12 @@ def update_lock(base, home):
 def verify_bundle():
     saved = ROOT / "manifest.json"
     if saved.is_symlink() or not saved.is_file() or saved.stat().st_size > 64 * 1024:
-        raise UpdateError("Extract the entire OBSGod archive first, then open Update OBSGod.desktop inside that folder.")
+        raise UpdateError("Extract the entire deckystream archive first, then open Update deckystream.desktop inside that folder.")
     manifest = json.loads(saved.read_text())
     if not isinstance(manifest, dict):
         raise UpdateError("The updater manifest is invalid. Extract a fresh complete archive.")
     files = manifest.get("files")
-    required = {"update.py", "releases.py", "Update OBSGod.desktop", "Update OBSGod.sh"}
+    required = {"update.py", "releases.py", "Update deckystream.desktop", "Update deckystream.sh"}
     if not isinstance(files, dict) or not required.issubset(files) or len(files) > 64 or manifest.get("platform") != "linux/amd64":
         raise UpdateError("The updater package is incomplete. Extract a fresh complete archive.")
     for name, digest in files.items():
@@ -108,7 +108,7 @@ def load_module(name, path):
 
 
 def release_module():
-    return load_module("obsgod_release_metadata", ROOT / "releases.py")
+    return load_module("deckystream_release_metadata", ROOT / "releases.py")
 
 
 def require_recovery_policy(path):
@@ -173,7 +173,7 @@ def check(channel="preview"):
 def unpack_payload(archive, destination, version):
     # Older SteamOS Python lacks tarfile's data filter. Validate all members
     # before copying only regular files into a new private directory.
-    prefix = "OBSGod-" + version
+    prefix = "deckystream-" + version
     with tarfile.open(archive) as bundle:
         members = []
         total = 0
@@ -196,7 +196,7 @@ def unpack_payload(archive, destination, version):
             else:
                 with bundle.extractfile(item) as source, target.open("xb") as output:
                     shutil.copyfileobj(source, output)
-                target.chmod(0o700 if target.name in {"obsgod", "decky-install"} else 0o600)
+                target.chmod(0o700 if target.name in {"deckystream", "decky-install"} else 0o600)
     return destination / prefix
 
 
@@ -227,12 +227,12 @@ def require_idle(bridge, allow_legacy=False):
             or not (media_idle or legacy_download_or_absent)
             or (not allow_legacy or "process" in state) and state.get("process") not in ("absent", "running")
             or state.get("operation") not in (None, "", "idle")):
-        raise UpdateError("Update blocked: OBS output is active, starting, recording or unconfirmed. Use Stop/cancel, wait for confirmed idle, then run Update OBSGod in Desktop Mode.")
+        raise UpdateError("Update blocked: OBS output is active, starting, recording or unconfirmed. Use Stop/cancel, wait for confirmed idle, then run Update deckystream in Desktop Mode.")
     # No implicit Stop: the installer rechecks and closes only verified idle OBS.
 
 
 def backup_settings(base, home):
-    config = xdg_root("XDG_CONFIG_HOME", home) / "obsgod"
+    config = xdg_root("XDG_CONFIG_HOME", home) / _paths.app_namespace(home)
     if not config.resolve().is_relative_to(home.resolve()):
         raise UpdateError("The settings directory points outside your home. Existing files were preserved.")
     backup = base / "backups" / ("updater-" + str(time.time_ns()))
@@ -276,7 +276,7 @@ def run_update(channel="preview", repair=False, recovery_plugin_version=None, ex
         current, installed = installed_release(home)
         if current and (current / "bridge.py").is_file():
             legacy = installed.get("version") in {"0.1.0-deck.1", "0.1.0-deck.2", "0.1.0-deck.3", "0.1.0-deck.4"}
-            require_idle(load_module("obsgod_installed_bridge", current / "bridge.py"), allow_legacy=legacy)
+            require_idle(load_module("deckystream_installed_bridge", current / "bridge.py"), allow_legacy=legacy)
         print("1/4 Checking the official " + channel + " runtime releases…", flush=True)
         if recovery_plugin_version is None:
             result, candidate = releases.inspect_updates(installed.get("version", "unknown"), channel)
@@ -298,7 +298,7 @@ def run_update(channel="preview", repair=False, recovery_plugin_version=None, ex
             with tempfile.TemporaryDirectory(prefix=".update-", dir=base) as temporary:
                 work = Path(temporary)
                 archive = work / "payload.tar.gz"
-                print("2/4 Downloading and verifying OBSGod " + candidate["version"] + "…", flush=True)
+                print("2/4 Downloading and verifying deckystream " + candidate["version"] + "…", flush=True)
                 releases.download_archive(candidate, archive)
                 package = unpack_payload(archive, work, candidate["version"])
                 manifest = package / "manifest.json"
@@ -309,9 +309,9 @@ def run_update(channel="preview", repair=False, recovery_plugin_version=None, ex
                     if not path.is_file() or path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                         raise UpdateError("The release payload checksum does not match. Existing files were preserved.")
                 require_recovery_policy(package / "install.py")
-                installer = load_module("obsgod_payload_installer", package / "install.py")
+                installer = load_module("deckystream_payload_installer", package / "install.py")
                 installer.verify_payload()
-                require_idle(load_module("obsgod_payload_bridge", package / "bridge.py"))
+                require_idle(load_module("deckystream_payload_bridge", package / "bridge.py"))
                 releases.require_plugin_replacement(candidate["version"], home, recovery_plugin_version, expected_plugin_version)
                 backup_settings(base, home)
                 progress["state"] = "installing"
@@ -333,14 +333,14 @@ def run_update(channel="preview", repair=False, recovery_plugin_version=None, ex
             progress["state"] = "interrupted-or-failed"
             save_progress(base, progress)
             raise
-    return "OBSGod " + candidate["version"] + " is installed in the Desktop app and Decky. Your settings, key and media are preserved. Return to Gaming Mode and make a local test clip before broadcasting."
+    return "deckystream " + candidate["version"] + " is installed in the Desktop app and Decky. Your settings, key and media are preserved. Return to Gaming Mode and make a local test clip before broadcasting."
 
 
 def show_result(message, success):
     if shutil.which("kdialog"):
-        subprocess.run(["kdialog", "--title", "OBSGod updater", "--msgbox" if success else "--error", message], check=False)
+        subprocess.run(["kdialog", "--title", "deckystream updater", "--msgbox" if success else "--error", message], check=False)
     elif shutil.which("zenity"):
-        subprocess.run(["zenity", "--info" if success else "--error", "--title=OBSGod updater", "--text=" + message], check=False)
+        subprocess.run(["zenity", "--info" if success else "--error", "--title=deckystream updater", "--text=" + message], check=False)
     elif sys.stdin.isatty():
         print("You can close this window, or press Enter.", flush=True)
         try:

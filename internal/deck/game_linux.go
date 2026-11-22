@@ -48,7 +48,7 @@ func gameAppIDs(ctx context.Context, root string, uid int) []uint32 {
 		}
 		name, _ := os.ReadFile(filepath.Join(proc, "comm"))
 		switch strings.TrimSpace(string(name)) {
-		case "steam", "steamwebhelper", "obs", "obsgod":
+		case "steam", "steamwebhelper", "obs", "deckystream", "obsgod":
 			continue
 		}
 		env, err := os.ReadFile(filepath.Join(proc, "environ"))

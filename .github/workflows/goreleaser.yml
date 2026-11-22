@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version: '1.27.4'
-          cache: ${{ env.OBSGOD_LOCAL_PROFILE != 'constrained' }}
+          cache: ${{ env.DECKYSTREAM_LOCAL_PROFILE != 'constrained' }}
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.12'
@@ -42,16 +42,16 @@ jobs:
           docker pull debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
           docker pull fedora:43@sha256:f01112b9a1f1d0504ad962d9adfa401425033f8ab067e0a821904ebdde5b8ca5
           docker pull alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2
-          nfpm_smoke="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}/obsgod-nfpm-smoke"
-          printf 'OBSGOD_NFPM_SMOKE_EVIDENCE=%s\n' "$nfpm_smoke" >> "$GITHUB_ENV"
+          nfpm_smoke="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}/deckystream-nfpm-smoke"
+          printf 'DECKYSTREAM_NFPM_SMOKE_EVIDENCE=%s\n' "$nfpm_smoke" >> "$GITHUB_ENV"
           python3 scripts/nfpm-release.py smoke --artifacts dist/snapshot --audit dist/snapshot/nfpm-supply-chain/SUMMARY.json --output "$nfpm_smoke/results"
       - name: Verify unprivileged Linux CLI installation without OBS
         run: |
-          smoke_output="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}/obsgod-generic-smoke"
-          printf 'OBSGOD_GENERIC_SMOKE_EVIDENCE=%s\n' "$smoke_output" >> "$GITHUB_ENV"
+          smoke_output="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}/deckystream-generic-smoke"
+          printf 'DECKYSTREAM_GENERIC_SMOKE_EVIDENCE=%s\n' "$smoke_output" >> "$GITHUB_ENV"
           python3 scripts/run-user-tests.py --output-root "$smoke_output" -- scripts/generic-release.py smoke --artifacts dist/snapshot --audit dist/snapshot/supply-chain/SUMMARY.json --output "$smoke_output/results"
       - name: Release only opted-in private compiler caches after Go consumers
-        if: env.OBSGOD_LOCAL_PROFILE == 'constrained'
+        if: env.DECKYSTREAM_LOCAL_PROFILE == 'constrained'
         run: python3 scripts/local-ci-resources.py trim-compiler-cache
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
@@ -62,5 +62,5 @@ jobs:
             dist/snapshot/supply-chain
             dist/snapshot/nfpm-supply-chain
             dist/snapshot/checksums.txt
-            ${{ env.OBSGOD_GENERIC_SMOKE_EVIDENCE }}
-            ${{ env.OBSGOD_NFPM_SMOKE_EVIDENCE }}
+            ${{ env.DECKYSTREAM_GENERIC_SMOKE_EVIDENCE }}
+            ${{ env.DECKYSTREAM_NFPM_SMOKE_EVIDENCE }}

@@ -12,7 +12,7 @@ import sys
 import wave
 
 
-INPUT = "OBSGod Game Audio"
+INPUT = "deckystream Game Audio"
 
 
 def measurements(samples, rate, frequency):
@@ -68,7 +68,7 @@ async def obs_snapshot(expected, seed=False):
     # This helper runs only in the disposable native fixture. The generated
     # password is read privately and never reaches argv, JSON output or logs.
     import websockets
-    password = json.loads((Path.home() / ".config/obsgod/secrets.json").read_text())["obs_password"]
+    password = json.loads((Path.home() / ".config/deckystream/secrets.json").read_text())["obs_password"]
     async with websockets.connect("ws://127.0.0.1:4457", open_timeout=5, max_size=2 * 1024 * 1024) as socket:
         hello = json.loads(await asyncio.wait_for(socket.recv(), 5))
         identify = {"rpcVersion": 1, "eventSubscriptions": 0}

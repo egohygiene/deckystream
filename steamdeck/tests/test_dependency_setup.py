@@ -488,7 +488,7 @@ time.sleep(30)
         self.assertEqual(self.mutations(), [])
 
     async def test_first_install_initializes_missing_shared_control_namespace(self):
-        lock = self.home / ".local/state/obsgod/control.lock"
+        lock = self.home / ".local/state/deckystream/control.lock"
 
         async def preflight():
             self.assertTrue(lock.exists())

@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/andreykaipov/goobs"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obstransport"
-	appversion "github.com/szmyty/obsgod/internal/version"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obstransport"
+	appversion "github.com/egohygiene/deckystream/internal/version"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 type OutputStatus struct {

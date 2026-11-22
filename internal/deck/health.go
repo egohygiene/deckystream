@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 const healthFreshness = 8 * time.Second
@@ -216,7 +216,7 @@ func ObserveStreamHealth(ctx context.Context, p Paths) HealthReport {
 	}
 	defer c.Close()
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		return unknown
 	}
 	before, err := c.HealthObservation(ctx)

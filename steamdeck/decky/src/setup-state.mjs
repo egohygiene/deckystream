@@ -1,6 +1,6 @@
 // Dependency readiness is separate from OBS listener and output readiness.
 // A Later preference never records successful installation.
-const laterKey="obsgod.dependency-setup.later";
+const laterKey="deckystream.dependency-setup.later";
 const states=new Set(["setup_required","ready","running","cancelling","cancelled","interrupted","failed"]);
 export const dependencyFreshness=20000;
 

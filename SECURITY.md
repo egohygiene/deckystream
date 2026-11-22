@@ -33,7 +33,7 @@ CI and device gates pass.
 ## Private wipe recovery archives
 
 Explicit `uninstall.py --wipe` retains a verified recovery TAR outside its removal
-roots, normally in the XDG data sibling `obsgod-wipe-exports`. It may contain
+roots, normally in the XDG data sibling `deckystream-wipe-exports`. It may contain
 stream keys, OBS control passwords and private history. Owned directory/archive
 modes0700/0600 provide local filesystem privacy, not encryption. Do not upload
 these archives to issues, logs or support bundles. Inspect/recover only selected

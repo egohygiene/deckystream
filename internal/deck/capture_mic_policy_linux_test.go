@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 // Keep source audio and independent output states observable while reusing the

@@ -1,6 +1,6 @@
 version: 2
-# Preserve the generic CLI/package identity when the repository name changes.
-project_name: obsgod
+# Explicit primary identity; old names are supported only by migration readers.
+project_name: deckystream
 dist: dist/snapshot
 
 before:
@@ -9,8 +9,8 @@ before:
     - python3 scripts/generic-release.py prepare
     - python3 scripts/nfpm-release.py prepare
 builds:
-  - id: obsgod
-    binary: obsgod
+  - id: deckystream
+    binary: deckystream
     env:
       - CGO_ENABLED=0
     flags:
@@ -73,10 +73,10 @@ archives:
 
 nfpms:
   - ids:
-      - obsgod
+      - deckystream
     homepage: "https://github.com/egohygiene/deckystream"
     maintainer: "szmyty"
-    description: "obsgod is a command-line remote control for OBS"
+    description: "deckystream is a command-line remote control for OBS"
     license: MIT
     formats:
       - apk
@@ -86,42 +86,42 @@ nfpms:
     mtime: "{{ .CommitDate }}"
     rpm:
       compression: gzip
-      buildhost: reproducible.obsgod.invalid
+      buildhost: reproducible.deckystream.invalid
     deb:
       compression: gzip
     contents:
       - src: .local-ci/nfpm-release/LICENSE
-        dst: /usr/share/doc/obsgod/LICENSE
+        dst: /usr/share/doc/deckystream/LICENSE
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/README.md
-        dst: /usr/share/doc/obsgod/README.md
+        dst: /usr/share/doc/deckystream/README.md
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/CHANGELOG.md
-        dst: /usr/share/doc/obsgod/CHANGELOG.md
+        dst: /usr/share/doc/deckystream/CHANGELOG.md
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/THIRD_PARTY_NOTICES.md
-        dst: /usr/share/doc/obsgod/THIRD_PARTY_NOTICES.md
+        dst: /usr/share/doc/deckystream/THIRD_PARTY_NOTICES.md
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/GO-NOTICES.json
-        dst: /usr/share/doc/obsgod/GO-NOTICES.json
+        dst: /usr/share/doc/deckystream/GO-NOTICES.json
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/GENERIC-CLI.md
-        dst: /usr/share/doc/obsgod/GENERIC-CLI.md
+        dst: /usr/share/doc/deckystream/GENERIC-CLI.md
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"
       - src: .local-ci/nfpm-release/SOURCE.json
-        dst: /usr/share/doc/obsgod/SOURCE.json
+        dst: /usr/share/doc/deckystream/SOURCE.json
         file_info:
           mode: 0644
           mtime: "{{ .CommitDate }}"

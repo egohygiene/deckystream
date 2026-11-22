@@ -1,4 +1,4 @@
-# Decky storage and existing OBSGod data
+# Decky storage and existing deckystream data
 
 The current compatible plugin uses Decky's supplied settings, persistent runtime
 data and log directories for plugin-owned metadata. These paths are supplied by
@@ -15,8 +15,8 @@ plugin into competing controllers.
 
 | Data | Current location/behavior |
 | --- | --- |
-| Managed settings and secrets | Existing `${XDG_CONFIG_HOME:-$HOME/.config}/obsgod` |
-| Managed state, locks, watcher/mic/media records and diagnostics | Existing `${XDG_STATE_HOME:-$HOME/.local/state}/obsgod` |
+| Managed settings and secrets | Existing `${XDG_CONFIG_HOME:-$HOME/.config}/deckystream` |
+| Managed state, locks, watcher/mic/media records and diagnostics | Existing `${XDG_STATE_HOME:-$HOME/.local/state}/deckystream` |
 | Adapter map and migration receipt | Supplied Decky settings directory, private `storage-v1/` |
 | Dependency jobs and fixed public progress | Supplied Decky persistent runtime directory, private `jobs/dependencies/` |
 | Adapter/loader log destination | Supplied Decky log directory; no raw credentials or subprocess output |

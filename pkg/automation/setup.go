@@ -156,7 +156,7 @@ func (c *Client) EnsureInput(ctx context.Context, scene, name, kind string, sett
 		}
 	}
 	if !found {
-		return errors.New("required OBS input is unavailable: install the OBSGod capture dependencies and restart its OBS instance")
+		return errors.New("required OBS input is unavailable: install the deckystream capture dependencies and restart its OBS instance")
 	}
 	l, e := empty(ctx, "GetInputList", c.obs.Inputs.GetInputList)
 	if e != nil {

@@ -110,7 +110,7 @@ type Capabilities struct {
 }
 
 func Discover() Capabilities {
-	return Capabilities{SchemaVersion, "obsgod/v1", []string{"snapshot", "stream.start", "stream.stop", "recording.start", "recording.stop", "replay.start", "replay.stop", "replay.save", "virtual-camera.start", "virtual-camera.stop", "profile.list", "profile.select", "collection.select", "scene.select", "scene-items.list", "scene-item.enable", "service.configure-rtmp", "service.verify-rtmp", "workflow.apply"}, "unknown"}
+	return Capabilities{SchemaVersion, "deckystream/v1", []string{"snapshot", "stream.start", "stream.stop", "recording.start", "recording.stop", "replay.start", "replay.stop", "replay.save", "virtual-camera.start", "virtual-camera.stop", "profile.list", "profile.select", "collection.select", "scene.select", "scene-items.list", "scene-item.enable", "service.configure-rtmp", "service.verify-rtmp", "workflow.apply"}, "unknown"}
 }
 
 // Response is the JSON process boundary used by the api command family.

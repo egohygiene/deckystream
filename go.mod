@@ -1,4 +1,4 @@
-module github.com/szmyty/obsgod
+module github.com/egohygiene/deckystream
 
 go 1.23.0
 

@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
-const GameScene = "OBSGod Game"
-const GameCaptureInput = "OBSGod Game Window"
-const IdlePlaceholderInput = "OBSGod Idle Message"
-const IdleImageInput = "OBSGod Idle Image"
-const IdleVideoInput = "OBSGod Idle Video"
+const GameScene = "deckystream Game"
+const GameCaptureInput = "deckystream Game Window"
+const IdlePlaceholderInput = "deckystream Idle Message"
+const IdleImageInput = "deckystream Idle Image"
+const IdleVideoInput = "deckystream Idle Video"
 
 // CaptureVideoStatus contains fixed safe facts, never game IDs or custom text.
 type CaptureVideoStatus struct {
@@ -185,7 +185,7 @@ func gameCapturePipeline(appID uint32) (string, error) {
 	if appID == 0 || appID == 769 {
 		return "", errors.New("game capture requires an unambiguous non-Steam-UI application")
 	}
-	return fmt.Sprintf("obsgodgamescopesrc app-id=%d ! queue leaky=downstream max-size-buffers=2 ! videoconvert ! video.", appID), nil
+	return fmt.Sprintf("deckystreamgamescopesrc app-id=%d ! queue leaky=downstream max-size-buffers=2 ! videoconvert ! video.", appID), nil
 }
 func pauseGameCapture(ctx context.Context, c *automation.Client) error {
 	if err := c.SetSceneItemEnabledIfPresent(ctx, GameScene, GameCaptureInput, false); err != nil {

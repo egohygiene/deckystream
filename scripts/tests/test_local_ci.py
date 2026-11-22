@@ -31,7 +31,7 @@ class LocalCITests(unittest.TestCase):
         self.assertEqual(found, ["build.yml", "coverage.yml", "steam-deck.yml"])
         source = Path(CI.__file__).read_text()
         self.assertIn('"TMPDIR=" + str(state / "tmp")', source)
-        self.assertIn('"OBSGOD_ACT_TEMP=" + str(state / "tmp")', source)
+        self.assertIn('"DECKYSTREAM_ACT_TEMP=" + str(state / "tmp")', source)
 
     def test_tooling_fixtures_use_runner_temp_before_nested_packaging_steps(self):
         text = (CI.ROOT / ".github/workflows/steam-deck.yml").read_text()

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 type ProviderConfig struct {
@@ -113,6 +113,11 @@ func (p RTMPProvider) Resolve(c ProviderConfig, lookup func(string) (string, boo
 		return api.RTMPService{}, invalid("creator.start")
 	}
 	key, ok := lookup(name)
+	if !ok && c.KeyEnv == "" && p.Name == "custom" && name == "DECKYSTREAM_STREAM_KEY" {
+		// Only the built-in custom provider's default has a legacy alias.
+		// An explicit key_env continues to name exactly one variable.
+		key, ok = lookup("OBSGOD_STREAM_KEY")
+	}
 	if !ok {
 		return api.RTMPService{}, invalid("creator.start")
 	}
@@ -123,7 +128,7 @@ func (p RTMPProvider) Resolve(c ProviderConfig, lookup func(string) (string, boo
 	return s, nil
 }
 func BuiltinProviders() []Provider {
-	return []Provider{RTMPProvider{"kick", "KICK_STREAM_KEY"}, RTMPProvider{"twitch", "TWITCH_STREAM_KEY"}, RTMPProvider{"youtube", "YOUTUBE_STREAM_KEY"}, RTMPProvider{"custom", "OBSGOD_STREAM_KEY"}}
+	return []Provider{RTMPProvider{"kick", "KICK_STREAM_KEY"}, RTMPProvider{"twitch", "TWITCH_STREAM_KEY"}, RTMPProvider{"youtube", "YOUTUBE_STREAM_KEY"}, RTMPProvider{"custom", "DECKYSTREAM_STREAM_KEY"}}
 }
 func ResolveService(p Profile, providers []Provider, lookup func(string) (string, bool)) (api.RTMPService, error) {
 	if e := p.Validate(); e != nil {

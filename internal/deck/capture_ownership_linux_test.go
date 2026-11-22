@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func assertCaptureReadOnly(t *testing.T, requests []fixtureRequest) {

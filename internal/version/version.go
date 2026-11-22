@@ -1,6 +1,6 @@
 package version
 
-const Name = "obsgod"
+const Name = "deckystream"
 
 func Display(buildVersion string) string {
 	if buildVersion == "" {

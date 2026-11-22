@@ -1,7 +1,7 @@
 "use strict";
 const fragment = window.location.hash.slice(1);
-if (fragment) window.sessionStorage.setItem("obsgodSetupToken", fragment);
-const token = fragment || window.sessionStorage.getItem("obsgodSetupToken") || "";
+if (fragment) window.sessionStorage.setItem("deckystreamSetupToken", fragment);
+const token = fragment || window.sessionStorage.getItem("deckystreamSetupToken") || "";
 window.history.replaceState(null, "", "/");
 const el = (id) => document.getElementById(id);
 // Provider guides are hints, not account integration. URLs and keys still come
@@ -167,7 +167,7 @@ async function changeControlPassword(generate) {
 }
 el("control-password-form").addEventListener("submit",event=>{event.preventDefault();void changeControlPassword(false);});
 el("reset-control-password").addEventListener("click",()=>void changeControlPassword(true));
-el("close").addEventListener("click",async()=>{const data=await api("/api/action",{action:"close"});window.sessionStorage.removeItem("obsgodSetupToken");document.body.textContent=data.message;});
+el("close").addEventListener("click",async()=>{const data=await api("/api/action",{action:"close"});window.sessionStorage.removeItem("deckystreamSetupToken");document.body.textContent=data.message;});
 refresh().catch(error=>{el("diagnostics").textContent=error.message;});
 
 // Advanced workspace commands use the same authenticated local CLI as Gaming

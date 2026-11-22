@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obs"
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obs"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func workflowFile(t *testing.T) string {
@@ -142,7 +142,7 @@ func TestReferenceIsOfflineDeterministicAndDoesNotExposeDefaultsFromEnvironment(
 		cfg := isolatedCommandConfig(t)
 		cfg.Host = host
 		cfg.Password = "private-credential-marker"
-		t.Setenv("OBSGOD_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
+		t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
 		command := NewRoot(&cfg, nil, "")
 		var out bytes.Buffer
 		command.SetOut(&out)
@@ -151,7 +151,7 @@ func TestReferenceIsOfflineDeterministicAndDoesNotExposeDefaultsFromEnvironment(
 			t.Fatal(err)
 		}
 		text := out.String()
-		if strings.Contains(text, host) || strings.Contains(text, cfg.Password) || !strings.Contains(text, "## obsgod workflow apply") || !strings.Contains(text, "## obsgod stream status") {
+		if strings.Contains(text, host) || strings.Contains(text, cfg.Password) || !strings.Contains(text, "## deckystream workflow apply") || !strings.Contains(text, "## deckystream stream status") {
 			t.Fatal("reference missing commands or exposing environment defaults")
 		}
 		if previous != "" && previous != text {
@@ -185,7 +185,7 @@ func TestCountdownCancellationStopsBeforeAnyLaterLabelWrites(t *testing.T) {
 
 func TestManagedDoctorAliasBypassesBrokenGenericConfiguration(t *testing.T) {
 	cfg := isolatedCommandConfig(t)
-	t.Setenv("OBSGOD_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
+	t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
 	command := NewRoot(&cfg, nil, "")
 	called := false
 	for _, child := range command.Commands() {

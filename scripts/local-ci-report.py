@@ -19,7 +19,7 @@ import sys
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("obsgod_local_ci", ROOT / "scripts/local-ci.py")
+SPEC = importlib.util.spec_from_file_location("deckystream_local_ci", ROOT / "scripts/local-ci.py")
 CI = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CI)
 MAX_RECEIPT = 2_000_000

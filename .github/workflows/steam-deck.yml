@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version: '1.27.4'
-          cache: ${{ env.OBSGOD_LOCAL_PROFILE != 'constrained' }}
+          cache: ${{ env.DECKYSTREAM_LOCAL_PROFILE != 'constrained' }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.19.0'
@@ -32,7 +32,7 @@ jobs:
           go mod download
           npm --prefix steamdeck/decky ci --ignore-scripts
           python -m pip install playwright==1.62.0
-          export PLAYWRIGHT_BROWSERS_PATH="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}/obsgod-playwright"
+          export PLAYWRIGHT_BROWSERS_PATH="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}/deckystream-playwright"
           mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
           printf 'PLAYWRIGHT_BROWSERS_PATH=%s\n' "$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
           python -m playwright install --with-deps chromium
@@ -59,32 +59,32 @@ jobs:
           npm --prefix steamdeck/decky audit
       - name: Qualify the complete primary standard-plugin build
         run: |
-          qualification_tmp="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}"
-          primary_output="$qualification_tmp/obsgod-primary-$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          qualification_tmp="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}"
+          primary_output="$qualification_tmp/deckystream-primary-$(python -c 'import uuid; print(uuid.uuid4().hex)')"
           python scripts/qualify-decky-build.py --revision "$GITHUB_SHA" --version 0.1.0-deck.9 --output "$primary_output"
-          printf 'OBSGOD_PRIMARY_EVIDENCE=%s\n' "$primary_output" >> "$GITHUB_ENV"
-          printf 'OBSGOD_PRIMARY_ZIP=%s\n' "$primary_output/second/obsgod-decky.zip" >> "$GITHUB_ENV"
+          printf 'DECKYSTREAM_PRIMARY_EVIDENCE=%s\n' "$primary_output" >> "$GITHUB_ENV"
+          printf 'DECKYSTREAM_PRIMARY_ZIP=%s\n' "$primary_output/second/deckystream-decky.zip" >> "$GITHUB_ENV"
       - name: Package compatibility archive and updater twice
         run: |
           python scripts/package-deck.py --version 0.1.0-deck.9
-          python scripts/package-updater.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz
+          python scripts/package-updater.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz
           cp dist/SHA256SUMS /tmp/first-runtime-sums
           cp dist/UPDATER-SHA256SUMS /tmp/first-updater-sums
           python scripts/package-deck.py --version 0.1.0-deck.9
-          python scripts/package-updater.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz
+          python scripts/package-updater.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz
           diff -u /tmp/first-runtime-sums dist/SHA256SUMS
           diff -u /tmp/first-updater-sums dist/UPDATER-SHA256SUMS
           # Compatibility must match the independently executed primary path.
           # Audit staging takes the primary bytes; browser fixtures below use
           # the original primary output directly.
-          cmp "$OBSGOD_PRIMARY_ZIP" dist/obsgod-decky.zip
-          cp "$OBSGOD_PRIMARY_ZIP" dist/obsgod-decky.zip
-          python - "$OBSGOD_PRIMARY_ZIP" <<'PY'
+          cmp "$DECKYSTREAM_PRIMARY_ZIP" dist/deckystream-decky.zip
+          cp "$DECKYSTREAM_PRIMARY_ZIP" dist/deckystream-decky.zip
+          python - "$DECKYSTREAM_PRIMARY_ZIP" <<'PY'
           import sys,zipfile
           from pathlib import Path
           with zipfile.ZipFile(sys.argv[1]) as archive:
-              assert archive.read('obsgod/bin/obsgod') == Path('dist/obsgod').read_bytes()
-              assert archive.read('obsgod/bin/libgstobsgodcapture.so') == Path('dist/libgstobsgodcapture.so').read_bytes()
+              assert archive.read('deckystream/bin/deckystream') == Path('dist/deckystream').read_bytes()
+              assert archive.read('deckystream/bin/libgstdeckystreamcapture.so') == Path('dist/libgstdeckystreamcapture.so').read_bytes()
           PY
       - name: Audit actual artifacts and reproduce unsigned supply-chain evidence
         run: |
@@ -93,47 +93,47 @@ jobs:
           python scripts/release-audit.py --revision "$GITHUB_SHA" --output dist/supply-chain
           diff -u /tmp/first-audit-sums dist/supply-chain/AUDIT-SHA256SUMS
       - name: Release only opted-in private compiler caches after Go consumers
-        if: env.OBSGOD_LOCAL_PROFILE == 'constrained'
+        if: env.DECKYSTREAM_LOCAL_PROFILE == 'constrained'
         run: python scripts/local-ci-resources.py trim-compiler-cache
       - name: Actual package browser checks
         run: |
-          browser_output="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}/obsgod-browser-evidence"
-          printf 'OBSGOD_BROWSER_EVIDENCE=%s\n' "$browser_output" >> "$GITHUB_ENV"
+          browser_output="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}/deckystream-browser-evidence"
+          printf 'DECKYSTREAM_BROWSER_EVIDENCE=%s\n' "$browser_output" >> "$GITHUB_ENV"
           browser=$(python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/setup"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-panel.py "$OBSGOD_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/panel"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-dependency-setup.py "$OBSGOD_PRIMARY_ZIP" --browser "$browser" --output "$browser_output/dependency-setup"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-native-configuration.py "$OBSGOD_PRIMARY_ZIP" --browser "$browser" --output "$browser_output/native-configuration"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/packaged-settings-boundary.py "$OBSGOD_PRIMARY_ZIP" --revision "$GITHUB_SHA" --output "$browser_output/settings-boundary"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-m3-panel.py "$OBSGOD_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/m3-panel"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-m3-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/m3-setup"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-mixer-panel.py "$OBSGOD_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/mixer-panel"
-          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-mixer-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/mixer-setup"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/setup"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-panel.py "$DECKYSTREAM_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/panel"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-dependency-setup.py "$DECKYSTREAM_PRIMARY_ZIP" --browser "$browser" --output "$browser_output/dependency-setup"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-native-configuration.py "$DECKYSTREAM_PRIMARY_ZIP" --browser "$browser" --output "$browser_output/native-configuration"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/packaged-settings-boundary.py "$DECKYSTREAM_PRIMARY_ZIP" --revision "$GITHUB_SHA" --output "$browser_output/settings-boundary"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-m3-panel.py "$DECKYSTREAM_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/m3-panel"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-m3-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/m3-setup"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-mixer-panel.py "$DECKYSTREAM_PRIMARY_ZIP" --browser "$browser" --screenshots "$browser_output/mixer-panel"
+          python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-mixer-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz --browser "$browser" --screenshots "$browser_output/mixer-setup"
           python scripts/run-user-tests.py --output-root "$browser_output" -- steamdeck/tests/browser-support.py --browser "$browser" --screenshots "$browser_output/support"
           python scripts/run-user-tests.py --output-root "$browser_output" -- site/tests/browser.py --browser "$browser" --site-dir "$browser_output/site-html" --output "$browser_output/site"
       - name: Native audio and app-filtered capture checks
         run: |
           # These public test inputs may be owned by runner UID1001 while the
           # disposable image uses UID1000. Installed app permissions remain private.
-          chmod a+rx dist/obsgod
-          chmod a+r dist/libgstobsgodcapture.so
-          qualification_tmp="${OBSGOD_ACT_TEMP:-$RUNNER_TEMP}"
+          chmod a+rx dist/deckystream
+          chmod a+r dist/libgstdeckystreamcapture.so
+          qualification_tmp="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}"
           docker_proxy_args=()
           for key in HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy; do
             if [[ -v "$key" ]]; then docker_proxy_args+=(--build-arg "$key"); fi
           done
-          docker build "${docker_proxy_args[@]}" --secret "id=proxy_ca,src=${CODEX_PROXY_CERT:-/etc/ssl/certs/ca-certificates.crt}" -f steamdeck/tests/obs-smoke.Dockerfile -t obsgod-obs-smoke:qualification .
-          mkdir -p "$qualification_tmp/obsgod-audio" "$qualification_tmp/obsgod-capture" "$qualification_tmp/obsgod-game-obs"
-          curl --fail --location --show-error --proto '=https' --proto-redir '=https' https://codeload.github.com/fzwoch/obs-gstreamer/tar.gz/b60942f8cd9d788c95ef7dee256f52e14bdf023e -o "$qualification_tmp/obsgod-audio/gstreamer-source.tar.gz"
-          printf '%s  %s\n' 566d547e83140d53a0aa22ed152cebc436725b47e4ead452e79cf250da531268 "$qualification_tmp/obsgod-audio/gstreamer-source.tar.gz" | sha256sum --check -
-          cp "$qualification_tmp/obsgod-audio/gstreamer-source.tar.gz" "$qualification_tmp/obsgod-game-obs/gstreamer-source.tar.gz"
-          sudo chown -R 1000:1000 "$qualification_tmp/obsgod-audio" "$qualification_tmp/obsgod-capture" "$qualification_tmp/obsgod-game-obs"
-          docker run --rm --user 1000:1000 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-audio,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-obs-smoke.sh
-          docker run --rm --user 1000:1000 -e "OBSGOD_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-capture,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-capture-smoke.sh /src/dist
-          docker run --rm --user 1000:1000 -e "OBSGOD_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/obsgod-game-obs,dst=/work" obsgod-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-game-obs-smoke.sh
+          docker build "${docker_proxy_args[@]}" --secret "id=proxy_ca,src=${CODEX_PROXY_CERT:-/etc/ssl/certs/ca-certificates.crt}" -f steamdeck/tests/obs-smoke.Dockerfile -t deckystream-obs-smoke:qualification .
+          mkdir -p "$qualification_tmp/deckystream-audio" "$qualification_tmp/deckystream-capture" "$qualification_tmp/deckystream-game-obs"
+          curl --fail --location --show-error --proto '=https' --proto-redir '=https' https://codeload.github.com/fzwoch/obs-gstreamer/tar.gz/b60942f8cd9d788c95ef7dee256f52e14bdf023e -o "$qualification_tmp/deckystream-audio/gstreamer-source.tar.gz"
+          printf '%s  %s\n' 566d547e83140d53a0aa22ed152cebc436725b47e4ead452e79cf250da531268 "$qualification_tmp/deckystream-audio/gstreamer-source.tar.gz" | sha256sum --check -
+          cp "$qualification_tmp/deckystream-audio/gstreamer-source.tar.gz" "$qualification_tmp/deckystream-game-obs/gstreamer-source.tar.gz"
+          sudo chown -R 1000:1000 "$qualification_tmp/deckystream-audio" "$qualification_tmp/deckystream-capture" "$qualification_tmp/deckystream-game-obs"
+          docker run --rm --user 1000:1000 --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/deckystream-audio,dst=/work" deckystream-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-obs-smoke.sh
+          docker run --rm --user 1000:1000 -e "DECKYSTREAM_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/deckystream-capture,dst=/work" deckystream-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-capture-smoke.sh /src/dist
+          docker run --rm --user 1000:1000 -e "DECKYSTREAM_QUALIFIED_REVISION=$GITHUB_SHA" --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/src,readonly" --mount "type=bind,src=$qualification_tmp/deckystream-game-obs,dst=/work" deckystream-obs-smoke:qualification dbus-run-session -- bash /src/steamdeck/tests/native-game-obs-smoke.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: obsgod-candidate-${{ github.sha }}
+          name: deckystream-candidate-${{ github.sha }}
           path: |
             dist/*.tar.gz
             dist/*.zip
@@ -141,11 +141,11 @@ jobs:
             dist/*SHA256SUMS
             dist/capture-build.json
             dist/supply-chain/*
-            ${{ env.OBSGOD_BROWSER_EVIDENCE }}
-            ${{ env.OBSGOD_PRIMARY_EVIDENCE }}/qualification.json
-            ${{ env.OBSGOD_PRIMARY_EVIDENCE }}/first.log
-            ${{ env.OBSGOD_PRIMARY_EVIDENCE }}/second.log
-            ${{ env.OBSGOD_PRIMARY_EVIDENCE }}/first/build-receipt.json
-            ${{ env.OBSGOD_PRIMARY_EVIDENCE }}/second/build-receipt.json
+            ${{ env.DECKYSTREAM_BROWSER_EVIDENCE }}
+            ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/qualification.json
+            ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/first.log
+            ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/second.log
+            ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/first/build-receipt.json
+            ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/second/build-receipt.json
           if-no-files-found: error
           retention-days: 14

@@ -1,7 +1,7 @@
 # Current legacy-cleanup helper
 
 Normal plugin installation/update/removal belongs to Decky. This optional
-maintainer-reviewed helper is for explicitly retiring old OBSGod Desktop files
+maintainer-reviewed helper is for explicitly retiring old deckystream Desktop files
 or planning a separate reset/wipe after the current-install transition succeeds.
 It is not another required application or a migration performed on your behalf.
 

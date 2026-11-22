@@ -64,7 +64,7 @@ func safeAudioStatus(route AudioRouting, err error) AudioStatus {
 		status.Message = "Audio routing has not been observed in this session"
 	} else if route.OutputMuted {
 		status.State = "muted"
-		status.Message = "The selected system output or its monitor is muted or has zero volume. OBSGod does not change system volume"
+		status.Message = "The selected system output or its monitor is muted or has zero volume. deckystream does not change system volume"
 	} else if route.MicrophoneRequested && route.MicrophoneDevice == "" {
 		status.State = "microphone-unavailable"
 		status.MicrophoneMuted = true

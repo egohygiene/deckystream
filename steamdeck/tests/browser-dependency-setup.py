@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     decky = Path(__file__).resolve().parents[1] / "decky"
-    with tempfile.TemporaryDirectory(prefix="obsgod-setup-panel-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-setup-panel-") as directory:
         root = Path(directory)
         with zipfile.ZipFile(args.plugin_zip) as archive:
             archive.extractall(root)

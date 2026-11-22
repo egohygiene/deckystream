@@ -12,7 +12,7 @@ import (
 	"syscall"
 )
 
-const deckyStorageMapEnv = "OBSGOD_DECKY_STORAGE_MAP"
+const deckyStorageMapEnv = "DECKYSTREAM_DECKY_STORAGE_MAP"
 
 type deckyStorageMap struct {
 	Schema  string `json:"schema"`
@@ -80,7 +80,12 @@ func deckyOwnedPath(path string, directory, private, missing bool) error {
 }
 
 func validateDeckyStorageMap(paths Paths, home string) error {
-	selected := os.Getenv(deckyStorageMapEnv)
+	selected := deckEnv(deckyStorageMapEnv)
+	if primary, ok := os.LookupEnv(deckyStorageMapEnv); ok && primary != "" {
+		if legacy := os.Getenv("OBSGOD_DECKY_STORAGE_MAP"); legacy != "" && legacy != primary {
+			return errDeckyStorageMap
+		}
+	}
 	if selected == "" {
 		return nil
 	}
@@ -108,9 +113,13 @@ func validateDeckyStorageMap(paths Paths, home string) error {
 		return errDeckyStorageMap
 	}
 	canonicalHome, err := filepath.EvalSymlinks(home)
-	if err != nil || mapping.Schema != "obsgod.decky-storage-map/v1" || mapping.Version != 1 || mapping.UID != os.Getuid() || mapping.Home != canonicalHome ||
+	primary := mapping.Schema == "deckystream.decky-storage-map/v1" &&
+		mapping.Compatibility.CLI == primaryNamespace && mapping.Compatibility.Plugin == primaryNamespace && mapping.Compatibility.Namespace == paths.namespace()
+	legacy := paths.legacyStore() && mapping.Schema == "obsgod.decky-storage-map/v1" &&
+		mapping.Compatibility.CLI == legacyNamespace && mapping.Compatibility.Plugin == legacyOBSIdentity && mapping.Compatibility.Namespace == legacyNamespace
+	if err != nil || !primary && !legacy || mapping.Version != 1 || mapping.UID != os.Getuid() || mapping.Home != canonicalHome ||
 		mapping.Shared.Config != paths.Config || mapping.Shared.Secrets != paths.Secrets || mapping.Shared.State != paths.State ||
-		mapping.Compatibility.CLI != "obsgod" || mapping.Compatibility.Plugin != "OBSGod" || mapping.Compatibility.Namespace != "obsgod" {
+		mapping.Compatibility.Namespace != paths.namespace() {
 		return errDeckyStorageMap
 	}
 	if selected != filepath.Join(mapping.Decky.Settings, "storage-v1/map.json") || deckyOwnedPath(filepath.Dir(selected), true, true, false) != nil {

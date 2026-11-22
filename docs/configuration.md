@@ -3,7 +3,7 @@
 These commands describe the current development candidate. Older preview
 packages do not acquire them until upgraded to a matching build.
 
-The `obsgod` command remains compatible while Decky Stream is the working product
+The `deckystream` command remains compatible while Decky Stream is the working product
 name. Product identity is versioned metadata; user connection configuration is
 separate. The reusable CLI controls an existing OBS instance without provider
 presets or automatic broadcasts. The Steam Deck `deck` commands use their own
@@ -19,12 +19,12 @@ there, separately from the reusable CLI's connection precedence below.
 Connection values resolve in this order, highest priority first:
 
 1. Explicit `--host`, `--port`, `--password-file` or legacy `--password` flags.
-2. `OBSGOD_*` environment variables, with the existing `OBS_*` aliases supported.
+2. `DECKYSTREAM_*` environment variables, with the existing `OBS_*` aliases supported.
 3. The selected connection profile in the configuration file.
 4. The file's base `connection` values.
 5. Built-in defaults: `localhost`, port `4455`, no password.
 
-Within the environment layer, a nonempty `OBSGOD_HOST` or `OBSGOD_PORT` takes
+Within the environment layer, a nonempty `DECKYSTREAM_HOST` or `DECKYSTREAM_PORT` takes
 precedence over its legacy alias. Empty host/port variables are ignored. An
 explicitly present password variable, including an empty one, overrides file
 credential references. An explicit port flag also overrides a malformed
@@ -37,16 +37,16 @@ scene, profile, recording or stream.
 
 ## File location and versioned schema
 
-Run `obsgod config path` to find the file. It defaults to:
+Run `deckystream config path` to find the file. It defaults to:
 
 | Platform | Default connection file |
 | --- | --- |
-| Linux / SteamOS | `${XDG_CONFIG_HOME:-$HOME/.config}/obsgod/config.json` |
-| macOS | `$HOME/Library/Application Support/obsgod/config.json` |
-| Windows | `%AppData%\obsgod\config.json` |
+| Linux / SteamOS | `${XDG_CONFIG_HOME:-$HOME/.config}/deckystream/config.json` |
+| macOS | `$HOME/Library/Application Support/deckystream/config.json` |
+| Windows | `%AppData%\deckystream\config.json` |
 
 Linux `XDG_CONFIG_HOME` must be absolute. `--config PATH` overrides
-`OBSGOD_CONFIG`; an explicit missing file is an error. A missing default file
+`DECKYSTREAM_CONFIG`; an explicit missing file is an error. A missing default file
 keeps legacy environment/default behavior. No file is created implicitly.
 
 Example configuration:
@@ -87,12 +87,12 @@ underscores or hyphens and begin with a letter/digit. Output lists are sorted.
 
 | Variable | Meaning | Legacy alias |
 | --- | --- | --- |
-| `OBSGOD_CONFIG` | Explicit connection-file path | none |
-| `OBSGOD_CONNECTION_PROFILE` | Selected named connection profile | none |
-| `OBSGOD_HOST` | OBS hostname/IP | `OBS_HOST` |
-| `OBSGOD_PORT` | OBS WebSocket port, 1–65535 | `OBS_PORT` |
-| `OBSGOD_PASSWORD` | OBS password, including an explicit empty value | `OBS_PASSWORD` |
-| `OBSGOD_PASSWORD_FILE` | Private single-line password file | `OBS_PASSWORD_FILE` |
+| `DECKYSTREAM_CONFIG` | Explicit connection-file path | none |
+| `DECKYSTREAM_CONNECTION_PROFILE` | Selected named connection profile | none |
+| `DECKYSTREAM_HOST` | OBS hostname/IP | `OBS_HOST` |
+| `DECKYSTREAM_PORT` | OBS WebSocket port, 1–65535 | `OBS_PORT` |
+| `DECKYSTREAM_PASSWORD` | OBS password, including an explicit empty value | `OBS_PASSWORD` |
+| `DECKYSTREAM_PASSWORD_FILE` | Private single-line password file | `OBS_PASSWORD_FILE` |
 
 Direct password variables take precedence over password-file environment
 variables. File `password_env` can name another environment variable without
@@ -115,11 +115,11 @@ or the password-file contents. Malformed JSON errors do not quote source data.
 ## Connection profiles and inspection
 
 ```sh
-obsgod config profiles
-obsgod --connection-profile studio config show --json
-obsgod --connection-profile studio config validate --json
-obsgod --connection-profile studio stream status --json
-obsgod --password-file /private/path/obs-password stream status
+deckystream config profiles
+deckystream --connection-profile studio config show --json
+deckystream --connection-profile studio config validate --json
+deckystream --connection-profile studio stream status --json
+deckystream --password-file /private/path/obs-password stream status
 ```
 
 Connection profiles choose the target connection. The existing `profile list`,
@@ -135,19 +135,19 @@ connection and credential reference without checking OBS connectivity.
 `config validate` also accepts the alias `config check`.
 
 For managed Steam Deck installation/OBS/capture diagnostics, use
-`obsgod doctor` (equivalently `obsgod deck doctor`); it uses the managed settings
+`deckystream doctor` (equivalently `deckystream deck doctor`); it uses the managed settings
 and returns JSON. A broken
 generic connection file does not block Deck status, Stop or recovery commands.
 
 ## Stable machine output
 
 ```sh
-obsgod version --json
-obsgod config show --json
-obsgod config validate --json
-obsgod config profiles --json
-obsgod stream status --json
-obsgod recording status --json
+deckystream version --json
+deckystream config show --json
+deckystream config validate --json
+deckystream config profiles --json
+deckystream stream status --json
+deckystream recording status --json
 ```
 
 These commands emit one JSON result with `schema_version: 1`. Stream and recording
@@ -168,18 +168,18 @@ queries emit no successful JSON and must never be interpreted as stopped.
 Generate completions without OBS or valid connection configuration:
 
 ```sh
-obsgod completion bash > obsgod.bash
-obsgod completion zsh > _obsgod
-obsgod completion fish > obsgod.fish
+deckystream completion bash > deckystream.bash
+deckystream completion zsh > _deckystream
+deckystream completion fish > deckystream.fish
 ```
 
 Install the generated file in your shell's user completion directory, or source
 the Bash file from your shell configuration. For Fish the usual user directory
-is `~/.config/fish/completions/`; for Zsh put `_obsgod` on `fpath` before `compinit`.
-`obsgod --help` and `obsgod COMMAND --help` provide the offline command reference.
-`obsgod version` and the existing `--version` include supplied build metadata.
+is `~/.config/fish/completions/`; for Zsh put `_deckystream` on `fpath` before `compinit`.
+`deckystream --help` and `deckystream COMMAND --help` provide the offline command reference.
+`deckystream version` and the existing `--version` include supplied build metadata.
 
-`obsgod reference > obsgod-reference.md` generates a deterministic Markdown
+`deckystream reference > deckystream-reference.md` generates a deterministic Markdown
 reference from the complete command tree without connecting or loading secrets.
 See the checked-in [command reference](cli-reference.md).
 
@@ -208,15 +208,15 @@ Add `workflow_profiles` to the same version 1 configuration file:
 ```
 
 ```sh
-obsgod workflow list
-obsgod workflow plan studio
-obsgod workflow apply studio --dry-run
-obsgod workflow apply studio --approve
+deckystream workflow list
+deckystream workflow plan studio
+deckystream workflow apply studio --dry-run
+deckystream workflow apply studio --approve
 ```
 
 List, plan and dry-run are offline JSON operations. They do not resolve password
 references, connect to OBS, switch settings or start output. Selection order is
-the explicit name, `OBSGOD_WORKFLOW`, then `default_workflow`.
+the explicit name, `DECKYSTREAM_WORKFLOW`, then `default_workflow`.
 
 Apply requires `--approve` for that invocation. A plan with local recording or
 replay enabled additionally requires `--allow-recording` or
@@ -250,14 +250,14 @@ requests; they do not lock out other OBS clients.
 
 Known optional environment overrides are:
 
-- `OBSGOD_WORKFLOW_OBS_PROFILE`
-- `OBSGOD_WORKFLOW_SCENE_COLLECTION`
-- `OBSGOD_WORKFLOW_STARTING_SCENE`
-- `OBSGOD_WORKFLOW_LIVE_SCENE`
-- `OBSGOD_WORKFLOW_RECORDING_ENABLED` (`true`/`false`)
-- `OBSGOD_WORKFLOW_REPLAY_BUFFER_ENABLED` (`true`/`false`)
-- `OBSGOD_WORKFLOW_READINESS_TIMEOUT`
-- `OBSGOD_WORKFLOW_POST_START_DELAY`
+- `DECKYSTREAM_WORKFLOW_OBS_PROFILE`
+- `DECKYSTREAM_WORKFLOW_SCENE_COLLECTION`
+- `DECKYSTREAM_WORKFLOW_STARTING_SCENE`
+- `DECKYSTREAM_WORKFLOW_LIVE_SCENE`
+- `DECKYSTREAM_WORKFLOW_RECORDING_ENABLED` (`true`/`false`)
+- `DECKYSTREAM_WORKFLOW_REPLAY_BUFFER_ENABLED` (`true`/`false`)
+- `DECKYSTREAM_WORKFLOW_READINESS_TIMEOUT`
+- `DECKYSTREAM_WORKFLOW_POST_START_DELAY`
 
 Nonempty values override the selected file profile; names, booleans and duration
 bounds are validated without echoing invalid data. Unknown file fields such as
@@ -278,7 +278,7 @@ that color. These flags do not enable an unfiltered WebSocket debug log.
 
 - **Cannot read configuration:** run `config path`; check that the intended
   file exists, is a regular file, and is readable. Correct an explicit stale
-  `OBSGOD_CONFIG`, or remove that override to use defaults.
+  `DECKYSTREAM_CONFIG`, or remove that override to use defaults.
 - **Invalid configuration JSON:** compare with version 1 above; use credential
   references, remove unknown fields and keep exactly one JSON object.
 - **Unavailable profile:** run `config profiles`, then choose an existing name

@@ -14,6 +14,19 @@ import (
 var errUnsafeControlPath = errors.New("managed OBS storage is unsafe; check directory ownership, permissions and symlinks before retrying")
 
 func Lock(ctx context.Context, p Paths) (func(), error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return nil, err
+	}
+	return recoveryLock(ctx, p)
+}
+
+// RecoveryLock retains the same inode and safety checks while allowing only
+// callers that explicitly stop output or close a positively owned idle OBS.
+func RecoveryLock(ctx context.Context, p Paths) (func(), error) {
+	return recoveryLock(ctx, p)
+}
+
+func recoveryLock(ctx context.Context, p Paths) (func(), error) {
 	privateUmask()
 	// Older CLI clients need the same protected namespace even when they do
 	// not carry a Decky storage map. A private leaf below a renameable parent

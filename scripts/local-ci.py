@@ -27,7 +27,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = "0.2.97"
 IMAGE = "ghcr.io/catthehacker/ubuntu:act-24.04@sha256:19619a010b204f44c5340bff7d39b68551109fe6a56a53f75201ea91e05d4270"
-APT_CA_CONFIG = b'Acquire::https::CaInfo "/run/obsgod-ca.pem";\n'
+APT_CA_CONFIG = b'Acquire::https::CaInfo "/run/deckystream-ca.pem";\n'
 ACT_SHA256 = {"x86_64": ("x86_64", "67b4976a56f33ea7870b798912e738ec44eef38e7578ae7b532f2def1c73a5ad"),
               "aarch64": ("arm64", "44d48e3d4a6409053fdec6fc6518322467d79a2d5be8f72c021b0421e2ac113d")}
 JOBS = {"build": ("build.yml", "build", "push"),
@@ -117,8 +117,8 @@ def network_options(state, temporary=None):
         raise SystemExit("Refusing symlink APT trust configuration")
     apt_configuration.write_bytes(APT_CA_CONFIG)
     apt_configuration.chmod(0o644)
-    options = ["--mount", f"type=bind,src={ca},dst=/run/obsgod-ca.pem,readonly",
-               "--mount", f"type=bind,src={apt_configuration},dst=/etc/apt/apt.conf.d/99-obsgod-cloud-ca,readonly",
+    options = ["--mount", f"type=bind,src={ca},dst=/run/deckystream-ca.pem,readonly",
+               "--mount", f"type=bind,src={apt_configuration},dst=/etc/apt/apt.conf.d/99-deckystream-cloud-ca,readonly",
                "--mount", f"type=bind,src={temporary},dst={temporary}"]
     for key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
         host = urllib.parse.urlsplit(os.environ.get(key, "")).hostname
@@ -286,7 +286,7 @@ def matrix(args, state):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["install", "prepare-actions", "list", "dry-run", "preflight", "matrix", *JOBS])
-    parser.add_argument("--act", type=Path, default=Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "obsgod/tools/bin/act")
+    parser.add_argument("--act", type=Path, default=Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "deckystream/tools/bin/act")
     parser.add_argument("--state", type=Path, default=ROOT / ".local-ci")
     parser.add_argument("--pull-request", action="store_true", help="Use the reviewed synthetic PR event (no provider review API is simulated)")
     parser.add_argument("--profile", choices=["constrained"], help="Opt into measured private scratch and post-consumer compiler-cache policy")
@@ -344,21 +344,21 @@ def main():
                "--action-cache-path", str(state / "actions"),
                "--artifact-server-path", str(state / "artifacts"),
                "--artifact-server-addr", service_address, "--artifact-server-port", "34567",
-               "--env", "NODE_EXTRA_CA_CERTS=/run/obsgod-ca.pem",
-               "--env", "NODE_USE_ENV_PROXY=1", "--env", "SSL_CERT_FILE=/run/obsgod-ca.pem",
-               "--env", "GIT_SSL_CAINFO=/run/obsgod-ca.pem", "--env", "PIP_CERT=/run/obsgod-ca.pem",
-               "--env", "CODEX_PROXY_CERT=/run/obsgod-ca.pem", "--env", "TMPDIR=" + str(state / "tmp"),
-               "--env", "OBSGOD_ACT_TEMP=" + str(state / "tmp")]
+               "--env", "NODE_EXTRA_CA_CERTS=/run/deckystream-ca.pem",
+               "--env", "NODE_USE_ENV_PROXY=1", "--env", "SSL_CERT_FILE=/run/deckystream-ca.pem",
+               "--env", "GIT_SSL_CAINFO=/run/deckystream-ca.pem", "--env", "PIP_CERT=/run/deckystream-ca.pem",
+               "--env", "CODEX_PROXY_CERT=/run/deckystream-ca.pem", "--env", "TMPDIR=" + str(state / "tmp"),
+               "--env", "DECKYSTREAM_ACT_TEMP=" + str(state / "tmp")]
     if attempt:
-        for prefix in ("TMPDIR=", "OBSGOD_ACT_TEMP="):
+        for prefix in ("TMPDIR=", "DECKYSTREAM_ACT_TEMP="):
             command[command.index(prefix + str(state / "tmp"))] = prefix + str(attempt / "tmp")
         # Bind the complete private attempt for compiler caches and nested builds;
         # network_options already binds the per-attempt daemon-visible temp.
         options = command.index("--container-options") + 1
         command[options] += " " + shlex.join(["--mount", f"type=bind,src={attempt},dst={attempt}"])
-        for key, value in {"OBSGOD_LOCAL_PROFILE": "constrained", "OBSGOD_LOCAL_SCRATCH": str(attempt),
-                           "OBSGOD_LOCAL_RESOURCE_RECEIPT": str(attempt / "resource-policy.json"),
-                           "OBSGOD_LOCAL_OWNER_UID": str(os.getuid()), "GOCACHE": str(attempt / "go-build-root")}.items():
+        for key, value in {"DECKYSTREAM_LOCAL_PROFILE": "constrained", "DECKYSTREAM_LOCAL_SCRATCH": str(attempt),
+                           "DECKYSTREAM_LOCAL_RESOURCE_RECEIPT": str(attempt / "resource-policy.json"),
+                           "DECKYSTREAM_LOCAL_OWNER_UID": str(os.getuid()), "GOCACHE": str(attempt / "go-build-root")}.items():
             command += ["--env", key + "=" + value]
     command += mappings
     # act uses the Engine API rather than `docker run`, so Docker client's proxy

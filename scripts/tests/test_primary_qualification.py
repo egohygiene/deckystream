@@ -29,7 +29,7 @@ class PrimaryQualificationTests(unittest.TestCase):
 
     def invoke(self, output, revision="f" * 40, overrides=None):
         env = os.environ.copy()
-        for key in ("OBSGOD_LOCAL_SCRATCH", "OBSGOD_LOCAL_OWNER_UID"):
+        for key in ("DECKYSTREAM_LOCAL_SCRATCH", "DECKYSTREAM_LOCAL_OWNER_UID"):
             env.pop(key, None)
         env.update(overrides or {})
         return subprocess.run([sys.executable, "-B", str(ROOT / "scripts/qualify-decky-build.py"),
@@ -71,8 +71,8 @@ class PrimaryQualificationTests(unittest.TestCase):
             for path in (scratch, modules):
                 os.chown(path, self.uid, self.gid)
         output = self.work / "profile"
-        result = self.invoke(output, overrides={"OBSGOD_LOCAL_SCRATCH": str(scratch),
-                                                "OBSGOD_LOCAL_OWNER_UID": str(self.uid)})
+        result = self.invoke(output, overrides={"DECKYSTREAM_LOCAL_SCRATCH": str(scratch),
+                                                "DECKYSTREAM_LOCAL_OWNER_UID": str(self.uid)})
         self.assertNotEqual(result.returncode, 0, "The actual wrong-revision primary still fails")
         record = json.loads((output / "qualification.json").read_text())
         self.assertEqual(record["build_context"]["GOCACHE"], str(scratch / f"go-build-user-{self.uid}"))
@@ -91,7 +91,7 @@ class PrimaryQualificationTests(unittest.TestCase):
         if os.getuid() == 0:
             os.chown(scratch, self.uid, self.gid)
         output = self.work / "refused"
-        result = self.invoke(output, overrides={"OBSGOD_LOCAL_SCRATCH": str(scratch)})
+        result = self.invoke(output, overrides={"DECKYSTREAM_LOCAL_SCRATCH": str(scratch)})
         self.assertNotEqual(result.returncode, 0)
         record = json.loads((output / "qualification.json").read_text())
         self.assertEqual(record["status"], "failed")
@@ -137,7 +137,7 @@ class PrimaryQualificationTests(unittest.TestCase):
             (frontend / name).write_bytes(("fixture:" + name).encode())
         capture = b"synthetic library, not native qualification"
         native = {"sha256": hashlib.sha256(capture).hexdigest(),
-                  "source_sha256": hashlib.sha256((ROOT / "steamdeck/capture/gstobsgodcapture.c").read_bytes()).hexdigest(),
+                  "source_sha256": hashlib.sha256((ROOT / "steamdeck/capture/gstdeckystreamcapture.c").read_bytes()).hexdigest(),
                   "dockerfile_sha256": hashlib.sha256((ROOT / "steamdeck/capture/build.Dockerfile").read_bytes()).hexdigest(),
                   "network_during_compile": False}
         files = package.plugin_files(ROOT, version="0.1.0-test.1", binary=b"synthetic executable",
@@ -152,11 +152,11 @@ class PrimaryQualificationTests(unittest.TestCase):
     def write_fixture(self, output, files, sources):
         archive = package.zip_payload(files, 1700000001)
         checksum = hashlib.sha256(archive).hexdigest()
-        (output / "obsgod-decky.zip").write_bytes(archive)
-        (output / "SHA256SUMS").write_text(checksum + "  obsgod-decky.zip\n")
+        (output / "deckystream-decky.zip").write_bytes(archive)
+        (output / "SHA256SUMS").write_text(checksum + "  deckystream-decky.zip\n")
         receipt = {"revision": "a" * 40, "version": "0.1.0-test.1", "dirty": False,
                    "platform": "linux/amd64", "source_tools": package.TOOLS,
-                   "archive": "obsgod-decky.zip", "sha256": checksum,
+                   "archive": "deckystream-decky.zip", "sha256": checksum,
                    "source_files_sha256": sources, "payload_files": len(files),
                    "official_cli": {"status": "unrun"}}
         (output / "build-receipt.json").write_bytes(package.json_bytes(receipt))
@@ -171,7 +171,7 @@ class PrimaryQualificationTests(unittest.TestCase):
         self.assertEqual(result["payload_files"], len(files))
         self.assertEqual(result["source_private_inventory"], "passed")
         self.assertEqual(set(p.name for p in output.iterdir()),
-                         {"obsgod-decky.zip", "SHA256SUMS", "build-receipt.json"})
+                         {"deckystream-decky.zip", "SHA256SUMS", "build-receipt.json"})
 
     def test_extra_private_file_and_rehashed_source_tampering_are_refused(self):
         output, files, sources = self.fixture()

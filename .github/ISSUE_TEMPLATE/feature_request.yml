@@ -3,7 +3,7 @@ description: Propose a bounded improvement to docs, CLI or Steam Deck workflows
 body:
   - type: markdown
     attributes:
-      value: "Describe a problem and a small, reviewable outcome. A request does not promise implementation or change current support/publication gates. Never include credentials, private setup links or raw private profiles/logs. Follow [SECURITY.md](https://github.com/szmyty/obsgod/security/policy) for suspected vulnerabilities."
+      value: "Describe a problem and a small, reviewable outcome. A request does not promise implementation or change current support/publication gates. Never include credentials, private setup links or raw private profiles/logs. Follow [SECURITY.md](https://github.com/egohygiene/deckystream/security/policy) for suspected vulnerabilities."
   - type: dropdown
     id: area
     attributes:

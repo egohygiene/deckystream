@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version: '1.27.4'
-          cache: ${{ env.OBSGOD_LOCAL_PROFILE != 'constrained' }}
+          cache: ${{ env.DECKYSTREAM_LOCAL_PROFILE != 'constrained' }}
       - name: Race and coverage
         env:
           TMPDIR: ${{ runner.temp }}
@@ -22,7 +22,7 @@ jobs:
           go test -race -covermode atomic -coverprofile=profile.cov ./...
           go tool cover -func=profile.cov | tee coverage-summary.txt
       - name: Release only opted-in private compiler caches after Go consumers
-        if: env.OBSGOD_LOCAL_PROFILE == 'constrained'
+        if: env.DECKYSTREAM_LOCAL_PROFILE == 'constrained'
         run: python3 scripts/local-ci-resources.py trim-compiler-cache
       - name: Retain coverage baseline for review
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

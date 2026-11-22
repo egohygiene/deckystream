@@ -9,13 +9,13 @@ import (
 
 // Explicit opt-in only. This reads version/status, never changes a live OBS.
 func TestRealOBSReadOnly(t *testing.T) {
-	address := os.Getenv("OBSGOD_TEST_OBS_ADDRESS")
+	address := os.Getenv("DECKYSTREAM_TEST_OBS_ADDRESS")
 	if address == "" {
-		t.Skip("set OBSGOD_TEST_OBS_ADDRESS for opt-in real OBS reads")
+		t.Skip("set DECKYSTREAM_TEST_OBS_ADDRESS for opt-in real OBS reads")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	c, e := Connect(ctx, Config{Address: address, Password: os.Getenv("OBSGOD_TEST_OBS_PASSWORD"), Timeout: 3 * time.Second})
+	c, e := Connect(ctx, Config{Address: address, Password: os.Getenv("DECKYSTREAM_TEST_OBS_PASSWORD"), Timeout: 3 * time.Second})
 	if e != nil {
 		t.Fatal(e)
 	}

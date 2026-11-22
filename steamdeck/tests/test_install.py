@@ -24,7 +24,7 @@ class ProductInstallBoundaries(unittest.TestCase):
         self.home.mkdir()
         self.package = Path(self.temp.name) / "package"
         self.package.mkdir()
-        names = {"obsgod", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "obsgod-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
+        names = {"deckystream", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "deckystream-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
         for name in names:
             (self.package / name).write_text("fixture " + name)
         self.manifest = {"version": "0.1.0-test", "files": {name: hashlib.sha256((self.package / name).read_bytes()).hexdigest() for name in names}}
@@ -43,9 +43,9 @@ class ProductInstallBoundaries(unittest.TestCase):
         data = self.home / "custom data"
         with patch.dict(os.environ, {"XDG_DATA_HOME": str(data)}), contextlib.redirect_stdout(io.StringIO()):
             current = install.install(launch=False, with_decky=False)
-        self.assertEqual(current, data / "obsgod/current")
-        self.assertTrue((data / "applications/obsgod-setup.desktop").exists())
-        self.assertFalse((self.home / ".local/share/obsgod").exists())
+        self.assertEqual(current, data / "deckystream/current")
+        self.assertTrue((data / "applications/deckystream-setup.desktop").exists())
+        self.assertFalse((self.home / ".local/share/deckystream").exists())
 
     def test_old_location_kept_when_xdg_data_changes_without_implicit_migration(self):
         with contextlib.redirect_stdout(io.StringIO()):
@@ -53,13 +53,13 @@ class ProductInstallBoundaries(unittest.TestCase):
         with patch.dict(os.environ, {"XDG_DATA_HOME": str(self.home / "custom data")}), contextlib.redirect_stdout(io.StringIO()):
             current = install.install(launch=False, with_decky=False)
         self.assertEqual(current, original)
-        self.assertFalse((self.home / "custom data/obsgod").exists())
+        self.assertFalse((self.home / "custom data/deckystream").exists())
 
     def test_insufficient_space_precedes_activation_or_plugin_replacement(self):
         with patch.object(install.shutil, "disk_usage", return_value=SimpleNamespace(free=0)), self.assertRaisesRegex(RuntimeError, "free space"):
             install.install(launch=False, with_decky=False)
-        self.assertFalse((self.home / ".local/share/obsgod/current").exists())
-        self.assertFalse((self.home / ".local/bin/obsgod").exists())
+        self.assertFalse((self.home / ".local/share/deckystream/current").exists())
+        self.assertFalse((self.home / ".local/bin/deckystream").exists())
 
     def test_symlinked_parent_inside_home_is_also_refused(self):
         destination = self.home / "actual-local"
@@ -74,7 +74,7 @@ class ProductInstallBoundaries(unittest.TestCase):
         link.symlink_to(self.home)
         with patch.dict(os.environ, {"XDG_DATA_HOME": str(link)}), self.assertRaisesRegex(RuntimeError, "symlinked"):
             install.install(launch=False, with_decky=False)
-        self.assertFalse((self.home / "obsgod").exists())
+        self.assertFalse((self.home / "deckystream").exists())
 
     def test_malformed_output_status_never_allows_install(self):
         for state in [None, [], {"ok": True, "state": "stopped"}, {"ok": True, "state": "stopped", "stream": []}, {"ok": True, "state": "stopped", "recording": []}]:
@@ -110,15 +110,15 @@ for name in ['install', 'update', 'uninstall']:
     spec = importlib.util.spec_from_file_location('downloaded_' + name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert module.app_directories(pathlib.Path(sys.argv[2]), {})[0] == pathlib.Path(sys.argv[2]) / '.local/share/obsgod'
+    assert module.app_directories(pathlib.Path(sys.argv[2]), {})[0] == pathlib.Path(sys.argv[2]) / '.local/share/deckystream'
     if hasattr(module, 'DISPLAY_NAME'): assert module.DISPLAY_NAME == 'deckystream'
 """
         result = subprocess.run([sys.executable, "-I", "-c", code, str(ROOT), str(self.home)], cwd=self.home, capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_install_and_control_locks_refuse_public_hardlinked_or_nonregular_files(self):
-        base = self.home / ".local/share/obsgod"
-        state = self.home / ".local/state/obsgod"
+        base = self.home / ".local/share/deckystream"
+        state = self.home / ".local/state/deckystream"
         for path in (base, state):
             install.owned_directory(path, self.home)
         for name, path, lease in (
@@ -142,7 +142,7 @@ for name in ['install', 'update', 'uninstall']:
                     path.with_suffix(".other").unlink(missing_ok=True)
 
     def test_replaced_lock_inode_is_refused_before_installation_can_proceed(self):
-        base = self.home / ".local/share/obsgod"
+        base = self.home / ".local/share/deckystream"
         install.owned_directory(base, self.home)
         path = base / "install.lock"
         original = install.fcntl.flock

@@ -4,10 +4,17 @@ export const product = {
   "description": "Stream from Steam Deck with OBS",
   "repository": "egohygiene/deckystream",
   "compatibility": {
+    "cli": "deckystream",
+    "plugin": "deckystream",
+    "plugin_directory": "deckystream",
+    "storage_namespace": "deckystream"
+  },
+  "legacyCompatibility": {
     "cli": "obsgod",
     "plugin": "OBSGod",
     "plugin_directory": "obsgod",
-    "storage_namespace": "obsgod"
+    "storage_namespace": "obsgod",
+    "environment_prefix": "OBSGOD"
   }
 } as const;
 export default product;

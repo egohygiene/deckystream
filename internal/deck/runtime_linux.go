@@ -21,8 +21,13 @@ var sessionKeys = map[string]bool{"DISPLAY": true, "WAYLAND_DISPLAY": true, "XAU
 
 func sessionEnvironment() []string {
 	m := map[string]string{}
-	for _, k := range []string{"PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "OBSGOD_DECKY_STORAGE_MAP", "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR", "XDG_CURRENT_DESKTOP", "PULSE_SERVER", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE"} {
-		if v := os.Getenv(k); v != "" {
+	for _, k := range []string{"PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "DECKY_HOME", "DECKYSTREAM_DECKY_STORAGE_MAP", "DECKYSTREAM_DECKY_RUNTIME_DIR", "DECKYSTREAM_DECKY_LOG_DIR", "XDG_CURRENT_DESKTOP", "PULSE_SERVER", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE"} {
+		if v := func() string {
+			if strings.HasPrefix(k, "DECKYSTREAM_") {
+				return deckEnv(k)
+			}
+			return os.Getenv(k)
+		}(); v != "" {
 			m[k] = v
 		}
 	}
@@ -154,7 +159,7 @@ func commandOutput(ctx context.Context, name string, args ...string) ([]byte, er
 
 func checkDependencies(ctx context.Context) error {
 	if _, e := exec.LookPath("flatpak"); e != nil {
-		return errors.New("the Flatpak runtime is missing; use OBSGod on SteamOS or install Flatpak first")
+		return errors.New("the Flatpak runtime is missing; use deckystream on SteamOS or install Flatpak first")
 	}
 	for _, id := range []string{"com.obsproject.Studio", "com.obsproject.Studio.Plugin.Gstreamer"} {
 		dependencyCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
@@ -201,7 +206,7 @@ func obsLaunchArgs(p Paths) []string {
 	// Apply this non-secret path inside the sandbox, after that reset, so OBS
 	// reads only its prepared private profile and WebSocket configuration. env
 	// execs OBS directly; no shell interpolation or automatic output is involved.
-	return []string{"run", "--user", "--command=/usr/bin/env", "com.obsproject.Studio", "XDG_CONFIG_HOME=" + p.OBSConfig, "GST_PLUGIN_PATH_1_0=" + capturePluginDirectory(), "obs", "--profile", "OBSGod", "--collection", "OBSGod", "--multi", "--minimize-to-tray", "--disable-missing-files-check"}
+	return []string{"run", "--user", "--command=/usr/bin/env", "com.obsproject.Studio", "XDG_CONFIG_HOME=" + p.OBSConfig, "GST_PLUGIN_PATH_1_0=" + capturePluginDirectory(), "obs", "--profile", "deckystream", "--collection", "deckystream", "--multi", "--minimize-to-tray", "--disable-missing-files-check"}
 }
 
 func capturePluginDirectory() string {
@@ -273,7 +278,7 @@ func launchOBSWindow(p Paths, visible bool) (<-chan int, error) {
 	cmd.Stderr = output
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if e := cmd.Start(); e != nil {
-		return nil, errors.New("OBS launch failed; open OBSGod Desktop setup and check dependencies")
+		return nil, errors.New("OBS launch failed; open deckystream Desktop setup and check dependencies")
 	}
 	// Observe early Flatpak/OBS failures instead of waiting 75 seconds for a
 	// connection that cannot appear. No pipes keep this CLI attached to OBS.

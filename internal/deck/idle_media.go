@@ -27,7 +27,7 @@ const idleVideoLimit int64 = 256 << 20
 var idleMediaName = regexp.MustCompile(`^[0-9a-f]{64}\.(png|jpg|mp4|webm)$`)
 
 func idleMediaDirectory(p Paths) string {
-	return filepath.Join(p.OBSConfig, "obs-studio", "obsgod-media")
+	return filepath.Join(p.OBSConfig, "obs-studio", "deckystream-media")
 }
 
 // validateIdleMediaSettings validates the portable metadata, never a caller's

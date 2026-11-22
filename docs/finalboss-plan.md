@@ -6,7 +6,7 @@ Applied to [#46](https://github.com/szmyty/obsgod/issues/46) after owner-approve
 
 **The live #46 is authoritative. Source-merge approval and administrative transfers are complete; unrun acceptance and publication remain open.**
 
-The implementation campaign prepared candidate 9 while preserving compatible obsgod/OBSGod installations. This is the consolidated pair-work checklist; #51 remains separate monetization/Decky Store research. No missing criterion passed merely because its original issue was superseded.
+The implementation campaign prepared candidate 9 while preserving compatible deckystream/deckystream installations. This is the consolidated pair-work checklist; #51 remains separate monetization/Decky Store research. No missing criterion passed merely because its original issue was superseded.
 
 ## Canonical evidence
 

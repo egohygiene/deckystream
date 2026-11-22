@@ -1,6 +1,6 @@
 # Native capture third-party notices
 
-OBSGod's independent `gstobsgodcapture.c` implementation is MIT licensed; see
+deckystream's independent `gstdeckystreamcapture.c` implementation is MIT licensed; see
 `LICENSE`. Its compiled library uses PipeWire/SPA, GStreamer and GLib headers.
 This file retains the upstream notices for the headers in the compiler's
 actual dependency list, including PipeWire/SPA inline MIT code. The matching
@@ -8,8 +8,8 @@ full GNU Lesser General Public License version 2.1 is included below for the
 LGPL-2.0-or-later / LGPL-2.1-or-later GStreamer and GLib interfaces.
 
 The runtime GStreamer, GLib and PipeWire shared-library binaries are installed
-separately through OBS/Flathub and are not copied into the OBSGod archive.
-OBSGod does not restrict replacing those shared libraries with compatible
+separately through OBS/Flathub and are not copied into the deckystream archive.
+deckystream does not restrict replacing those shared libraries with compatible
 modified versions or reverse engineering for debugging such modifications.
 The native plugin's preferred source, Makefile, license, notices and pinned-base
 build recipe accompany every package in `CAPTURE-SOURCE.tar.gz`. Rebuild the

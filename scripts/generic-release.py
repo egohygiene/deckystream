@@ -24,7 +24,7 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE = "github.com/szmyty/obsgod"
+MODULE = "github.com/egohygiene/deckystream"
 GO = "go1.27.4"
 MAX_FILE = 64 * 1024 * 1024
 MAX_TOTAL = 96 * 1024 * 1024
@@ -214,7 +214,7 @@ def archive_files(data, kind):
 
 def binary_metadata(data):
     # Parses cross-platform executable metadata; does not run the binary.
-    with tempfile.TemporaryDirectory(prefix="obsgod-generic-metadata-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-generic-metadata-") as directory:
         path = Path(directory) / "binary"
         path.write_bytes(data)
         output = command("go", "version", "-m", str(path))
@@ -239,7 +239,7 @@ def binary_metadata(data):
 
 def target_name(version, target):
     system, arch, arm = target
-    return f"obsgod_{version}_{system}_{arch}{'v' + arm if arm else ''}." + ("zip" if system == "windows" else "tar.gz")
+    return f"deckystream_{version}_{system}_{arch}{'v' + arm if arm else ''}." + ("zip" if system == "windows" else "tar.gz")
 
 
 def audit_archive(name, data, target, version, identity, prepared):
@@ -250,7 +250,7 @@ def audit_archive(name, data, target, version, identity, prepared):
 def audit_payload(name, data, files, target, version, identity, prepared):
     """Verify the same executable/notices contract after a bounded format reader."""
     system, arch, arm = target
-    binary = "obsgod.exe" if system == "windows" else "obsgod"
+    binary = "deckystream.exe" if system == "windows" else "deckystream"
     require(set(files) == BASE_FILES | {binary}, "Generic archive exact inventory mismatch")
     for filename in ("LICENSE", "README.md", "CHANGELOG.md"):
         require(files[filename]["data"] == git_file(identity["revision"], filename), "Archive source file mismatch")
@@ -291,7 +291,7 @@ def audit_payload(name, data, files, target, version, identity, prepared):
 def sidecars(record, version, identity):
     identity_hash = record["sha256"]
     repository_url = "https://github.com/" + source_repository(identity["revision"])
-    packages = [{"SPDXID": "SPDXRef-Application", "name": "obsgod", "versionInfo": version,
+    packages = [{"SPDXID": "SPDXRef-Application", "name": "deckystream", "versionInfo": version,
                  "downloadLocation": repository_url + "/tree/" + identity["revision"],
                  "filesAnalyzed": False, "licenseConcluded": "NOASSERTION", "licenseDeclared": "MIT"},
                 {"SPDXID": "SPDXRef-Go", "name": "Go standard library", "versionInfo": GO,
@@ -312,7 +312,7 @@ def sidecars(record, version, identity):
         relationships.append({"spdxElementId": "SPDXRef-Application", "relationshipType": "CONTAINS", "relatedSpdxElement": identifier})
     sbom = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": record["name"],
             "documentNamespace": repository_url + "/sbom/" + identity["revision"] + "/" + identity_hash,
-            "creationInfo": {"created": identity["created"], "creators": ["Tool: obsgod-generic-release-schema1"]},
+            "creationInfo": {"created": identity["created"], "creators": ["Tool: deckystream-generic-release-schema1"]},
             "packages": packages, "files": files, "relationships": relationships,
             "comment": "UNSIGNED local inventory. Notice catalog is a target-selected module superset; only actual linked modules are package dependencies. Platform compilation is not native runtime qualification."}
     materials = [{"uri": "git+" + repository_url + "@" + identity["revision"], "digest": {"sha1": identity["revision"]}}]
@@ -320,9 +320,9 @@ def sidecars(record, version, identity):
         materials.append({"uri": name, "digest": {"sha256": sha(git_file(identity["revision"], name))}})
     provenance = {"_type": "https://in-toto.io/Statement/v1", "subject": [{"name": record["name"], "digest": {"sha256": identity_hash}}],
                   "predicateType": "https://slsa.dev/provenance/v1", "predicate": {
-                      "buildDefinition": {"buildType": "urn:obsgod:generic-cli-snapshot", "externalParameters": {"version": version, "platform": record["platform"]},
+                      "buildDefinition": {"buildType": "urn:deckystream:generic-cli-snapshot", "externalParameters": {"version": version, "platform": record["platform"]},
                                           "internalParameters": {"go": GO}, "resolvedDependencies": materials},
-                      "runDetails": {"builder": {"id": "urn:obsgod:local-self-reported-unsigned"}, "metadata": {"invocationId": "urn:sha256:" + identity_hash},
+                      "runDetails": {"builder": {"id": "urn:deckystream:local-self-reported-unsigned"}, "metadata": {"invocationId": "urn:sha256:" + identity_hash},
                                      "byproducts": [{"name": "trust-boundary", "annotations": {"status": "UNSIGNED", "claim": "No authenticated publisher, trusted builder, signature, SLSA level or native-platform acceptance is established."}}]}}}
     return {record["name"] + ".spdx.json": canonical(sbom), record["name"] + ".provenance.unsigned.json": canonical(provenance)}
 
@@ -331,7 +331,7 @@ def audit(directory, revision):
     identity = source(revision)
     require(not directory.is_symlink() and directory.is_dir(), "Artifact directory must be a real directory")
     metadata = json.loads((directory / "metadata.json").read_bytes())
-    require(metadata.get("commit") == revision and metadata.get("project_name") == "obsgod", "Snapshot metadata source/project mismatch")
+    require(metadata.get("commit") == revision and metadata.get("project_name") == "deckystream", "Snapshot metadata source/project mismatch")
     version = metadata.get("version", "")
     require(bool(re.fullmatch(r"0\.0\.0-dev\.g[0-9a-f]{7,40}", version)) and revision.startswith(version.split(".g", 1)[1]), "Revision-bound snapshot version required")
     expected = {target_name(version, target): target for target in TARGETS}
@@ -370,8 +370,8 @@ def smoke(directory, summary):
     data = archive.read_bytes()
     require(sha(data) == record["sha256"], "Smoke archive differs from audit")
     files = archive_files(data, "tar.gz")
-    require(set(files) == BASE_FILES | {"obsgod"} and all(sha(item["data"]) == record["files"][name]["sha256"] for name, item in files.items()), "Smoke payload differs from audit")
-    with tempfile.TemporaryDirectory(prefix="obsgod-generic-install-") as temporary:
+    require(set(files) == BASE_FILES | {"deckystream"} and all(sha(item["data"]) == record["files"][name]["sha256"] for name, item in files.items()), "Smoke payload differs from audit")
+    with tempfile.TemporaryDirectory(prefix="deckystream-generic-install-") as temporary:
         home = Path(temporary) / "home"
         unpacked = Path(temporary) / "unpacked"
         unpacked.mkdir(mode=0o700)
@@ -379,10 +379,10 @@ def smoke(directory, summary):
             target = unpacked / name
             with target.open("xb") as stream:
                 stream.write(item["data"])
-            target.chmod(0o755 if name == "obsgod" else 0o644)
-        binary = home / ".local/bin/obsgod"
+            target.chmod(0o755 if name == "deckystream" else 0o644)
+        binary = home / ".local/bin/deckystream"
         binary.parent.mkdir(parents=True, mode=0o700)
-        binary.write_bytes((unpacked / "obsgod").read_bytes())
+        binary.write_bytes((unpacked / "deckystream").read_bytes())
         binary.chmod(0o755)
         env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home), "LANG": "C.UTF-8", "TMPDIR": temporary}
         outputs = []
@@ -391,11 +391,11 @@ def smoke(directory, summary):
             require(result.returncode == 0 and not result.stderr and len(result.stdout) < 262144, "Installed CLI offline command failed")
             outputs.append(result.stdout.decode())
         version = json.loads(outputs[0])
-        require(version == {"schema_version": 1, "name": "obsgod", "version": summary["version"] + " (" + summary["source"]["revision"] + ")"}, "Installed CLI version mismatch")
-        require(outputs[1].strip() == str(home / ".config/obsgod/config.json") and not (home / ".config").exists(), "Config inspection wrote or selected unexpected data")
+        require(version == {"schema_version": 1, "name": "deckystream", "version": summary["version"] + " (" + summary["source"]["revision"] + ")"}, "Installed CLI version mismatch")
+        require(outputs[1].strip() == str(home / ".config/deckystream/config.json") and not (home / ".config").exists(), "Config inspection wrote or selected unexpected data")
         require(isinstance(json.loads(outputs[2]), dict), "Capabilities command did not return JSON")
         return {"schema_version": 1, "source_revision": summary["source"]["revision"], "archive": record["name"], "archive_sha256": record["sha256"],
-                "uid": os.getuid(), "gid": os.getgid(), "platform": "Linux/amd64", "outcome": "passed", "commands": [["obsgod", *a] for a in (["version", "--json"], ["config", "path"], ["api", "capabilities"])],
+                "uid": os.getuid(), "gid": os.getgid(), "platform": "Linux/amd64", "outcome": "passed", "commands": [["deckystream", *a] for a in (["version", "--json"], ["config", "path"], ["api", "capabilities"])],
                 "scope": "Private temporary user-prefix extraction/install/offline CLI only; no OBS connection or supported-platform claim."}
 
 

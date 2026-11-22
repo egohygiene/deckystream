@@ -23,7 +23,7 @@ import time
 sys.dont_write_bytecode = True
 
 def _sibling(name):
-    spec = importlib.util.spec_from_file_location("obsgod_remove_" + name, Path(__file__).resolve().parent / (name + ".py"))
+    spec = importlib.util.spec_from_file_location("deckystream_remove_" + name, Path(__file__).resolve().parent / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -32,7 +32,7 @@ def _sibling(name):
 run_cli = _sibling("bridge").run_cli
 _paths = _sibling("paths")
 app_directories, xdg_root, decky_locations = _paths.app_directories, _paths.xdg_root, _paths.decky_locations
-DISPLAY_NAME = _sibling("product").DISPLAY_NAME if (Path(__file__).resolve().parent / "product.py").is_file() else "OBSGod"
+DISPLAY_NAME = _sibling("product").DISPLAY_NAME if (Path(__file__).resolve().parent / "product.py").is_file() else "deckystream"
 
 RECORDING = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}(?:_\d+)?\.mkv\Z")
 EXPORT_MAX_NODES = 20_000
@@ -80,7 +80,7 @@ def validate_path(path, home, *, current=False, tree=False):
         for directory, names, files in os.walk(path, followlinks=False):
             for name in names + files:
                 child = Path(directory) / name
-                allowed_current = child == path / "current" and path.name == "obsgod"
+                allowed_current = child == path / "current" and path.name in {"deckystream", "obsgod"}
                 validate_path(child, home, current=allowed_current)
     return path
 
@@ -185,13 +185,13 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
     base, apps = app_directories(home, environ)
     base = validate_path(base, home)
     apps = validate_path(apps, home)
-    config = xdg_root("XDG_CONFIG_HOME", home, environ) / "obsgod"
-    state = xdg_root("XDG_STATE_HOME", home, environ) / "obsgod"
-    cache = xdg_root("XDG_CACHE_HOME", home, environ) / "obsgod"
-    managed_obs = home / ".var/app/com.obsproject.Studio/config/obsgod"
+    config = xdg_root("XDG_CONFIG_HOME", home, environ) / _paths.app_namespace(home, environ)
+    state = xdg_root("XDG_STATE_HOME", home, environ) / _paths.app_namespace(home, environ)
+    cache = xdg_root("XDG_CACHE_HOME", home, environ) / _paths.app_namespace(home, environ)
+    managed_obs = home / ".var/app/com.obsproject.Studio/config" / _paths.app_namespace(home, environ)
     # Match the runtime's compatibility media path; never infer ownership of an
     # unrelated XDG Videos location during a product rename.
-    videos = home / "Videos/OBSGod"
+    videos = home / "Videos" / ("OBSGod" if _paths.app_namespace(home, environ) == "obsgod" else "deckystream")
     decky = decky_locations(home, environ)
     decky_root = decky["plugin"].parent.parent
     pending_gates = []
@@ -208,8 +208,8 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
             entries.append({"path": str(path), "label": label, "kind": kind})
 
     if mode != "reset":
-        executable = home / ".local/bin/obsgod"
-        if executable.is_symlink() and executable.readlink() == base / "current/obsgod":
+        executable = home / ".local/bin/deckystream"
+        if executable.is_symlink() and executable.readlink() == base / "current/deckystream":
             for parent in [executable.parent, executable.parent.parent]:
                 validate_path(parent, home)
             if executable.lstat().st_uid != os.getuid():
@@ -217,13 +217,13 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
             entries.append({"path": str(executable), "label": "Managed command alias", "kind": "alias"})
         elif exists(executable):
             preserved.append(str(executable) + " (unrelated command)")
-        for name in ["obsgod-setup.desktop", "obsgod-update.desktop", "obsgod-uninstall.desktop"]:
+        for name in ["deckystream-setup.desktop", "deckystream-update.desktop", "deckystream-uninstall.desktop"]:
             shortcut = apps / name
             validate_path(shortcut, home)
             if shortcut.is_file():
                 if shortcut.stat().st_size > 64 * 1024:
                     raise RemovalError("An application shortcut is unexpectedly large")
-                if "X-OBSGod-Managed=true" in shortcut.read_text():
+                if "X-deckystream-Managed=true" in shortcut.read_text():
                     add(shortcut, "Managed Desktop shortcut", "file")
                 else:
                     preserved.append(str(shortcut) + " (unrelated shortcut)")
@@ -300,7 +300,7 @@ def build_plan(home, mode="uninstall", purge=False, delete_recordings=False, rec
     plan["ancestors"] = ancestors
     if mode == "wipe":
         destination = (Path(export_path) if export_path is not None else
-                       xdg_root("XDG_DATA_HOME", home, environ) / "obsgod-wipe-exports" /
+                       xdg_root("XDG_DATA_HOME", home, environ) / "deckystream-wipe-exports" /
                        (str(time.time_ns()) + "-" + secrets.token_hex(8) + ".tar"))
         destination = _paths.normalize_home_path(destination, home)
         for root in [Path(entry["path"]) for entry in entries] + [Path(plan["plugin_directory"])]:
@@ -482,7 +482,7 @@ def export_wipe(plan, home):
     nodes, expected, records = _export_nodes(plan, home), {}, []
     destination = Path(plan["export"]["path"])
     with _export_parent(plan["export"], home) as (directory, ancestors):
-        name = ".obsgod-wipe-" + secrets.token_hex(12) + ".tmp"
+        name = ".deckystream-wipe-" + secrets.token_hex(12) + ".tmp"
         descriptor = os.open(name, os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
         owned = os.fstat(descriptor)
         identity = (owned.st_dev, owned.st_ino)
@@ -612,7 +612,7 @@ def remove_plugin(home, directory=None):
         if known.is_symlink() or metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 64 * 1024:
             raise RemovalError("The remaining plugin directory could not be identified safely; inspect Decky before retrying.")
         saved = json.loads(metadata.read_text())
-        if not isinstance(saved, dict) or saved.get("name") != "OBSGod":
+        if not isinstance(saved, dict) or saved.get("name") != "deckystream":
             raise RemovalError("The remaining plugin directory has an unexpected identity; inspect Decky before retrying.")
     result = decky.helper_request("uninstall", uninstall_existing=exists(known))
     if result.get("removed") is not True:
@@ -703,7 +703,7 @@ def describe(plan):
     scope = "legacy app retirement" if plan.get("legacy_app_only") else plan["mode"]
     lines = [DISPLAY_NAME + " — " + scope + " inventory", ""]
     if plan["remove_plugin"]:
-        lines.append("Remove the OBSGod compatibility plugin through Decky at " + plan["plugin_directory"] + ".")
+        lines.append("Remove the deckystream compatibility plugin through Decky at " + plan["plugin_directory"] + ".")
     lines.append("Decky adapter inventory root: " + plan["decky_root"] + ". For a nonstandard installation, set DECKY_HOME before reviewing this plan.")
     lines.extend(entry["label"] + ": " + entry["path"] for entry in plan["entries"])
     if not plan["entries"]:
@@ -760,8 +760,8 @@ def main(argv=None):
     parser.add_argument("--yes", action="store_true", help="Apply the reviewed inventory without prompting")
     parser.add_argument("--legacy-app-only", action="store_true", help="Retire only the old Desktop app and launchers; preserve the Decky plugin and shared user data")
     parser.add_argument("--export", metavar="PATH", help="For --wipe, choose a new private recovery TAR outside all removal roots; the archive contains credentials and is retained")
-    parser.add_argument("--delete-recordings", action="store_true", help="Also delete standard date-named OBS MKVs in Videos/OBSGod; preview with --dry-run")
-    parser.add_argument("--recording", action="append", default=[], metavar="PATH", help="Also delete this explicitly selected MKV in Videos/OBSGod (repeatable)")
+    parser.add_argument("--delete-recordings", action="store_true", help="Also delete standard date-named OBS MKVs in Videos/deckystream; preview with --dry-run")
+    parser.add_argument("--recording", action="append", default=[], metavar="PATH", help="Also delete this explicitly selected MKV in Videos/deckystream (repeatable)")
     args = parser.parse_args(argv)
     try:
         if os.getuid() == 0:

@@ -16,6 +16,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	appnaming "github.com/egohygiene/deckystream/internal/naming"
 )
 
 const Port = "4457"
@@ -47,12 +49,16 @@ type Secrets struct {
 type Paths struct{ Config, Secrets, OBSConfig, State, Videos string }
 
 func UserPaths() (Paths, error) {
-	home, e := os.UserHomeDir()
+	originalHome, e := os.UserHomeDir()
 	if e != nil {
 		return Paths{}, e
 	}
-	if !filepath.IsAbs(home) || strings.ContainsAny(home, "\r\n\x00") {
+	if !filepath.IsAbs(originalHome) || strings.ContainsAny(originalHome, "\r\n\x00") {
 		return Paths{}, errors.New("HOME must be an absolute directory without control characters")
+	}
+	home, e := appnaming.NormalizeHome(originalHome)
+	if e != nil {
+		return Paths{}, errors.New("HOME has unsafe ownership, permissions or aliases")
 	}
 	root, e := os.UserConfigDir()
 	if e != nil {
@@ -61,6 +67,10 @@ func UserPaths() (Paths, error) {
 	if !filepath.IsAbs(root) || strings.ContainsAny(root, "\r\n\x00") {
 		return Paths{}, errors.New("the configuration directory must be absolute without control characters")
 	}
+	root, e = appnaming.NormalizeHomePath(root, originalHome, home)
+	if e != nil {
+		return Paths{}, e
+	}
 	data := os.Getenv("XDG_STATE_HOME")
 	if data == "" {
 		data = filepath.Join(home, ".local/state")
@@ -68,11 +78,22 @@ func UserPaths() (Paths, error) {
 	if !filepath.IsAbs(data) || strings.ContainsAny(data, "\r\n\x00") {
 		return Paths{}, errors.New("XDG_STATE_HOME must be an absolute directory without control characters")
 	}
+	data, e = appnaming.NormalizeHomePath(data, originalHome, home)
+	if e != nil {
+		return Paths{}, e
+	}
+	namespace, e := selectNamespace(originalHome, home, root, data)
+	if e != nil {
+		return Paths{}, e
+	}
 	videos, e := DefaultVideosDirectory(home, root)
 	if e != nil {
 		return Paths{}, e
 	}
-	paths := Paths{Config: filepath.Join(root, "obsgod/deck.json"), Secrets: filepath.Join(root, "obsgod/secrets.json"), OBSConfig: filepath.Join(home, ".var/app/com.obsproject.Studio/config/obsgod"), State: filepath.Join(data, "obsgod"), Videos: videos}
+	if namespace == legacyNamespace {
+		videos = filepath.Join(filepath.Dir(videos), legacyOBSIdentity)
+	}
+	paths := Paths{Config: filepath.Join(root, namespace, "deck.json"), Secrets: filepath.Join(root, namespace, "secrets.json"), OBSConfig: filepath.Join(home, ".var/app/com.obsproject.Studio/config", namespace), State: filepath.Join(data, namespace), Videos: videos}
 	if e = validateDeckyStorageMap(paths, home); e != nil {
 		return Paths{}, e
 	}
@@ -162,7 +183,7 @@ func Load(p Paths) (Settings, Secrets, error) {
 	s := DefaultSettings()
 	var secret Secrets
 	if e := readJSON(p.Config, &s); e != nil {
-		return s, secret, errors.New("complete OBSGod Desktop setup first")
+		return s, secret, errors.New("complete deckystream Desktop setup first")
 	}
 	if e := s.Validate(); e != nil {
 		return s, secret, e
@@ -171,7 +192,7 @@ func Load(p Paths) (Settings, Secrets, error) {
 		return s, Secrets{}, e
 	}
 	if secret.StreamKey == "" || secret.OBSPassword == "" {
-		return s, Secrets{}, errors.New("save your stream key in OBSGod Desktop setup")
+		return s, Secrets{}, errors.New("save your stream key in deckystream Desktop setup")
 	}
 	if secret.SettingsHash != settingsHash(s) {
 		return s, Secrets{}, errors.New("settings and credentials do not match; save Desktop setup again before starting")
@@ -197,6 +218,9 @@ func loadCredentials(p Paths) (Secrets, error) {
 }
 
 func Configure(p Paths, r io.Reader) (Settings, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return Settings{}, err
+	}
 	input := struct {
 		Settings
 		StreamKey string `json:"stream_key"`
@@ -262,13 +286,13 @@ func readJSON(path string, v any) error {
 func readPrivateJSON(path string, v any) error {
 	info, e := os.Lstat(path)
 	if e != nil {
-		return errors.New("OBSGod credentials are missing; run Desktop setup")
+		return errors.New("deckystream credentials are missing; run Desktop setup")
 	}
 	if !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
 		return errors.New("credential file must be a regular, private file (chmod 600); symlinks are refused")
 	}
 	if e = readJSON(path, v); e != nil {
-		return errors.New("could not read OBSGod credentials; run Desktop setup")
+		return errors.New("could not read deckystream credentials; run Desktop setup")
 	}
 	return nil
 }
@@ -282,7 +306,7 @@ func privateDir(path string) error {
 		return e
 	}
 	if !i.IsDir() || i.Mode()&os.ModeSymlink != 0 {
-		return errors.New("unsafe OBSGod directory")
+		return errors.New("unsafe deckystream directory")
 	}
 	return os.Chmod(path, 0700)
 }
@@ -292,9 +316,9 @@ func atomicWrite(path string, b []byte) error {
 		return e
 	}
 	if i, e := os.Lstat(path); e == nil && (!i.Mode().IsRegular() || i.Mode()&os.ModeSymlink != 0) {
-		return errors.New("refusing to replace a non-regular OBSGod file")
+		return errors.New("refusing to replace a non-regular deckystream file")
 	}
-	f, e := os.CreateTemp(filepath.Dir(path), ".obsgod-*")
+	f, e := os.CreateTemp(filepath.Dir(path), ".deckystream-*")
 	if e != nil {
 		return e
 	}
@@ -323,11 +347,14 @@ func writeJSON(path string, v any) error {
 	return atomicWrite(path, append(b, '\n'))
 }
 
-// Prepare writes only inside OBSGod's isolated Flatpak config, while it is offline.
+// Prepare writes only inside deckystream's isolated Flatpak config, while it is offline.
 func Prepare(p Paths, s Settings, secret Secrets) error { return prepare(p, s, secret, false) }
 
 func prepare(p Paths, s Settings, secret Secrets, visible bool) error {
-	profile := filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/OBSGod")
+	if err := RequirePrimaryBackend(); err != nil {
+		return err
+	}
+	profile := filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/deckystream")
 	mediaDir, replaySeconds, replayMemoryMB, err := MediaProfileValues(p)
 	if err != nil {
 		return err
@@ -340,7 +367,7 @@ func prepare(p Paths, s Settings, secret Secrets, visible bool) error {
 			return e
 		}
 	}
-	global := "[General]\nFirstRun=true\nConfigOnNewProfile=false\n\n[Basic]\nProfile=OBSGod\nProfileDir=OBSGod\nSceneCollection=OBSGod\nSceneCollectionFile=OBSGod\n\n[BasicWindow]\nPreviewEnabled=false\nSysTrayEnabled=true\nSysTrayWhenStarted=true\nWarnBeforeStartingStream=false\nWarnBeforeStoppingStream=false\n"
+	global := "[General]\nFirstRun=true\nConfigOnNewProfile=false\n\n[Basic]\nProfile=deckystream\nProfileDir=deckystream\nSceneCollection=deckystream\nSceneCollectionFile=deckystream\n\n[BasicWindow]\nPreviewEnabled=false\nSysTrayEnabled=true\nSysTrayWhenStarted=true\nWarnBeforeStartingStream=false\nWarnBeforeStoppingStream=false\n"
 	if visible {
 		global = strings.Replace(global, "SysTrayWhenStarted=true", "SysTrayWhenStarted=false", 1)
 	}
@@ -355,7 +382,7 @@ func prepare(p Paths, s Settings, secret Secrets, visible bool) error {
 	if s.Encoder == "x264" {
 		encoder = "obs_x264"
 	}
-	ini := fmt.Sprintf("[General]\nName=OBSGod\n\n[Video]\nBaseCX=1280\nBaseCY=720\nOutputCX=%d\nOutputCY=%d\nFPSType=0\nFPSCommon=%d\nScaleType=bicubic\nColorFormat=NV12\nColorSpace=709\nColorRange=Partial\n\n[Output]\nMode=Advanced\n\n[AdvOut]\nTrackIndex=1\nEncoder=%s\nApplyServiceSettings=true\nUseRescale=false\nRecType=Standard\nRecFilePath=%s\nRecFormat2=mkv\nRecEncoder=none\nRecTracks=1\nRecRB=true\nRecRBTime=%d\nRecRBSize=%d\nFFOutputToFile=true\n\n[Audio]\nSampleRate=48000\nChannelSetup=Stereo\n", s.OutputWidth(), s.OutputHeight(), s.FPS, encoder, filepath.ToSlash(mediaDir), replaySeconds, replayMemoryMB)
+	ini := fmt.Sprintf("[General]\nName=deckystream\n\n[Video]\nBaseCX=1280\nBaseCY=720\nOutputCX=%d\nOutputCY=%d\nFPSType=0\nFPSCommon=%d\nScaleType=bicubic\nColorFormat=NV12\nColorSpace=709\nColorRange=Partial\n\n[Output]\nMode=Advanced\n\n[AdvOut]\nTrackIndex=1\nEncoder=%s\nApplyServiceSettings=true\nUseRescale=false\nRecType=Standard\nRecFilePath=%s\nRecFormat2=mkv\nRecEncoder=none\nRecTracks=1\nRecRB=true\nRecRBTime=%d\nRecRBSize=%d\nFFOutputToFile=true\n\n[Audio]\nSampleRate=48000\nChannelSetup=Stereo\n", s.OutputWidth(), s.OutputHeight(), s.FPS, encoder, filepath.ToSlash(mediaDir), replaySeconds, replayMemoryMB)
 	if strings.ContainsAny(mediaDir, "\r\n") {
 		return errors.New("unsupported newline in home directory")
 	}

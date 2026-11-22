@@ -14,7 +14,7 @@ import subprocess
 import time
 
 
-BINARY = Path("/src/dist/obsgod")
+BINARY = Path("/src/dist/deckystream")
 OUTPUT = Path("/work/output")
 SENSITIVE = set()
 
@@ -67,7 +67,7 @@ def check_output(path, label):
 def run():
     assert Path("/.dockerenv").exists() and Path.home() == Path("/work/home"), "Run only inside the disposable native fixture"
     root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    secret = json.loads((root / "obsgod/secrets.json").read_text())
+    secret = json.loads((root / "deckystream/secrets.json").read_text())
     SENSITIVE.update(secret.get(key, "") for key in ["obs_password", "stream_key"])
     initial = main_status()
     assert not initial["stream"]["active"] and not initial["media"]["recording"]["active"] and not initial["media"]["replay_active"], "Media qualification needs confirmed idle OBS"
@@ -157,7 +157,7 @@ def run():
 def run_live():
     assert Path("/.dockerenv").exists() and Path.home() == Path("/work/home"), "Run only inside the disposable native fixture"
     root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    secret = json.loads((root / "obsgod/secrets.json").read_text())
+    secret = json.loads((root / "deckystream/secrets.json").read_text())
     SENSITIVE.update(secret.get(key, "") for key in ["obs_password", "stream_key"])
     initial = main_status()
     assert initial["stream"]["active"] and not initial["media"]["recording"]["active"] and not initial["media"]["replay_active"], "Live coexistence needs an explicitly started fixture stream and idle local outputs"

@@ -26,7 +26,7 @@ compatibility responsibilities. Countdown orchestration stays in the CLI.
 
 `api.Client.Legacy` accepts only typed `LegacyRequest`/`LegacyResult` models and
 39 documented `LegacyOperation` values. There is no arbitrary protocol request,
-raw JSON payload, public `goobs` constructor/model or new `obsgod api legacy`
+raw JSON payload, public `goobs` constructor/model or new `deckystream api legacy`
 JSON command. Unknown operations fail before backend execution. Normal public
 v1 methods retain their existing approvals and stronger observation/readback.
 
@@ -111,7 +111,7 @@ new qualification is complete. The intact [original criteria and dependencies](e
 remain authoritative. No new hard dependency, deprecation date or removal is added.
 
 This change implements a narrow typed `pkg/api/v1.Client.Profiles` read and uses
-it in the **new** `obsgod api profile list` command. Both send one profile-list
+it in the **new** `deckystream api profile list` command. Both send one profile-list
 request without unrelated output queries. The existing JSON operation/result
 shape is retained. Legacy `profile list/get`, its service and injected dialer
 remain unchanged; this is partial preparation for their later integration.

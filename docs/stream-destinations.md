@@ -32,7 +32,7 @@ local RTMP endpoint without a new service account.
 ## Local connection and password recovery
 
 The managed local control endpoint is `127.0.0.1:4457`. Its generated password
-is separate from the stream key. The legacy `OBSGod` plugin/profile/storage IDs
+is separate from the stream key. The legacy `deckystream` plugin/profile/storage IDs
 remain compatibility identities; ordinary OBS configuration is separate.
 
 - **Refresh connection details** reports public endpoint/process facts without
@@ -59,17 +59,17 @@ remain compatibility identities; ordinary OBS configuration is separate.
 The CLI exposes the same local operations as JSON:
 
 ```sh
-obsgod deck connection-info
-obsgod deck test-connection
+deckystream deck connection-info
+deckystream deck test-connection
 ```
 
-`obsgod deck change-obs-password` reads exactly one confirmed request from stdin;
+`deckystream deck change-obs-password` reads exactly one confirmed request from stdin;
 it does not accept a password argument. Prefer the local Desktop form for manual
 passwords so secrets stay out of shell history. Automatic generation can be
 requested without exposing a secret:
 
 ```sh
-printf '%s' '{"confirm":true,"generate":true}' | obsgod deck change-obs-password
+printf '%s' '{"confirm":true,"generate":true}' | deckystream deck change-obs-password
 ```
 
 No reveal endpoint was added. Entered fields are masked and stored credentials

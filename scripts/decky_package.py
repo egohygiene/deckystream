@@ -78,17 +78,17 @@ def validate_files(files):
         if (not isinstance(name, str) or path.is_absolute() or ".." in path.parts
                 or str(path) != name or "\\" in name or not isinstance(data, bytes)):
             raise ValueError("Invalid package payload path or content")
-    required = {"main.py", "storage.py", "dependency_setup.py", "plugin.json", "package.json", "dist/index.js", "bin/obsgod",
-                "bin/libgstobsgodcapture.so", "LICENSE", "LICENSE.LGPL-2.1",
+    required = {"main.py", "storage.py", "dependency_setup.py", "plugin.json", "package.json", "dist/index.js", "bin/deckystream",
+                "bin/libgstdeckystreamcapture.so", "LICENSE", "LICENSE.LGPL-2.1",
                 "THIRD_PARTY_NOTICES.md", "CAPTURE-SOURCE.tar.gz", "dist/decky-api.js",
                 "source/decky-api/package.json", "source/decky-api/SOURCE.tar.gz", *SHARED_FILES}
     if required - files.keys():
         raise ValueError("Missing package payload: " + ", ".join(sorted(required - files.keys())))
     plugin = json.loads(files["plugin.json"])
     package = json.loads(files["package.json"])
-    if plugin.get("name") != "OBSGod" or plugin.get("flags") != [] or plugin.get("api_version") != 1:
+    if plugin.get("name") != "deckystream" or plugin.get("flags") != [] or plugin.get("api_version") != 1:
         raise ValueError("Unexpected Decky identity, privileges or API contract")
-    if package.get("name") != "obsgod":
+    if package.get("name") != "deckystream":
         raise ValueError("Unexpected compatible package identity")
 
 
@@ -111,13 +111,13 @@ def plugin_files(repo, *, version, binary, capture_library, frontend, capture_so
     for name in SHARED_FILES:
         add(name, safe_read(repo / "steamdeck" / name, limit=2 * 1024 * 1024))
     add("plugin.json", safe_read(backend / "plugin.json"))
-    add("package.json", json_bytes({"name": "obsgod", "version": version, "license": "MIT",
+    add("package.json", json_bytes({"name": "deckystream", "version": version, "license": "MIT",
         "type": "module", "scripts": {"build": "node build/verify.mjs"}}))
     add("build/verify.mjs", STAGE_BUILD)
     add("pnpm-lock.yaml", STAGE_LOCK)
     add("README.md", safe_read(repo / "docs/decky-package.md"))
-    add("bin/obsgod", binary)
-    add("bin/libgstobsgodcapture.so", capture_library)
+    add("bin/deckystream", binary)
+    add("bin/libgstdeckystreamcapture.so", capture_library)
     add("CAPTURE-SOURCE.tar.gz", capture_source)
     for name, source in (("LICENSE", repo / "LICENSE"),
                          ("LICENSE.LGPL-2.1", backend / "LICENSE.LGPL-2.1"),
@@ -130,7 +130,7 @@ def plugin_files(repo, *, version, binary, capture_library, frontend, capture_so
     sdk = backend / "node_modules/@decky/api"
     add("source/decky-api/SOURCE.tar.gz", sdk_source_archive(sdk))
     add("source/decky-api/package.json", safe_read(sdk / "package.json"))
-    add("source/decky-api/BUILDING.md", b"SOURCE.tar.gz contains the unmodified preferred TypeScript source of @decky/api 1.1.3, including its original package.json and src/ tree under decky-api/. Extract with tar -xzf SOURCE.tar.gz, then use the corresponding repository revision's pinned frontend toolchain and rollup.config.js. The outer package.json is an identical convenience copy. dist/decky-api.js is separate and replaceable; build changes are the manifest import to ./manifest.js and the types export to ./types.js. dist/manifest.js supplies the OBSGod name. LICENSE.LGPL-2.1 is at the plugin root.\n")
+    add("source/decky-api/BUILDING.md", b"SOURCE.tar.gz contains the unmodified preferred TypeScript source of @decky/api 1.1.3, including its original package.json and src/ tree under decky-api/. Extract with tar -xzf SOURCE.tar.gz, then use the corresponding repository revision's pinned frontend toolchain and rollup.config.js. The outer package.json is an identical convenience copy. dist/decky-api.js is separate and replaceable; build changes are the manifest import to ./manifest.js and the types export to ./types.js. dist/manifest.js supplies the deckystream name. LICENSE.LGPL-2.1 is at the plugin root.\n")
     if capture_receipt is not None:
         add("build/capture-build.json", capture_receipt)
     manifest = {"format": "decky-plugin", "version": version, "revision": revision,
@@ -147,7 +147,7 @@ def zip_payload(files, epoch):
     timestamp = datetime.fromtimestamp(max(epoch, 315532800), tz=timezone.utc).timetuple()[:6]
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(files.items()):
-            info = zipfile.ZipInfo("obsgod/" + name, timestamp)
+            info = zipfile.ZipInfo("deckystream/" + name, timestamp)
             info.create_system = 3
             info.external_attr = (0o100755 if name.startswith("bin/") else 0o100644) << 16
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -179,8 +179,8 @@ def stage_cli(files, directory):
 def read_zip(path):
     with zipfile.ZipFile(path) as archive:
         names = [name for name in archive.namelist() if not name.endswith("/")]
-        if len(names) != len(set(names)) or any(not name.startswith("obsgod/") for name in names):
+        if len(names) != len(set(names)) or any(not name.startswith("deckystream/") for name in names):
             raise ValueError("Duplicate or unexpected official CLI archive paths")
-        files = {name.removeprefix("obsgod/"): archive.read(name) for name in names}
+        files = {name.removeprefix("deckystream/"): archive.read(name) for name in names}
     validate_files(files)
     return files

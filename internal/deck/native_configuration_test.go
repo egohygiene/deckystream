@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func configurationStopped() Result {
@@ -311,7 +311,7 @@ func TestNativeConfigurationInvalidSavedSettingsCannotAuthorizeClose(t *testing.
 	before := configurationPair(t, p)
 	state := configurationStopped()
 	state.Process, state.Connected = "running", true
-	state.Runtime = &automation.RuntimeStatus{Profile: "OBSGod", Collection: "OBSGod"}
+	state.Runtime = &automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}
 	view := readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
 	if view.OK || view.CanConfigure || view.CanClose || !reflect.DeepEqual(before, configurationPair(t, p)) {
 		t.Fatal("invalid settings granted a configuration action despite known idle output", view)
@@ -322,7 +322,7 @@ func TestNativeConfigurationCloseRequiresIdleAuthenticatedManagedOBS(t *testing.
 	p := testPaths(t)
 	state := configurationStopped()
 	state.Process, state.Connected = "running", true
-	state.Runtime = &automation.RuntimeStatus{Profile: "OBSGod", Collection: "OBSGod"}
+	state.Runtime = &automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}
 	view := readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
 	if !view.CanClose || view.CanConfigure {
 		t.Fatal("positive idle managed OBS cannot be explicitly closed", view)
@@ -337,7 +337,7 @@ func TestNativeConfigurationCloseRequiresIdleAuthenticatedManagedOBS(t *testing.
 	} {
 		state = configurationStopped()
 		state.Process, state.Connected = "running", true
-		state.Runtime = &automation.RuntimeStatus{Profile: "OBSGod", Collection: "OBSGod"}
+		state.Runtime = &automation.RuntimeStatus{Profile: "deckystream", Collection: "deckystream"}
 		alter(&state)
 		view = readConfiguration(context.Background(), p, configurationProbe(state), configurationLocal("running"))
 		if view.CanClose || view.CanConfigure {

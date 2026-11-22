@@ -15,7 +15,7 @@ AUDIT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(AUDIT)
 
 
-def tar_bytes(files, root="OBSGod-Capture"):
+def tar_bytes(files, root="deckystream-Capture"):
     out = io.BytesIO()
     with tarfile.open(fileobj=out, mode="w:gz") as archive:
         for name, data in files.items():
@@ -25,7 +25,7 @@ def tar_bytes(files, root="OBSGod-Capture"):
     return out.getvalue()
 
 
-def zip_bytes(files, root="obsgod"):
+def zip_bytes(files, root="deckystream"):
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w") as archive:
         for name, data in files.items():
@@ -91,14 +91,14 @@ class ReleaseAuditTests(unittest.TestCase):
 
     def fixture(self, directory, mutate=None):
         revision, version = "a" * 40, "0.1.0-test"
-        capture = {name: name.encode() for name in ("gstobsgodcapture.c", "Makefile", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "build.Dockerfile")}
+        capture = {name: name.encode() for name in ("gstdeckystreamcapture.c", "Makefile", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "build.Dockerfile")}
         source = {"steamdeck/capture/" + name: data for name, data in capture.items()}
         source.update({"LICENSE": b"MIT license", "docs/steam-deck.md": b"guide"})
         source["product.json"] = AUDIT.canonical({"repository": "egohygiene/deckystream"})
         lock = {"packages": {"node_modules/@decky/api": {"version": "1.1.3", "license": "LGPL-2.1", "integrity": AUDIT.SDK_INTEGRITY},
                              "node_modules/qrcode-generator": {"version": "2.0.4", "license": "MIT"}}}
         source["steamdeck/decky/package-lock.json"] = AUDIT.canonical(lock)
-        plugin = {"bin/obsgod": b"go binary", "bin/libgstobsgodcapture.so": b"capture binary",
+        plugin = {"bin/deckystream": b"go binary", "bin/libgstdeckystreamcapture.so": b"capture binary",
                   "LICENSE": b"MIT license", "THIRD_PARTY_NOTICES.md": b"example.test/module v1.0.0 license text",
                   "CAPTURE-SOURCE.tar.gz": tar_bytes(capture), "LICENSE.LGPL-2.1": b"LGPL license",
                   "LICENSE.qrcode-generator.txt": b"MIT QR license", "source/decky-api/src/index.ts": b"preferred source",
@@ -113,29 +113,29 @@ class ReleaseAuditTests(unittest.TestCase):
         for name in AUDIT.PLUGIN_FILES:
             plugin.setdefault(name, name.encode())
         plugin["dist/LICENSE.qrcode-generator.txt"] = plugin["LICENSE.qrcode-generator.txt"]
-        runtime = {"obsgod": plugin["bin/obsgod"], "decky-install": b"helper binary", "libgstobsgodcapture.so": plugin["bin/libgstobsgodcapture.so"],
+        runtime = {"deckystream": plugin["bin/deckystream"], "decky-install": b"helper binary", "libgstdeckystreamcapture.so": plugin["bin/libgstdeckystreamcapture.so"],
                    "CAPTURE-SOURCE.tar.gz": plugin["CAPTURE-SOURCE.tar.gz"], "LICENSE": plugin["LICENSE"],
                    "THIRD_PARTY_NOTICES.md": plugin["THIRD_PARTY_NOTICES.md"], "STEAM-DECK.md": b"guide", "update.py": b"updater"}
         source["steamdeck/update.py"] = b"updater"
-        for name in AUDIT.RUNTIME_FILES - {"obsgod-decky.zip"}:
+        for name in AUDIT.RUNTIME_FILES - {"deckystream-decky.zip"}:
             runtime.setdefault(name, name.encode())
             if name.endswith((".py", ".desktop", ".sh", ".html", ".js", ".css")):
                 source.setdefault("steamdeck/" + name, runtime[name])
         if mutate:
             mutate(runtime, plugin, source)
-        runtime["obsgod-decky.zip"] = zip_bytes(plugin)
+        runtime["deckystream-decky.zip"] = zip_bytes(plugin)
         manifest = {"version": version, "updater_version": version, "revision": revision, "dirty": False, "platform": "linux/amd64",
                     "go": "go1.27.4", "node": "24.19.0", "npm": "11.9.0", "files": {name: AUDIT.sha(data) for name, data in runtime.items()}}
         runtime["manifest.json"] = AUDIT.canonical(manifest)
-        artifacts = {f"obsgod-deck_{version}_linux_amd64.tar.gz": tar_bytes(runtime, "OBSGod-" + version),
-                     "obsgod-decky.zip": runtime["obsgod-decky.zip"], "manifest.json": runtime["manifest.json"]}
+        artifacts = {f"deckystream-deck_{version}_linux_amd64.tar.gz": tar_bytes(runtime, "deckystream-" + version),
+                     "deckystream-decky.zip": runtime["deckystream-decky.zip"], "manifest.json": runtime["manifest.json"]}
         updater = {name: runtime[name] for name in AUDIT.UPDATER_FILES}
         updater_manifest = {"kind": "updater", "version": version, "updater_version": version, "revision": revision, "runtime_revision": revision,
                             "platform": "linux/amd64", "files": {name: AUDIT.sha(data) for name, data in updater.items()}}
         updater["manifest.json"] = AUDIT.canonical(updater_manifest)
-        updater_name = f"obsgod-one-click-update_{version}_linux_amd64.zip"
-        updater_bytes = zip_bytes(updater, "OBSGod-Updater")
-        receipt = {"sha256": AUDIT.sha(runtime["libgstobsgodcapture.so"]), "source_sha256": AUDIT.sha(capture["gstobsgodcapture.c"]),
+        updater_name = f"deckystream-one-click-update_{version}_linux_amd64.zip"
+        updater_bytes = zip_bytes(updater, "deckystream-Updater")
+        receipt = {"sha256": AUDIT.sha(runtime["libgstdeckystreamcapture.so"]), "source_sha256": AUDIT.sha(capture["gstdeckystreamcapture.c"]),
                    "dockerfile_sha256": AUDIT.sha(capture["build.Dockerfile"]), "network_during_compile": False, "image_id": "sha256:" + "b" * 64}
         (directory / "SHA256SUMS").write_text("".join(AUDIT.sha(data) + "  " + name + "\n" for name, data in artifacts.items()))
         (directory / "UPDATER-SHA256SUMS").write_text(AUDIT.sha(updater_bytes) + "  " + updater_name + "\n")
@@ -176,7 +176,7 @@ class ReleaseAuditTests(unittest.TestCase):
                 sbom = json.loads(result["sbom.spdx.json"])
                 provenance = json.loads(result["provenance.unsigned.json"])
                 base = "https://github.com/" + repository
-                self.assertEqual(sbom["packages"][0]["name"], "OBSGod")
+                self.assertEqual(sbom["packages"][0]["name"], "deckystream")
                 self.assertEqual(sbom["packages"][0]["downloadLocation"], base + "/tree/" + revision)
                 self.assertTrue(sbom["documentNamespace"].startswith(base + "/sbom/" + revision + "/"))
                 definition = provenance["predicate"]["buildDefinition"]
@@ -214,10 +214,10 @@ class ReleaseAuditTests(unittest.TestCase):
         source["docs/decky-package.md"] = plugin["README.md"]
         plugin["build/verify.mjs"], plugin["pnpm-lock.yaml"] = b"prepared build check", b"empty stage lock"
         source["scripts/decky_package.py"] = b'STAGE_BUILD = b"prepared build check"\nSTAGE_LOCK = b"empty stage lock"\n'
-        plugin["package.json"] = AUDIT.canonical({"name": "obsgod", "version": "0.1.0-test", "license": "MIT",
+        plugin["package.json"] = AUDIT.canonical({"name": "deckystream", "version": "0.1.0-test", "license": "MIT",
             "type": "module", "scripts": {"build": "node build/verify.mjs"}})
-        plugin["build/capture-build.json"] = AUDIT.canonical({"sha256": AUDIT.sha(runtime["libgstobsgodcapture.so"]),
-            "source_sha256": AUDIT.sha(source["steamdeck/capture/gstobsgodcapture.c"]),
+        plugin["build/capture-build.json"] = AUDIT.canonical({"sha256": AUDIT.sha(runtime["libgstdeckystreamcapture.so"]),
+            "source_sha256": AUDIT.sha(source["steamdeck/capture/gstdeckystreamcapture.c"]),
             "dockerfile_sha256": AUDIT.sha(source["steamdeck/capture/build.Dockerfile"]),
             "network_during_compile": False, "image_id": "sha256:" + "b" * 64})
         if mutate:
@@ -256,7 +256,7 @@ class ReleaseAuditTests(unittest.TestCase):
 
     def test_detects_disagreement_between_plugin_and_runtime(self):
         with self.assertRaisesRegex(ValueError, "Decky runtime differs"):
-            self.run_fixture(lambda runtime, plugin, source: plugin.update({"bin/obsgod": b"different build"}))
+            self.run_fixture(lambda runtime, plugin, source: plugin.update({"bin/deckystream": b"different build"}))
 
     def test_missing_preferred_source_is_not_release_ready(self):
         with self.assertRaisesRegex(ValueError, "Decky required payload"):
@@ -272,13 +272,13 @@ class ReleaseAuditTests(unittest.TestCase):
         # First create a fully consistent candidate, then deliberately remove
         # only the updater's helper and recompute its own manifest/checksums.
         def remove_updater_helper(directory):
-            updater_name = "obsgod-one-click-update_0.1.0-test_linux_amd64.zip"
+            updater_name = "deckystream-one-click-update_0.1.0-test_linux_amd64.zip"
             _, updater = AUDIT.archive_files((directory / updater_name).read_bytes(), "zip")
             updater.pop("decky-install")
             manifest = json.loads(updater["manifest.json"])
             manifest["files"].pop("decky-install")
             updater["manifest.json"] = AUDIT.canonical(manifest)
-            data = zip_bytes(updater, "OBSGod-Updater")
+            data = zip_bytes(updater, "deckystream-Updater")
             (directory / updater_name).write_bytes(data)
             (directory / "updater-manifest.json").write_bytes(updater["manifest.json"])
             (directory / "UPDATER-SHA256SUMS").write_text(AUDIT.sha(data) + "  " + updater_name + "\n")
@@ -297,7 +297,7 @@ class ReleaseAuditTests(unittest.TestCase):
 
     def test_capture_source_must_match_git_even_when_payload_hashes_are_valid(self):
         with self.assertRaisesRegex(ValueError, "Capture preferred source differs"):
-            self.run_fixture(lambda runtime, plugin, source: source.update({"steamdeck/capture/gstobsgodcapture.c": b"different revision"}))
+            self.run_fixture(lambda runtime, plugin, source: source.update({"steamdeck/capture/gstdeckystreamcapture.c": b"different revision"}))
 
 
 if __name__ == "__main__":

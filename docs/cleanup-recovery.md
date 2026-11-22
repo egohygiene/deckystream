@@ -87,8 +87,8 @@ is required; external changes are not silently accepted as cleanup side effects.
 
 The original #82-C4 contract requires recoverable export before a complete wipe.
 `--wipe` now plans a unique TAR in the owned private
-`XDG_DATA_HOME/obsgod-wipe-exports` sibling namespace (default
-`~/.local/share/obsgod-wipe-exports`). `--export PATH` chooses a new private target
+`XDG_DATA_HOME/deckystream-wipe-exports` sibling namespace (default
+`~/.local/share/deckystream-wipe-exports`). `--export PATH` chooses a new private target
 for wipe only. The export is never inside a selected deletion tree or plugin
 root. Preview is read-only and advertises that the archive contains credentials
 and remains after wipe. Existing non-wipe/reset/legacy-retirement semantics stay.

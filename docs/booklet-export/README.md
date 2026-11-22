@@ -8,7 +8,7 @@ or new requirements for the plugin's ordinary builds.
 From the repository root:
 
 ```sh
-SOURCE_DATE_EPOCH=$(git show -s --format=%ct a2137bf214c77efda3ce3fb87879f88004c6477c) \
+SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD) \
 FORCE_SOURCE_DATE=1 \
 pandoc docs/testing-booklet.md --from=gfm --pdf-engine=xelatex \
   --lua-filter=docs/booklet-export/layout.lua \

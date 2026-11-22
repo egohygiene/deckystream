@@ -2,7 +2,7 @@ package v1
 
 import (
 	"context"
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type LegacyOperation string

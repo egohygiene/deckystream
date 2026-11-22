@@ -5,7 +5,7 @@ the paired Steam Deck runtime. They do not install OBS, Decky, capture libraries
 services or provider integrations. Installing a package never broadcasts.
 
 The existing source-clean, non-publishing GoReleaser snapshot now includes
-`/usr/bin/obsgod` and seven files under `/usr/share/doc/obsgod`: project LICENSE,
+`/usr/bin/deckystream` and seven files under `/usr/share/doc/deckystream`: project LICENSE,
 README, CHANGELOG, complete Go notices, selected-module catalog, generic CLI
 guide and `SOURCE.json`. The latter binds the application revision and immutable
 preferred-source URL; module source checksums and full licenses stay in the
@@ -77,7 +77,7 @@ disposable mount with readable modes. Original private build directories/files
 retain their ownership, bytes and 0700/0600 permissions; no DAC-override
 capability or recursive permission workaround is used.
 Debian's minimal image prunes documentation by default; the fixture passes
-scoped `dpkg --path-include` flags only for `/usr/share/doc/obsgod` so the actual
+scoped `dpkg --path-include` flags only for `/usr/share/doc/deckystream` so the actual
 notice installation can be checked. Host and image package-manager presets are
 not rewritten. Fedora ships a root-owned 0555 `/usr/bin`; the disposable fixture
 adds only owner-write on that overlay directory, keeping all container

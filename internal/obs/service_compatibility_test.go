@@ -18,7 +18,7 @@ import (
 
 	"github.com/andreykaipov/goobs"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/internal/config"
+	"github.com/egohygiene/deckystream/internal/config"
 )
 
 type compatibilityRequest struct {
@@ -191,7 +191,7 @@ func TestCompatibilityLegacyMutationsRemainAcknowledgementOnly(t *testing.T) {
 			f.mu.Lock()
 			agents := append([]string{}, f.agents...)
 			f.mu.Unlock()
-			if !reflect.DeepEqual(agents, []string{"obsgod/compat-build"}) {
+			if !reflect.DeepEqual(agents, []string{"deckystream/compat-build"}) {
 				t.Fatalf("legacy user agent changed: %v", agents)
 			}
 		})

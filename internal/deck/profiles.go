@@ -253,7 +253,7 @@ func environmentStreamProfile(explicit *StreamProfileOverrides) (StreamProfileOv
 		if (key == "WIDTH" && explicit.Width != nil) || (key == "HEIGHT" && explicit.Height != nil) || (key == "BITRATE" && explicit.Bitrate != nil) || (key == "FPS" && explicit.FPS != nil) {
 			continue
 		}
-		if value := os.Getenv("OBSGOD_DECK_" + key); value != "" {
+		if value := deckEnv("DECKYSTREAM_DECK_" + key); value != "" {
 			n, err := strconv.Atoi(value)
 			if err != nil {
 				return o, errors.New("invalid managed stream-profile environment override")
@@ -261,16 +261,16 @@ func environmentStreamProfile(explicit *StreamProfileOverrides) (StreamProfileOv
 			*target = &n
 		}
 	}
-	if value := os.Getenv("OBSGOD_DECK_ENCODER"); value != "" && explicit.Encoder == nil {
+	if value := deckEnv("DECKYSTREAM_DECK_ENCODER"); value != "" && explicit.Encoder == nil {
 		o.Encoder = &value
 	}
-	if value := os.Getenv("OBSGOD_DECK_CAPTURE_MODE"); value != "" && explicit.CaptureMode == nil {
+	if value := deckEnv("DECKYSTREAM_DECK_CAPTURE_MODE"); value != "" && explicit.CaptureMode == nil {
 		o.CaptureMode = &value
 	}
-	if value, present := os.LookupEnv("OBSGOD_DECK_MICROPHONE"); present && explicit.Microphone == nil {
+	if value, present := deckLookupEnv("DECKYSTREAM_DECK_MICROPHONE"); present && explicit.Microphone == nil {
 		v, err := strconv.ParseBool(value)
 		if err != nil {
-			return o, errors.New("OBSGOD_DECK_MICROPHONE must be true or false")
+			return o, errors.New("DECKYSTREAM_DECK_MICROPHONE must be true or false")
 		}
 		o.Microphone = &v
 	}
@@ -284,7 +284,7 @@ func resolveStreamProfile(p Paths, store streamProfileStore, input StreamProfile
 	}
 	name := input.Name
 	if name == "" && input.Action != "save" {
-		name = os.Getenv("OBSGOD_DECK_PROFILE")
+		name = deckEnv("DECKYSTREAM_DECK_PROFILE")
 	}
 	if input.GameID != "" {
 		if !validSteamGameID(input.GameID) {
@@ -532,18 +532,18 @@ func ApplyGameStreamProfile(ctx context.Context, p Paths, game GameIdentity) (bo
 	if err != nil {
 		return false, err
 	}
-	name := os.Getenv("OBSGOD_DECK_PROFILE")
+	name := deckEnv("DECKYSTREAM_DECK_PROFILE")
 	if name == "" && game.State == "running" && game.AppID != 0 {
 		name = store.GameProfiles[strconv.FormatUint(uint64(game.AppID), 10)]
 	}
 	if name == "" {
 		hasOverride := false
 		for _, key := range []string{"WIDTH", "HEIGHT", "BITRATE", "FPS", "ENCODER", "CAPTURE_MODE"} {
-			if os.Getenv("OBSGOD_DECK_"+key) != "" {
+			if deckEnv("DECKYSTREAM_DECK_"+key) != "" {
 				hasOverride = true
 			}
 		}
-		if _, present := os.LookupEnv("OBSGOD_DECK_MICROPHONE"); present {
+		if _, present := deckLookupEnv("DECKYSTREAM_DECK_MICROPHONE"); present {
 			hasOverride = true
 		}
 		if !hasOverride {

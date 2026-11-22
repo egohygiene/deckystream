@@ -36,7 +36,7 @@ def load(path, name):
 
 class RepositoryMigration(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="obsgod-migration-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="deckystream-migration-")
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.home = self.root / "home with spaces"
@@ -54,9 +54,9 @@ class RepositoryMigration(unittest.TestCase):
         self.addCleanup(self.stack.close)
         self.stack.enter_context(patch.dict(os.environ, self.environment))
         self.stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
-        self.base = self.home / "custom data/obsgod"
-        self.config = self.home / "custom config/obsgod"
-        self.plugin = self.home / "homebrew/plugins/obsgod"
+        self.base = self.home / "custom data/deckystream"
+        self.config = self.home / "custom config/deckystream"
+        self.plugin = self.home / "homebrew/plugins/deckystream"
         self.calls = []
         self.output_state = {
             "ok": True, "configured": True, "state": "stopped",
@@ -72,10 +72,10 @@ class RepositoryMigration(unittest.TestCase):
         )
         self.sentinels = {}
         for relative, value in {
-            "custom config/obsgod/deck.json": b'{"capture_mode":"game"}',
-            "custom config/obsgod/secrets.json": b'{"fixture_key":"not-a-real-secret"}',
-            "custom state/obsgod/diagnostics/history": b"prior diagnostics",
-            "Videos/OBSGod/2026-11-14 00-00-00.mkv": b"preserved recording",
+            "custom config/deckystream/deck.json": b'{"capture_mode":"game"}',
+            "custom config/deckystream/secrets.json": b'{"fixture_key":"not-a-real-secret"}',
+            "custom state/deckystream/diagnostics/history": b"prior diagnostics",
+            "Videos/deckystream/2026-11-14 00-00-00.mkv": b"preserved recording",
             ".var/app/com.obsproject.Studio/config/obs-studio/ordinary.json": b"ordinary OBS",
             "homebrew/plugins/OtherPlugin/keep": b"another plugin",
         }.items():
@@ -97,14 +97,14 @@ class RepositoryMigration(unittest.TestCase):
     def plugin_request(self, operation, package, manifest):
         self.assertEqual(operation, "install")
         package = Path(package)
-        data = (package / "obsgod-decky.zip").read_bytes()
-        self.assertEqual(hashlib.sha256(data).hexdigest(), manifest["files"]["obsgod-decky.zip"])
+        data = (package / "deckystream-decky.zip").read_bytes()
+        self.assertEqual(hashlib.sha256(data).hexdigest(), manifest["files"]["deckystream-decky.zip"])
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
-            self.assertEqual(archive.namelist(), ["obsgod/plugin.json", "obsgod/package.json"])
-            plugin = json.loads(archive.read("obsgod/plugin.json"))
-            identity = json.loads(archive.read("obsgod/package.json"))
-        self.assertEqual(plugin, {"name": "OBSGod", "version": manifest["version"]})
-        self.assertEqual(identity, {"name": "obsgod", "version": manifest["version"]})
+            self.assertEqual(archive.namelist(), ["deckystream/plugin.json", "deckystream/package.json"])
+            plugin = json.loads(archive.read("deckystream/plugin.json"))
+            identity = json.loads(archive.read("deckystream/package.json"))
+        self.assertEqual(plugin, {"name": "deckystream", "version": manifest["version"]})
+        self.assertEqual(identity, {"name": "deckystream", "version": manifest["version"]})
         self.calls.append(("plugin", manifest["version"]))
         self.plugin.mkdir(parents=True, exist_ok=True)
         (self.plugin / "plugin.json").write_text(json.dumps(plugin))
@@ -115,12 +115,12 @@ class RepositoryMigration(unittest.TestCase):
         package = self.root / ("package-" + version)
         package.mkdir()
         names = {
-            "obsgod", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css",
-            "uninstall.py", "obsgod-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md",
+            "deckystream", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css",
+            "uninstall.py", "deckystream-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md",
             "STEAM-DECK.md", "decky-install", "decky.py", "install.py",
-            "Install OBSGod.desktop", "update.py", "releases.py",
-            "Update OBSGod.desktop", "Update OBSGod.sh", "libgstobsgodcapture.so",
-            "CAPTURE-SOURCE.tar.gz", "paths.py", "product.py", "Uninstall OBSGod.desktop",
+            "Install deckystream.desktop", "update.py", "releases.py",
+            "Update deckystream.desktop", "Update deckystream.sh", "libgstdeckystreamcapture.so",
+            "CAPTURE-SOURCE.tar.gz", "paths.py", "product.py", "Uninstall deckystream.desktop",
         }
         for name in names:
             original = ROOT / name
@@ -141,9 +141,9 @@ class RepositoryMigration(unittest.TestCase):
                 end = sum(map(len, lines[:value.end_lineno - 1])) + value.end_col_offset
                 content = content[:start] + json.dumps(repository).encode() + content[end:]
             (package / name).write_bytes(content)
-        with zipfile.ZipFile(package / "obsgod-decky.zip", "w") as archive:
-            archive.writestr("obsgod/plugin.json", json.dumps({"name": "OBSGod", "version": version}))
-            archive.writestr("obsgod/package.json", json.dumps({"name": "obsgod", "version": version}))
+        with zipfile.ZipFile(package / "deckystream-decky.zip", "w") as archive:
+            archive.writestr("deckystream/plugin.json", json.dumps({"name": "deckystream", "version": version}))
+            archive.writestr("deckystream/package.json", json.dumps({"name": "deckystream", "version": version}))
         manifest = {
             "version": version, "revision": "e" * 40, "platform": "linux/amd64",
             "dirty": False, "updater_version": version,
@@ -180,9 +180,9 @@ class RepositoryMigration(unittest.TestCase):
     def assert_pair(self, version):
         self.assertEqual(json.loads((self.base / "current/manifest.json").read_text())["version"], version)
         self.assertEqual(json.loads((self.plugin / "plugin.json").read_text())["version"], version)
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         self.assertTrue(alias.is_symlink())
-        self.assertEqual(alias.readlink(), self.base / "current/obsgod")
+        self.assertEqual(alias.readlink(), self.base / "current/deckystream")
         self.assert_preserved()
 
     def published_fixture(self, publisher, package, manifest, corrupt=False):
@@ -193,13 +193,13 @@ class RepositoryMigration(unittest.TestCase):
                 if not path.is_file():
                     continue
                 data = path.read_bytes()
-                if corrupt and path.name == "obsgod":
+                if corrupt and path.name == "deckystream":
                     data += b"corruption"
-                item = tarfile.TarInfo("OBSGod-" + version + "/" + path.name)
+                item = tarfile.TarInfo("deckystream-" + version + "/" + path.name)
                 item.size = len(data)
                 archive.addfile(item, io.BytesIO(data))
         archive_data = output.getvalue()
-        archive_name = "obsgod-deck_" + version + "_linux_amd64.tar.gz"
+        archive_name = "deckystream-deck_" + version + "_linux_amd64.tar.gz"
         base = "https://github.com/" + publisher.REPOSITORY + "/releases/download/v" + version + "/"
         manifest_data = (package / "manifest.json").read_bytes()
         sums = (hashlib.sha256(manifest_data).hexdigest() + "  manifest.json\n" +
@@ -277,7 +277,7 @@ class RepositoryMigration(unittest.TestCase):
         self.assertFalse((self.base / "current").is_symlink())
         self.assertFalse((self.base / "releases").exists())
         self.assertFalse(self.plugin.exists())
-        self.assertFalse((self.home / ".local/bin/obsgod").is_symlink())
+        self.assertFalse((self.home / ".local/bin/deckystream").is_symlink())
         self.assert_preserved()
 
     def test_verified_plugin_then_activation_failure_restores_previous_pair(self):
@@ -323,11 +323,11 @@ class RepositoryMigration(unittest.TestCase):
         old, old_manifest = self.package("0.1.0-deck.10", OLD_REPOSITORY)
         future, _ = self.package("0.1.0-deck.11", FUTURE_REPOSITORY)
         self.installer(old).install(launch=False)
-        legacy = self.home / ".local/share/obsgod"
+        legacy = self.home / ".local/share/deckystream"
         legacy.mkdir(parents=True)
         (legacy / "keep").write_text("second existing location")
         before = len(self.calls)
-        with self.assertRaisesRegex(ValueError, "Two OBSGod installation locations"):
+        with self.assertRaisesRegex(ValueError, "Two deckystream installation locations"):
             self.installer(future).install(launch=False)
         self.assert_pair(old_manifest["version"])
         self.assertEqual((legacy / "keep").read_text(), "second existing location")
@@ -336,7 +336,7 @@ class RepositoryMigration(unittest.TestCase):
     def test_repository_is_build_identity_not_environment_or_redirect_trust(self):
         old, _ = self.package("0.1.0-deck.10", OLD_REPOSITORY)
         future, _ = self.package("0.1.0-deck.11", FUTURE_REPOSITORY)
-        with patch.dict(os.environ, {"OBSGOD_REPOSITORY": FUTURE_REPOSITORY,
+        with patch.dict(os.environ, {"DECKYSTREAM_REPOSITORY": FUTURE_REPOSITORY,
                                      "GITHUB_REPOSITORY": FUTURE_REPOSITORY}):
             old_publisher = load(old / "releases.py", "migration_old_source")
         new_publisher = load(future / "releases.py", "migration_future_source")
@@ -362,7 +362,7 @@ class RepositoryMigration(unittest.TestCase):
     def test_future_immutable_artifact_metadata_stays_in_its_exact_repository(self):
         future, manifest = self.package("0.1.0-deck.11", FUTURE_REPOSITORY)
         publisher = load(future / "releases.py", "migration_future_artifacts")
-        name = "obsgod-deck_" + manifest["version"] + "_linux_amd64.tar.gz"
+        name = "deckystream-deck_" + manifest["version"] + "_linux_amd64.tar.gz"
         commit = "a" * 40
         expected = "https://raw.githubusercontent.com/" + FUTURE_REPOSITORY + "/" + commit + "/"
         for body_url in (expected + name,

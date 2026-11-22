@@ -1,12 +1,13 @@
 # Local GitHub Actions validation
 
-## Useful local confidence while hosted billing is unavailable
+## Available hosted and local validation
 
-The owner cannot fund hosted Actions. Billing does not prevent standalone local
-tests, builds, security scans, package checks or actual Steam Deck observations.
-Use those results, pinned to the final source, for the concrete release decision
-while identifying any unavailable hosted/platform/service checks separately.
-Required branch protections still apply; no standalone check is a hosted pass.
+The public `egohygiene/deckystream` repository runs its hosted workflows.
+Inspect the selected revision's actual jobs and dependency review; older billing
+refusals from the original repository are historical, not the current status.
+Standalone local tests, security scans and package checks remain useful and must
+be recorded separately from hosted or device results. Required branch rules
+still apply. Do not spend or retry a known account refusal repeatedly.
 
 The 2026-11-22 metadata-only constrained preflight at exact source `f4561aa`
 needed 7,544,361,132 root/Docker bytes and observed 3,110,805,504: a shortfall of
@@ -144,7 +145,7 @@ receipt records the address. Action-generated GitHub artifact URLs are synthetic
 under act; verify the locally retained bytes rather than treating those links as
 hosted GitHub delivery.
 The shared state `tmp` directory is mounted at the same absolute path on both
-sides, and `TMPDIR`/`OBSGOD_ACT_TEMP` select it for nested-Docker inputs/outputs.
+sides, and `TMPDIR`/`DECKYSTREAM_ACT_TEMP` select it for nested-Docker inputs/outputs.
 This avoids treating act's container-only `/tmp` as a daemon-visible host path.
 Go test and tooling-unit-test steps explicitly set
 `TMPDIR: ${{ runner.temp }}` instead. ACT executes

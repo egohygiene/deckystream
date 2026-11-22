@@ -12,16 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
-const LiveScene = "OBSGod Live"
-const IdleScene = "OBSGod Idle"
-const CaptureInput = "OBSGod Gamescope"
-const GameAudio = "OBSGod Game Audio"
-const MicAudio = "OBSGod Microphone"
+const LiveScene = "deckystream Live"
+const IdleScene = "deckystream Idle"
+const CaptureInput = "deckystream Gamescope"
+const GameAudio = "deckystream Game Audio"
+const MicAudio = "deckystream Microphone"
 
-var errUnmanaged = errors.New("the OBS instance is not using the managed OBSGod profile; refusing to change it")
+var errUnmanaged = errors.New("the OBS instance is not using the managed deckystream profile; refusing to change it")
 
 // Do not request a fixed framerate from Gamescope: some versions crash their
 // PipeWire node during negotiation. OBS controls output framerate separately.
@@ -35,6 +35,7 @@ type Result struct {
 	Connected     bool                      `json:"connected"`
 	Stream        automation.StreamStatus   `json:"stream"`
 	Runtime       *automation.RuntimeStatus `json:"runtime,omitempty"`
+	LegacyRuntime bool                      `json:"legacy_runtime,omitempty"`
 	Settings      *Settings                 `json:"settings,omitempty"`
 	RecordingPath string                    `json:"recording_path,omitempty"`
 	Diagnostics   []DiagnosticEntry         `json:"diagnostics"`
@@ -125,12 +126,13 @@ func Status(ctx context.Context, p Paths) Result {
 	defer c.Close()
 	r.Connected, r.Connection = true, "ready"
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || !managedForRecovery(p, runtime.Profile, runtime.Collection) {
 		r.OK, r.State, r.OutputKnown = false, "unknown", false
 		r.Message = "The managed OBS profile and output state could not be verified"
 		return r
 	}
 	r.Process, r.Runtime, r.Recording = "running", &runtime, runtime.Recording
+	r.LegacyRuntime = runtime.Profile == legacyOBSIdentity
 	r.Stream, err = c.StreamStatus(ctx)
 	if err != nil {
 		r.OK, r.State, r.OutputKnown = false, "unknown", false
@@ -191,6 +193,9 @@ func Status(ctx context.Context, p Paths) Result {
 		} else if media.ReplayActive {
 			r.Message = "Replay buffer is active locally; not streaming"
 		}
+	}
+	if r.LegacyRuntime {
+		r.Message = "A previous managed OBS instance is running. Stop its outputs and use Close managed OBS before starting the renamed application; saved settings and recordings are preserved"
 	}
 	return r
 }
@@ -268,7 +273,7 @@ func readyWithin(ctx context.Context, p Paths, s Settings, secret Secrets, budge
 			if listening {
 				lastStage = "obs.authentication-waiting"
 				if launched == nil && len(managedProcesses(p)) == 0 {
-					return nil, errors.New("port 4457 is already in use or OBSGod credentials do not match; stop the conflicting instance in Desktop Mode")
+					return nil, errors.New("port 4457 is already in use or deckystream credentials do not match; stop the conflicting instance in Desktop Mode")
 				}
 			} else {
 				lastStage = "obs.listener-unavailable"
@@ -324,8 +329,23 @@ func verifyManaged(ctx context.Context, c *automation.Client) (*automation.Clien
 		_ = c.Close()
 		return nil, e
 	}
-	if r.Profile != "OBSGod" || r.Collection != "OBSGod" {
+	if r.Profile != "deckystream" || r.Collection != "deckystream" {
 		_ = c.Close()
+		return nil, errUnmanaged
+	}
+	return c, nil
+}
+
+// The old profile is an explicit recovery target only when the selected store
+// is the validated legacy namespace. Start/capture/mixer retain strict primary
+// verification so a name change cannot create new inputs in a running old scene.
+func verifyManagedRecovery(ctx context.Context, c *automation.Client, p Paths) (*automation.Client, error) {
+	r, err := c.RuntimeStatus(ctx)
+	if err != nil || !managedForRecovery(p, r.Profile, r.Collection) {
+		_ = c.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, errUnmanaged
 	}
 	return c, nil
@@ -550,7 +570,7 @@ func Stop(ctx context.Context, p Paths) (Result, error) {
 		return Result{}, errors.New("cannot confirm the stream has stopped: OBS is present but unreachable")
 	}
 	defer c.Close()
-	if _, e = verifyManaged(ctx, c); e != nil {
+	if _, e = verifyManagedRecovery(ctx, c, p); e != nil {
 		return Result{}, e
 	}
 	state, e := c.StopStream(ctx)
@@ -721,7 +741,7 @@ func Restart(ctx context.Context, p Paths) (Result, error) {
 	}
 	c, e := connect(ctx, secret, time.Second)
 	if e == nil {
-		if _, err := verifyManaged(ctx, c); err != nil {
+		if _, err := verifyManagedRecovery(ctx, c, p); err != nil {
 			return Result{}, err
 		}
 		r, err := c.RuntimeStatus(ctx)
@@ -740,7 +760,7 @@ func Restart(ctx context.Context, p Paths) (Result, error) {
 			return Result{}, replayErr
 		}
 		if r.Recording || s.Active || replay {
-			return Result{}, errors.New("stop streaming, recording and replay before restarting OBSGod")
+			return Result{}, errors.New("stop streaming, recording and replay before restarting deckystream")
 		}
 	} else if process, listener := presence(p); process != "absent" || listener {
 		return Result{}, errors.New("cannot safely restart an unreachable OBS instance; inspect it in Desktop Mode first")

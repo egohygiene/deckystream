@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/obs"
+	"github.com/egohygiene/deckystream/internal/obs"
 )
 
 func newSceneCollectionCommand(service obs.Service) *coral.Command {

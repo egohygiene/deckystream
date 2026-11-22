@@ -1,7 +1,7 @@
 # Runtime correctness checkpoint
 
 Owner-authorized repairs [#96–#100](https://github.com/szmyty/obsgod/pull/106)
-preserve the current OBSGod installation and public/legacy control surfaces.
+preserve the current deckystream installation and public/legacy control surfaces.
 They do not complete the later cleanup, settings, artwork or device-test stages.
 
 ## Observations and capture ownership

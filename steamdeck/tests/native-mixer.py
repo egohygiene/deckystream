@@ -15,9 +15,9 @@ from pathlib import Path
 import subprocess
 import time
 
-BIN = "/src/dist/obsgod"
-MIC = "OBSGod Microphone"
-GAME = "OBSGod Game Audio"
+BIN = "/src/dist/deckystream"
+MIC = "deckystream Microphone"
+GAME = "deckystream Game Audio"
 
 
 def pulse(*args, structured=False):
@@ -34,17 +34,17 @@ async def cli(payload):
 
 
 async def run():
-    if not Path("/.dockerenv").exists() or os.environ.get("OBSGOD_DISPOSABLE_AUDIO_FIXTURE") != "1":
+    if not Path("/.dockerenv").exists() or os.environ.get("DECKYSTREAM_DISPOSABLE_AUDIO_FIXTURE") != "1":
         raise ValueError("Use only the disposable OBS Docker fixture with its explicit audio-test flag")
     import websockets
-    config_root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "obsgod"
+    config_root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "deckystream"
     mixer_path = config_root / "mixer.json"
     previous_mixer = mixer_path.read_bytes() if mixer_path.exists() else None
     previous_config = (config_root / "deck.json").read_bytes()
     previous_secret = (config_root / "secrets.json").read_bytes()
     password = json.loads(previous_secret)["obs_password"]
     original_default = pulse("info", structured=True).get("default_source_name")
-    module = pulse("load-module", "module-null-source", "source_name=obsgod_fixture_mic")
+    module = pulse("load-module", "module-null-source", "source_name=deckystream_fixture_mic")
     max_heartbeat_ms = 0
     try:
         async with websockets.connect("ws://127.0.0.1:4457", open_timeout=5, max_size=2 * 1024 * 1024) as socket:
@@ -91,8 +91,8 @@ async def run():
             previous_game = await input_state(GAME)
             try:
                 inventory = (await cli({"action": "devices"}))["mixer"]
-                assert any(item["id"] == "obsgod_fixture_mic" and item["available"] for item in inventory["devices"]), "The real synthetic input was not discovered"
-                await cli({"action": "configure", "preferences": {"microphone_enabled": True, "microphone_device": "obsgod_fixture_mic", "microphone_muted": True, "microphone_gain_percent": 65, "game_gain_percent": 75, "push_to_talk": False}})
+                assert any(item["id"] == "deckystream_fixture_mic" and item["available"] for item in inventory["devices"]), "The real synthetic input was not discovered"
+                await cli({"action": "configure", "preferences": {"microphone_enabled": True, "microphone_device": "deckystream_fixture_mic", "microphone_muted": True, "microphone_gain_percent": 65, "game_gain_percent": 75, "push_to_talk": False}})
                 mic_state = await input_state(MIC)
                 # Native OBS stores source gain as float32 (0.65 becomes
                 # 0.6499999761581421). Keep mute strict; compare linear gain.
@@ -140,7 +140,7 @@ async def run():
                 await wait_muted(timeout=12)
                 current = await cli({"action": "status"})
                 snapshot = current["mixer"]
-                assert snapshot["preferences"]["microphone_muted"] is True and snapshot["preferences"]["microphone_device"] == "obsgod_fixture_mic", "Missing input did not preserve selected source and saved mute"
+                assert snapshot["preferences"]["microphone_muted"] is True and snapshot["preferences"]["microphone_device"] == "deckystream_fixture_mic", "Missing input did not preserve selected source and saved mute"
                 assert snapshot["microphone"]["available"] is False, "Missing input was presented available"
                 assert await output_state() == initial_output, "Mixer/device loss changed broadcast, recording or replay state"
                 assert (config_root / "deck.json").read_bytes() == previous_config, "Mixer changed legacy credential-bound settings"

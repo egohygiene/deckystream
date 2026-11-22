@@ -2,8 +2,8 @@
 
 This describes the Milestone 3 development candidate, not an already published
 release. The same profile requests are used by the Decky panel, Desktop setup
-and `obsgod deck stream-profiles` JSON command. They configure the isolated
-managed OBS profile; the generic `obsgod profile` commands still manage OBS's own
+and `deckystream deck stream-profiles` JSON command. They configure the isolated
+managed OBS profile; the generic `deckystream profile` commands still manage OBS's own
 profiles and the generic connection configuration remains separate.
 
 ## Choose a starting point
@@ -43,9 +43,9 @@ All requests use one JSON object on stdin. No credential belongs in an argument,
 profile or exported document:
 
 ```sh
-printf '%s\n' '{"action":"list"}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"preview","preset":"small-540p30"}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"save","name":"portable","preset":"small-540p30"}' | obsgod deck stream-profiles
+printf '%s\n' '{"action":"list"}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"preview","preset":"small-540p30"}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"save","name":"portable","preset":"small-540p30"}' | deckystream deck stream-profiles
 ```
 
 Preview, validation, list and export do not connect to OBS or change output.
@@ -56,8 +56,8 @@ its idle process. A present/unconfirmed process or listener blocks applying
 settings. No profile action starts a stream or stops someone else's output.
 
 ```sh
-printf '%s\n' '{"action":"apply","name":"portable"}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"reset"}' | obsgod deck stream-profiles
+printf '%s\n' '{"action":"apply","name":"portable"}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"reset"}' | deckystream deck stream-profiles
 ```
 
 Apply/reset preserve the current destination, stream key, local WebSocket
@@ -108,13 +108,13 @@ a letter or digit. Lists are sorted.
 For preview, validate, save and apply, effective tunables resolve in this order:
 
 1. Explicit CLI flags, then request `overrides` for fields without a flag.
-2. `OBSGOD_DECK_WIDTH`, `OBSGOD_DECK_HEIGHT`, `OBSGOD_DECK_BITRATE`,
-   `OBSGOD_DECK_FPS`, `OBSGOD_DECK_ENCODER`, `OBSGOD_DECK_MICROPHONE` and
-   `OBSGOD_DECK_CAPTURE_MODE`.
+2. `DECKYSTREAM_DECK_WIDTH`, `DECKYSTREAM_DECK_HEIGHT`, `DECKYSTREAM_DECK_BITRATE`,
+   `DECKYSTREAM_DECK_FPS`, `DECKYSTREAM_DECK_ENCODER`, `DECKYSTREAM_DECK_MICROPHONE` and
+   `DECKYSTREAM_DECK_CAPTURE_MODE`.
 3. The explicitly selected portable profile or preset; otherwise the saved
    named profile, current managed settings, then established defaults.
 
-Explicit profile/preset selection overrides `OBSGOD_DECK_PROFILE`. A named
+Explicit profile/preset selection overrides `DECKYSTREAM_DECK_PROFILE`. A named
 profile selected by that environment variable takes precedence over an automatic
 game binding before a new explicit output. Numeric overrides accept integers;
 microphone accepts a boolean; invalid effective values fail without printing
@@ -125,8 +125,8 @@ For example, this previews a 60 FPS modification without changing the preset,
 current settings or output:
 
 ```sh
-printf '%s\n' '{"action":"preview","preset":"balanced-720p30","overrides":{"fps":60,"bitrate":6000}}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"preview","preset":"balanced-720p30"}' | obsgod deck stream-profiles --fps=60 --bitrate=6000 --microphone=false
+printf '%s\n' '{"action":"preview","preset":"balanced-720p30","overrides":{"fps":60,"bitrate":6000}}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"preview","preset":"balanced-720p30"}' | deckystream deck stream-profiles --fps=60 --bitrate=6000 --microphone=false
 ```
 
 Environment overrides are applied before a new explicit cold output; they never
@@ -141,9 +141,9 @@ injection. Reset intentionally uses the established defaults.
 ## Per-game selection
 
 ```sh
-printf '%s\n' '{"action":"bind-game","name":"portable","game_id":"4242"}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"preview","game_id":"4242"}' | obsgod deck stream-profiles
-printf '%s\n' '{"action":"unbind-game","game_id":"4242"}' | obsgod deck stream-profiles
+printf '%s\n' '{"action":"bind-game","name":"portable","game_id":"4242"}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"preview","game_id":"4242"}' | deckystream deck stream-profiles
+printf '%s\n' '{"action":"unbind-game","game_id":"4242"}' | deckystream deck stream-profiles
 ```
 
 Binding stores a preference for a numeric Steam game ID; it neither starts OBS

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type MediaSnapshot struct {
@@ -60,7 +60,7 @@ func ObserveMedia(ctx context.Context, p Paths, c *automation.Client) MediaSnaps
 }
 func mediaSnapshotFrom(ctx context.Context, p Paths, c *automation.Client, result MediaSnapshot) MediaSnapshot {
 	runtime, e := c.RuntimeStatus(ctx)
-	if e != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if e != nil || !managedForRecovery(p, runtime.Profile, runtime.Collection) {
 		return result
 	}
 	media, e := c.MediaStatus(ctx)
@@ -188,7 +188,9 @@ func mediaActionWith(ctx context.Context, p Paths, action string, deps mediaActi
 	if e != nil {
 		return Result{}, e
 	}
-	if runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	recoveryStop := action == "record-stop" || action == "record-cancel" || action == "replay-stop"
+	if (runtime.Profile != primaryNamespace || runtime.Collection != primaryNamespace) &&
+		(!recoveryStop || !managedForRecovery(p, runtime.Profile, runtime.Collection)) {
 		return Result{}, errUnmanaged
 	}
 	media, e := c.MediaStatus(ctx)
@@ -334,7 +336,7 @@ func MediaStorageGuard(ctx context.Context, p Paths, c *automation.Client) error
 	if e != nil {
 		return e
 	}
-	if runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		return errUnmanaged
 	}
 	media, e := c.MediaStatus(ctx)
@@ -368,7 +370,7 @@ func MediaStorageGuard(ctx context.Context, p Paths, c *automation.Client) error
 	if e != nil {
 		return e
 	}
-	if runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		return errUnmanaged
 	}
 	media, e = c.MediaStatus(ctx)
