@@ -1,5 +1,13 @@
 # Working in this repository
 
+This is the fresh independent `egohygiene/deckystream` repository, default
+`main`. Current remaining work is [finalization #1](https://github.com/egohygiene/deckystream/issues/1)
+and [optional auth research #8](https://github.com/egohygiene/deckystream/issues/8).
+Historical issue references below retain their original `szmyty/obsgod`
+meaning; use [the carry-forward mapping](docs/history/fresh-repository-issue-mapping.json).
+The source migration is complete; product qualification, owner tests, release
+and legacy retirement remain separate gates.
+
 Read [architecture](ARCHITECTURE.md), [vocabulary](ONTOLOGY.md),
 [decisions](DECISIONS.md), [roadmap](ROADMAP.md), [continuity](CONTINUITY.md)
 and applicable feature/security guides before behavior changes. Read live issues,

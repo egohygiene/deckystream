@@ -1,5 +1,13 @@
 # Product roadmap
 
+Current destination: **egohygiene/deckystream** (`main`). The first snapshot
+push is verified at `38464de765e913ca977f7e4cdae16dec0884d24b`.
+[Finalization #1](https://github.com/egohygiene/deckystream/issues/1) carries the
+remaining qualification, manual testing, release and retirement work;
+[auth research #8](https://github.com/egohygiene/deckystream/issues/8) remains
+independent. Historical issue numbers below refer to `szmyty/obsgod` and retain
+their original criteria/dependencies. Migration alone passes no product tests.
+
 ## Active journey: polish, prepare, migrate, then test
 
 The owner changed the order on 2026-11-22. [The decision](DECISIONS.md#owner-sequence-update-2026-11-22)

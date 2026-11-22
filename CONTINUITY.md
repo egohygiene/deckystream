@@ -1,5 +1,36 @@
 # Current work
 
+## Fresh repository first push recovered — 2026-11-22
+
+The owner-created `egohygiene/deckystream` repository (ID `1467389697`) now has
+independent root commit `38464de765e913ca977f7e4cdae16dec0884d24b` on `main`.
+The reviewed source is old `szmyty/obsgod` commit
+`0d035e2a6242359b6d62dfb9f80829ae0c47e1d7`; the source and staged archive bytes
+matched the retained review packet before recovery. The Mac command created the
+repository but its first push failed; the helper discarded that Git error, so
+its cause is unknown. A separate normal Cloud push succeeded after verifying
+the exact ID, public/nonfork identity, push permission and empty remote refs.
+See [the recovery evidence](docs/evidence/fresh-repository-recovery.json).
+
+Current work is [finalization #1](https://github.com/egohygiene/deckystream/issues/1)
+and separate [optional authentication research #8](https://github.com/egohygiene/deckystream/issues/8).
+The [mapping](docs/history/fresh-repository-issue-mapping.json) retains original
+criteria and dependencies without inferring acceptance. Unqualified issue
+numbers in older entries below refer to `szmyty/obsgod`. Dependabot automatically
+opened dependency PRs after the initial push; review those separately rather
+than automatically merging major upgrades into the test candidate.
+
+No stable release, deployment, old-repository retirement, artwork-rights
+decision, new product qualification or Steam Deck acceptance occurred. The old
+repository, installed IDs, credential/media paths, legacy URLs and notices are
+preserved. The new initial commit differs from the Mac's attempted commit;
+archive equality does not imply identical Git author/timestamp metadata.
+
+Rulesets were readable and empty at recovery. Branch-protection inspection
+returned 403 for this integration, so its requirements remain unverified;
+empty rulesets are not proof of absent branch protections. Keep any repair PR
+reviewable and do not infer merge readiness from push permission.
+
 ## Pinned owner entrypoint follow-through
 
 After the recommendation to use `egohygiene/deckystream`, the owner said

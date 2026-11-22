@@ -24,7 +24,6 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import tarfile
-import tempfile
 
 
 SOURCE_REPOSITORY = "szmyty/obsgod"
@@ -52,6 +51,39 @@ class PreparationError(RuntimeError):
     pass
 
 
+class OperationFailure(PreparationError):
+    """Safe public summary; raw stderr is retained only by explicit apply."""
+    STDERR_LIMIT = 64 * 1024
+
+    def __init__(self, arguments, returncode, stderr, category=None):
+        operation = "local-command"
+        if arguments[0] == "git":
+            operation = "git-command"
+            for command in ("push", "ls-remote", "commit-tree", "init"):
+                if command in arguments[1:]:
+                    operation = "git-" + command
+                    break
+        raw = stderr if isinstance(stderr, bytes) else b""
+        lowered = raw.lower()
+        patterns = {
+            "workflow-permission": (b"without `workflow` scope", b"without workflow scope", b"workflows permission"),
+            "secret-protection": (b"gh009", b"gh021", b"push cannot contain secrets", b"secret scanning"),
+            "repository-rule": (b"gh013", b"gh006", b"repository rule violations", b"protected branch"),
+            "authentication": (b"authentication failed", b"could not read username", b"terminal prompts disabled", b"invalid username"),
+            "large-file": (b"gh001", b"large files detected", b"exceeds github"),
+            "signing": (b"failed to sign", b"signing failed", b"signing key"),
+            "tls": (b"ssl certificate problem", b"certificate verify failed"),
+            "remote-not-found": (b"repository not found",),
+            "network": (b"could not resolve host", b"failed to connect", b"connection timed out"),
+        }
+        self.summary = {"operation": operation, "category": category or next(
+            (name for name, terms in patterns.items() if any(term in lowered for term in terms)), "unclassified"),
+            "exit_status": returncode}
+        self._stderr = raw[:self.STDERR_LIMIT]
+        self.stderr_truncated = len(raw) > len(self._stderr)
+        super().__init__("A subprocess failed (operation={operation}, category={category}, exit_status={exit_status}); raw output is withheld.".format(**self.summary))
+
+
 def encoded(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
 
@@ -72,10 +104,13 @@ def run(arguments, cwd=None, data=None):
             environment.pop(key, None)
         environment["GIT_NO_REPLACE_OBJECTS"] = "1"
         environment["GIT_OPTIONAL_LOCKS"] = "0"
-    result = subprocess.run(arguments, cwd=cwd, input=data, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, env=environment, timeout=180, check=False)
+    try:
+        result = subprocess.run(arguments, cwd=cwd, input=data, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, env=environment, timeout=180, check=False)
+    except subprocess.TimeoutExpired as error:
+        raise OperationFailure(arguments, None, error.stderr, category="timeout") from None
     if result.returncode:
-        raise PreparationError("A local preparation operation failed; no tool output containing credentials is printed.")
+        raise OperationFailure(arguments, result.returncode, result.stderr)
     return result.stdout
 
 
@@ -570,50 +605,64 @@ def apply(prepared, output, api):
     write_preparation(output, prepared)
     receipt(output, state)
     try:
-        with tempfile.TemporaryDirectory(prefix="fresh-deckystream-") as temporary:
-            repository = Path(temporary) / "snapshot.git"
-            state["snapshot_commit"] = snapshot_commit(repository, payload, inventory, sidecars)
-            if not isinstance(state["snapshot_commit"], str) or not SHA.fullmatch(state["snapshot_commit"]):
-                raise PreparationError("Snapshot commit must be a full 40-character SHA1 before repository creation.")
-            remote = exact_push_remote(repository, plan["destination"])
-            state["state"] = "ready-to-create"
-            receipt(output, state)
-            # Recheck immediately before creation; a collision fails creation and
-            # cannot become permission to reuse an existing repository.
-            inspect_destination(api, plan["destination"], plan["source_sha"], history["repository"]["id"])
-            recheck_source(source, plan["source_sha"])
-            state.update({"state": "creation-attempted-outcome-unknown", "creation_attempted": True, "remote_created": None})
-            receipt(output, state)
-            created = api.request("POST", inspection["creation_endpoint"],
-                                  {"name": "deckystream", "private": False, "auto_init": False})
-            state["state"] = "creation-response-unverified"
-            if isinstance(created, dict) and type(created.get("id")) is int:
-                state["destination_repository_id"] = created["id"]
-            receipt(output, state)
-            verify_repo(created, plan["destination"], independent=True)
-            state.update({"remote_created": True, "state": "created-not-pushed"})
-            receipt(output, state)
-            url = "https://github.com/" + plan["destination"] + ".git"
-            transport = ("-c", "http.followRedirects=false", "-c", "http." + url + ".followRedirects=false")
-            if git(repository, *transport, "ls-remote", remote):
-                raise PreparationError("The newly created destination already has refs; it is preserved without a push.")
-            state.update({"state": "push-attempted-outcome-unknown", "push_attempted": True})
-            receipt(output, state)
-            git(repository, *transport, "-c", "push.followTags=false", "-c", "remote.fresh-snapshot.mirror=false",
-                "push", "--porcelain", "--no-follow-tags",
-                "--recurse-submodules=no", remote, "refs/heads/main:refs/heads/main")
-            state["state"] = "pushed-verification-pending"
-            receipt(output, state)
-            actual = api.request("GET", "/repos/" + plan["destination"])
-            verify_repo(actual, plan["destination"], independent=True)
-            if actual["id"] != created["id"] or actual.get("default_branch") != "main":
-                raise PreparationError("Destination ID or default main branch is unconfirmed; no settings are changed.")
-            ref = api.request("GET", "/repos/" + plan["destination"] + "/git/ref/heads/main")
-            if ref.get("object", {}).get("sha") != state["snapshot_commit"]:
-                raise PreparationError("Destination main does not match the exact snapshot commit.")
-            state.update({"state": "snapshot-pushed-post-migration-tests-unrun", "push_verified": True})
-            receipt(output, state)
-    except Exception:
+        repository = output / "snapshot.git"
+        repository.mkdir(mode=0o700)
+        state["snapshot_repository"] = "snapshot.git"
+        receipt(output, state)
+        state["snapshot_commit"] = snapshot_commit(repository, payload, inventory, sidecars)
+        if not isinstance(state["snapshot_commit"], str) or not SHA.fullmatch(state["snapshot_commit"]):
+            raise PreparationError("Snapshot commit must be a full 40-character SHA1 before repository creation.")
+        remote = exact_push_remote(repository, plan["destination"])
+        state["state"] = "ready-to-create"
+        receipt(output, state)
+        # Recheck immediately before creation; a collision fails creation and
+        # cannot become permission to reuse an existing repository.
+        inspect_destination(api, plan["destination"], plan["source_sha"], history["repository"]["id"])
+        recheck_source(source, plan["source_sha"])
+        state.update({"state": "creation-attempted-outcome-unknown", "creation_attempted": True, "remote_created": None})
+        receipt(output, state)
+        created = api.request("POST", inspection["creation_endpoint"],
+                              {"name": "deckystream", "private": False, "auto_init": False})
+        state["state"] = "creation-response-unverified"
+        if isinstance(created, dict) and type(created.get("id")) is int:
+            state["destination_repository_id"] = created["id"]
+        receipt(output, state)
+        verify_repo(created, plan["destination"], independent=True)
+        state.update({"remote_created": True, "state": "created-not-pushed"})
+        receipt(output, state)
+        url = "https://github.com/" + plan["destination"] + ".git"
+        transport = ("-c", "http.followRedirects=false", "-c", "http." + url + ".followRedirects=false")
+        if git(repository, *transport, "ls-remote", remote):
+            raise PreparationError("The newly created destination already has refs; it is preserved without a push.")
+        state.update({"state": "push-attempted-outcome-unknown", "push_attempted": True})
+        receipt(output, state)
+        git(repository, *transport, "-c", "push.followTags=false", "-c", "remote.fresh-snapshot.mirror=false",
+            "push", "--porcelain", "--no-follow-tags",
+            "--recurse-submodules=no", remote, "refs/heads/main:refs/heads/main")
+        state["state"] = "pushed-verification-pending"
+        receipt(output, state)
+        actual = api.request("GET", "/repos/" + plan["destination"])
+        verify_repo(actual, plan["destination"], independent=True)
+        if actual["id"] != created["id"] or actual.get("default_branch") != "main":
+            raise PreparationError("Destination ID or default main branch is unconfirmed; no settings are changed.")
+        ref = api.request("GET", "/repos/" + plan["destination"] + "/git/ref/heads/main")
+        if ref.get("object", {}).get("sha") != state["snapshot_commit"]:
+            raise PreparationError("Destination main does not match the exact snapshot commit.")
+        state.update({"state": "snapshot-pushed-post-migration-tests-unrun", "push_verified": True})
+        receipt(output, state)
+    except Exception as error:
+        if isinstance(error, OperationFailure):
+            state["failure"] = {**error.summary, "stderr_truncated": error.stderr_truncated,
+                                "private_stderr_saved": False}
+            # The new apply output is private and retained. No raw tool output
+            # enters the public receipt, exception message, or terminal.
+            try:
+                write_new(output / "subprocess-stderr.log", error._stderr)
+            except OSError:
+                pass
+            else:
+                state["failure"].update({"private_stderr_saved": True,
+                                         "private_stderr_file": "subprocess-stderr.log"})
         state["outcome"] = "stopped-with-state-preserved"
         receipt(output, state)
         raise

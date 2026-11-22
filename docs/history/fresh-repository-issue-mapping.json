@@ -1,0 +1,64 @@
+{
+  "schema": "deckystream.fresh-repository-issue-mapping/v1",
+  "snapshot_commit": "38464de765e913ca977f7e4cdae16dec0884d24b",
+  "source_repository": "szmyty/obsgod",
+  "destination_repository": "egohygiene/deckystream",
+  "criteria_count": 230,
+  "original_carry_forward_sha256": "27fbebd34c203f8792a858357254fdbf3cd428b52f6cd0db129d78bc583c5d30",
+  "original_ledger": "docs/evidence/completion-criteria.json",
+  "original_history": "docs/history/fresh-repository-public-history.json",
+  "criteria_policy": "All230 original criterion IDs/text/dependencies/statuses remain unchanged in the preserved ledger. New issue1 owns reconciliation of remaining product criteria; issue8 owns optional auth research including retained old14/40 intent. Historical closed status is neither reopened nor newly qualified by this mapping.",
+  "issues": [
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/46",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/79",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/82",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/83",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/85",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/86",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/87",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/88",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/95",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/1",
+      "disposition": "remaining work carried forward; acceptance not inferred; original issue retained"
+    },
+    {
+      "original_issue": "https://github.com/szmyty/obsgod/issues/89",
+      "destination_issue": "https://github.com/egohygiene/deckystream/issues/8",
+      "disposition": "research carried forward; no authentication implementation authorized by migration"
+    }
+  ],
+  "issue_closure_performed": false
+}

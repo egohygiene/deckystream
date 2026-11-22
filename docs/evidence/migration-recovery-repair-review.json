@@ -1,0 +1,51 @@
+{
+  "schema": "deckystream.migration-recovery-repair-review/v1",
+  "base_revision": "38464de765e913ca977f7e4cdae16dec0884d24b",
+  "platform": "Linux x86_64 cloud workspace",
+  "python": "3.12.14",
+  "git": "2.52.0",
+  "tested_source_sha256": {
+    "scripts/prepare-fresh-repository.py": "5ab0364cebbf8f53b1f567730d6154edb076b7710abd76443219569c52590825",
+    "scripts/tests/test_fresh_repository.py": "3a834272e8dbe5a0994071c66200f83ec8221811c92cb06fad17e0798ba33f8f",
+    "scripts/tests/test_migration_entrypoint.py": "2915c64b92bb0da6809cfd95cf1176c7338f98b8f3b0a0f6db1ad2923f174487"
+  },
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_fresh_repository.py -v",
+      "outcome": "passed",
+      "tests": 33
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_migration_entrypoint.py -v",
+      "outcome": "passed",
+      "tests": 13
+    },
+    {
+      "command": "python3 -m py_compile scripts/prepare-fresh-repository.py scripts/tests/test_fresh_repository.py",
+      "outcome": "passed",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "outcome": "passed",
+      "exit_code": 0
+    }
+  ],
+  "regression_evidence": [
+    "Real disposable Git snapshot/commit objects survive simulated push failure.",
+    "Safe operation/category/exit-status summaries omit command arguments/stdout/stderr.",
+    "Apply rawstderr is capped64KiB, retained0600 inside0700 output; receipt contains no rawstderr.",
+    "Timeout summary remains redacted.",
+    "Existing destination refusal and ordinary non-force push boundaries retained."
+  ],
+  "reviews": [
+    "Independent read-only recovery design review passed.",
+    "Root reviewed diagnostics implementation; collaborator reviewed recovery documentation/mapping with no blocking finding."
+  ],
+  "limitations": [
+    "Unit API/push failures are fixtures, not live failed GitHub operations.",
+    "Live successful recovery used the unchanged reviewed initial source packet; this helper repair was not used to repeat repository creation.",
+    "No new product/platform/provider/CI/release qualification.",
+    "Branch-protection requirements unavailable403; leave repair in draft pending merge readiness."
+  ]
+}

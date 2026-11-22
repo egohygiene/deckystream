@@ -1,5 +1,30 @@
 # Fresh deckystream repository: owner-run preparation
 
+## Executed first-push recovery
+
+The owner creation step made `egohygiene/deckystream` (ID `1467389697`), but its
+first push failed. Recovery completed a normal, non-force push to `main` at
+`38464de765e913ca977f7e4cdae16dec0884d24b`, after byte-comparing the reviewed
+packet and verifying the exact existing repo and empty refs. See
+[the receipt](evidence/fresh-repository-recovery.json). Do not rerun `--apply`:
+its existing-destination refusal is intentional. The Mac failure's actual Git
+stderr was discarded, so successful Cloud recovery does not establish its cause.
+
+Continue with [finalization #1](https://github.com/egohygiene/deckystream/issues/1).
+The creation instructions below describe the original operation; they do not
+authorize overwriting or recreating this now-populated repository. Keep the
+Mac's private migration workspace until the new repository and backup are
+accepted. Its logs are private and must not be committed or pasted wholesale.
+
+The repaired helper retains `snapshot.git` inside its private apply output,
+including the exact attempted commit. Failed subprocesses expose only a fixed
+operation/category and exit status. Their first 64 KiB of stderr are retained
+in `subprocess-stderr.log` with mode `0600`; the receipt says whether writing
+that file succeeded and whether it was truncated. Treat it as potentially
+containing credentials. Default preparation does not save raw command errors.
+This repair does not recover the already-discarded Mac error or add an
+automatic retry/overwrite path for existing repositories.
+
 [PR #119](https://github.com/szmyty/obsgod/pull/119) and the
 [exact preparation review](evidence/fresh-repository-preparation-review.json)
 record the working command, repaired review findings and unrun external steps.
