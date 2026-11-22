@@ -560,6 +560,47 @@ class Apply(Fixture):
         self.assertFalse(any(call[0] in {"DELETE", "PATCH", "PUT"} for call in api.calls))
         self.assertTrue((self.output / "source.tar").exists())
 
+    def test_real_snapshot_and_private_bounded_stderr_survive_push_failure(self):
+        prepared = self.prepared(canonical=True)
+        api = API()
+        api.source_sha = self.sha
+        original_run = subprocess.run
+        private = b"PRIVATE-CREDENTIAL-SENTINEL without `workflow` scope\n" + b"x" * (70 * 1024)
+
+        def commands(arguments, **kwargs):
+            if arguments[0] == "git" and "ls-remote" in arguments:
+                return subprocess.CompletedProcess(arguments, 0, b"", b"")
+            if arguments[0] == "git" and "push" in arguments:
+                return subprocess.CompletedProcess(arguments, 1, b"PRIVATE-STDOUT", private)
+            return original_run(arguments, **kwargs)
+
+        environment = {"GIT_AUTHOR_NAME": "Fixture Owner", "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
+                       "GIT_COMMITTER_NAME": "Fixture Owner", "GIT_COMMITTER_EMAIL": "fixture@example.invalid"}
+        public = io.StringIO()
+        with patch.dict(os.environ, environment), patch.object(M.subprocess, "run", side_effect=commands), contextlib.redirect_stdout(public), contextlib.redirect_stderr(public):
+            with self.assertRaises(M.OperationFailure) as caught:
+                M.apply(prepared, self.output, api)
+        self.assertIn("operation=git-push, category=workflow-permission, exit_status=1", str(caught.exception))
+        self.assertNotIn("PRIVATE", str(caught.exception) + public.getvalue())
+        receipt = (self.output / "apply-receipt.json").read_bytes()
+        self.assertNotIn(b"PRIVATE", receipt)
+        state = json.loads(receipt)
+        self.assertEqual(state["state"], "push-attempted-outcome-unknown")
+        self.assertFalse(state["push_verified"])
+        self.assertEqual(state["failure"]["category"], "workflow-permission")
+        self.assertEqual(state["failure"]["exit_status"], 1)
+        self.assertTrue(state["failure"]["stderr_truncated"])
+        log = self.output / state["failure"]["private_stderr_file"]
+        self.assertEqual(log.read_bytes(), private[:64 * 1024])
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.output.stat().st_mode & 0o777, 0o700)
+        repository = self.output / state["snapshot_repository"]
+        self.assertEqual(repository.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(local_git(repository, "rev-parse", "main").strip(), state["snapshot_commit"].encode())
+        self.assertEqual(local_git(repository, "rev-list", "--count", "main").strip(), b"1")
+        self.assertEqual(local_git(repository, "show", "main:LICENSE"), prepared[3]["LICENSE"])
+        self.assertFalse(any(call[0] in {"DELETE", "PATCH", "PUT"} for call in api.calls))
+
     def test_new_destination_refs_never_authorize_a_push_or_cleanup(self):
         prepared = self.prepared(canonical=True)
         api = API()
@@ -582,6 +623,24 @@ class Apply(Fixture):
 
 
 class Transport(unittest.TestCase):
+    def test_failed_subprocess_exposes_only_fixed_categories_and_no_arguments(self):
+        for stderr, category in ((b"PRIVATE GH013 repository rule violations", "repository-rule"),
+                                 (b"PRIVATE Authentication failed", "authentication"),
+                                 (b"PRIVATE unrecognized credential helper message", "unclassified")):
+            result = subprocess.CompletedProcess([], 128, b"PRIVATE STDOUT", stderr)
+            with patch.object(M.subprocess, "run", return_value=result), self.assertRaises(M.OperationFailure) as caught:
+                M.run(["git", "push", "https://PRIVATE-CREDENTIAL@example.invalid/repo"])
+            self.assertEqual(caught.exception.summary, {"operation": "git-push", "category": category, "exit_status": 128})
+            self.assertNotIn("PRIVATE", str(caught.exception))
+
+    def test_timeout_summary_does_not_expose_command_or_partial_output(self):
+        error = subprocess.TimeoutExpired(["git", "push", "PRIVATE-URL"], 180,
+                                         output=b"PRIVATE-STDOUT", stderr=b"PRIVATE-STDERR")
+        with patch.object(M.subprocess, "run", side_effect=error), self.assertRaises(M.OperationFailure) as caught:
+            M.run(error.cmd)
+        self.assertEqual(caught.exception.summary, {"operation": "git-push", "category": "timeout", "exit_status": None})
+        self.assertNotIn("PRIVATE", str(caught.exception))
+
     def test_gh_explicit_get_status_and_auth_errors_cannot_be_absence(self):
         api = M.GitHub()
         for status, code, expected in ((404, 1, None), (401, 1, "error"), (403, 1, "error"), (302, 0, "error")):

@@ -1,0 +1,39 @@
+{
+  "destination": "egohygiene/deckystream",
+  "destination_repository_id": 1467389697,
+  "mac_attempted_commit": "64331a7b31929cb2929d464d2b1cf2bcdac4977b",
+  "product_qualification": "unrun",
+  "push_attempted": true,
+  "push_exit_code": 0,
+  "push_verified": true,
+  "release_published": false,
+  "reviewed_packet_byte_comparison": "passed",
+  "snapshot_archive_sha256": "0ad8f9a7308aec31e1e26ba05f22da9527039a125fdc68f0b8ca2faf906c6cc6",
+  "snapshot_commit": "38464de765e913ca977f7e4cdae16dec0884d24b",
+  "source_archive_sha256": "0f5765ec7a4358338aa4d7cc70c1ae7ceca2bc40aada50832259e86b676df397",
+  "source_repository_preserved": true,
+  "source_sha": "0d035e2a6242359b6d62dfb9f80829ae0c47e1d7",
+  "state": "snapshot-pushed-post-migration-tests-unrun",
+  "schema": "deckystream.fresh-repository-recovery/v1",
+  "verification_platform": "Linux cloud workspace; Git HTTPS transport and GitHub REST API",
+  "mac_error_cause": "unknown: original helper discarded Git stderr",
+  "recovery_actions": [
+    "Compared all retained preparation files byte-for-byte with regeneration from the same pinned source and public-history export.",
+    "Verified exact existing repository ID/name/public/nonfork/default-main/push permission.",
+    "Verified all Git remote refs empty immediately before one ordinary non-force main push.",
+    "Verified GitHub main ref and Git ls-remote HEAD/main equal the new snapshot commit; no other refs existed at that check."
+  ],
+  "commands": [
+    "python3 /workspace/.obsgod-tools/recover-deckystream-empty.py",
+    "git -c core.hooksPath=/dev/null -C RETAINED_BARE_REPO -c http.followRedirects=false -c http.https://github.com/egohygiene/deckystream.git.followRedirects=false -c push.followTags=false -c remote.fresh-snapshot.mirror=false push --porcelain --no-follow-tags --recurse-submodules=no fresh-snapshot refs/heads/main:refs/heads/main"
+  ],
+  "limitations": [
+    "Original Mac push failure is not diagnosed by successful Cloud recovery.",
+    "No product matrix, Steam Deck/provider test, release, deployment or legacy retirement.",
+    "Branch protection GET returned403 for integration; rulesets list was empty.",
+    "The initial skip-ci commit is not a hosted CI pass.",
+    "Original source archive, history, artwork-rights status, old repository and installed identities remain preserved."
+  ],
+  "rulesets_read": "passed-empty",
+  "branch_protection_read": "unavailable-http-403"
+}
