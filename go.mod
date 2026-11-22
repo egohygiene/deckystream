@@ -5,13 +5,13 @@ go 1.23.0
 toolchain go1.27.4
 
 require (
-	github.com/andreykaipov/goobs v1.8.3
+	github.com/andreykaipov/goobs v1.11.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/muesli/coral v1.0.0
 )
 
 require (
-	github.com/buger/jsonparser v1.1.2 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/buger/jsonparser v1.6.1 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
