@@ -53,7 +53,7 @@ jobs:
       - name: Release only opted-in private compiler caches after Go consumers
         if: env.OBSGOD_LOCAL_PROFILE == 'constrained'
         run: python3 scripts/local-ci-resources.py trim-compiler-cache
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: generic-snapshot-audit-${{ github.sha }}
           retention-days: 7
