@@ -47,6 +47,24 @@ parser's syntax. [The final repair review](docs/evidence/primary-naming-final-ci
 pins official sources and records an independent OpenSSL protocol-vector check.
 The final hosted CodeQL and candidate results must confirm the latest head.
 
+At `90fcae1e81f7e9311896dd9f64d6f2917b03b0f9`, the full source/build/browser
+stages and real OBS audio/RTMP/authentication/app-capture checks passed. The last
+game-OBS fixture asserted watcher readiness immediately after observing recording
+and game pixels; source inspection showed that these can precede the separate
+observer startup. It now awaits positively observed readiness within 12 seconds,
+fails on lost/unknown output, clip completion or probe errors, and retains only
+safe first/final state facts. A recording-specific Go regression passed under a
+held control lock without output mutations. No production runtime change was
+justified. The [watcher review](docs/evidence/primary-naming-watcher-review.json)
+records these exact checks and the local native reproduction's disk-capacity
+refusal before OBS launch; hosted native qualification must test the latest head.
+
+The separate CodeQL PR security check still reports three protocol-required
+SHA256 false positives; this hosted setup did not apply the source annotations.
+The connected identity cannot manage code-scanning alerts (HTTP 403). The owner
+was asked to dismiss only those findings with the verified protocol rationale.
+Analysis-job success alone is not a pass for that separate PR security check.
+
 The README is 76 lines with the selected light/dark banner, five badges, short
 features and linked setup/development guidance. The active testing booklet was
 regenerated as 13 pages; its original MD/PDF are preserved under `docs/history`.

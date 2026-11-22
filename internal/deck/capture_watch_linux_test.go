@@ -171,3 +171,63 @@ func TestCaptureWatchObservesIdleWithoutTakingOutputControlOrMutating(t *testing
 		t.Fatalf("observer did not run while output lock was held: %+v", status)
 	}
 }
+
+func TestCaptureWatchConfirmsActiveRecordingBeforeTakingOutputControl(t *testing.T) {
+	f := newVideoFixture(t)
+	f.active, f.recording = false, true
+	_, dial := videoClient(t, f)
+	p := testPaths(t)
+	s := DefaultSettings()
+	s.CaptureMode = "game"
+	unlock, err := Lock(context.Background(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(unlock) // Cancel and reap the observer before releasing output control.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	exited := make(chan error, 1)
+	go func() {
+		defer close(exited)
+		exited <- watchCaptureWith(ctx, p, captureWatchDeps{
+			load: func(Paths) (Settings, Secrets, error) { return s, Secrets{}, nil }, connect: dial,
+			discover: func(context.Context) GameIdentity { return GameIdentity{AppID: 42, State: "running"} },
+			interval: time.Millisecond,
+		})
+	}()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-exited:
+		case <-time.After(time.Second):
+			t.Error("observer did not stop after cancelling its read-only readiness check")
+		}
+	})
+	deadline := time.NewTimer(2 * time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(5 * time.Millisecond)
+	defer tick.Stop()
+	for {
+		status := ReadCaptureVideoStatus(p)
+		if status.Watching {
+			if status.State != "unknown" || status.Frames != "unknown" {
+				t.Fatal("read-only readiness invented frame/capture health while output control was held", status)
+			}
+			break
+		}
+		select {
+		case <-exited:
+			t.Fatal("observer exited before confirming active recording")
+		case <-deadline.C:
+			t.Fatal("active recording readiness waited for the initiating output control lock", status)
+		case <-tick.C:
+		}
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if len(f.requests) == 0 {
+		t.Fatal("readiness did not observe managed output")
+	}
+	assertNoOutputCommands(t, f)
+	assertCaptureReadOnly(t, f.requests)
+}

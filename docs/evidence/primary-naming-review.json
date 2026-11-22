@@ -315,7 +315,7 @@
         "outcome": "passed",
         "evidence": "/workspace/.obsgod-tools/naming-20261122/go-deck-process-final.log",
         "evidence_sha256": "61db09a2fac86cc33d6998ed528538ebf5781360fddbc8fb7e4e0376cc3d8c23",
-        "scope": "Real CLI/observer subprocesses with controlled OBS protocol fixtures; no real Steam Deck hardware"
+        "scope": "Real CLI subprocess cancellation/flock with controlled OBS protocol fixtures; no detached-watcher or real Steam Deck hardware proof"
       },
       {
         "command": "go test -race -count=1 -v ./internal/deck -run 'TestLegacyDeckyMapSchemas|TestLegacyRetryRecovery|TestLegacyMedia|TestLegacyRuntime'",
