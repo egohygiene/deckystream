@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/config"
 	api "github.com/egohygiene/deckystream/pkg/api/v1"
 	"github.com/egohygiene/deckystream/pkg/automation"
+	"github.com/muesli/coral"
 )
 
 type apiConnector func(context.Context, config.Config) (*api.Client, error)

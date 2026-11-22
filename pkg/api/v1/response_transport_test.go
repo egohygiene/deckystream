@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/egohygiene/deckystream/pkg/automation"
+	"github.com/gorilla/websocket"
 )
 
 type responseTransportFixture struct {

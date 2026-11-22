@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/obs"
+	"github.com/muesli/coral"
 )
 
 func newSourceCommand(service obs.Service) *coral.Command {

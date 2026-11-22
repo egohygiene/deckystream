@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/andreykaipov/goobs"
-	"github.com/gorilla/websocket"
 	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/gorilla/websocket"
 )
 
 type compatibilityRequest struct {

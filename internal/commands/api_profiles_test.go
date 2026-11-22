@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/egohygiene/deckystream/internal/config"
 	api "github.com/egohygiene/deckystream/pkg/api/v1"
+	"github.com/gorilla/websocket"
 )
 
 func TestPublicProfileListKeepsJSONShapeWithOnlyProfileRead(t *testing.T) {

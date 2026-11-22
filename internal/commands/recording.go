@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/obs"
+	"github.com/muesli/coral"
 )
 
 func newRecordingCommand(service obs.Service) *coral.Command {

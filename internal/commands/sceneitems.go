@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/obs"
+	"github.com/muesli/coral"
 )
 
 func newSceneItemCommand(service obs.Service) *coral.Command {

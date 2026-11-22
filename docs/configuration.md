@@ -3,8 +3,8 @@
 These commands describe the current development candidate. Older preview
 packages do not acquire them until upgraded to a matching build.
 
-The `deckystream` command remains compatible while Decky Stream is the working product
-name. Product identity is versioned metadata; user connection configuration is
+The primary command and product name are `deckystream`.
+Product identity is versioned metadata; user connection configuration is
 separate. The reusable CLI controls an existing OBS instance without provider
 presets or automatic broadcasts. The Steam Deck `deck` commands use their own
 managed configuration and do not read this generic connection file.
@@ -19,7 +19,7 @@ there, separately from the reusable CLI's connection precedence below.
 Connection values resolve in this order, highest priority first:
 
 1. Explicit `--host`, `--port`, `--password-file` or legacy `--password` flags.
-2. `DECKYSTREAM_*` environment variables, with the existing `OBS_*` aliases supported.
+2. `DECKYSTREAM_*` environment variables, with explicit `OBSGOD_*` and existing `OBS_*` aliases supported.
 3. The selected connection profile in the configuration file.
 4. The file's base `connection` values.
 5. Built-in defaults: `localhost`, port `4455`, no password.
@@ -37,13 +37,17 @@ scene, profile, recording or stream.
 
 ## File location and versioned schema
 
-Run `deckystream config path` to find the file. It defaults to:
+Run `deckystream config path` to find the file. Fresh installations default to:
 
 | Platform | Default connection file |
 | --- | --- |
 | Linux / SteamOS | `${XDG_CONFIG_HOME:-$HOME/.config}/deckystream/config.json` |
 | macOS | `$HOME/Library/Application Support/deckystream/config.json` |
 | Windows | `%AppData%\deckystream\config.json` |
+
+Validated older stores retain the `obsgod` namespace. Selection also considers
+the shared state/data/cache and managed OBS roots; mixed or unsafe layouts
+require repair. See [product naming and upgrades](product-naming.md).
 
 Linux `XDG_CONFIG_HOME` must be absolute. `--config PATH` overrides
 `DECKYSTREAM_CONFIG`; an explicit missing file is an error. A missing default file
@@ -87,12 +91,15 @@ underscores or hyphens and begin with a letter/digit. Output lists are sorted.
 
 | Variable | Meaning | Legacy alias |
 | --- | --- | --- |
-| `DECKYSTREAM_CONFIG` | Explicit connection-file path | none |
-| `DECKYSTREAM_CONNECTION_PROFILE` | Selected named connection profile | none |
-| `DECKYSTREAM_HOST` | OBS hostname/IP | `OBS_HOST` |
-| `DECKYSTREAM_PORT` | OBS WebSocket port, 1–65535 | `OBS_PORT` |
-| `DECKYSTREAM_PASSWORD` | OBS password, including an explicit empty value | `OBS_PASSWORD` |
-| `DECKYSTREAM_PASSWORD_FILE` | Private single-line password file | `OBS_PASSWORD_FILE` |
+| `DECKYSTREAM_CONFIG` | Explicit connection-file path | `OBSGOD_CONFIG` |
+| `DECKYSTREAM_CONNECTION_PROFILE` | Selected named connection profile | `OBSGOD_CONNECTION_PROFILE` |
+| `DECKYSTREAM_HOST` | OBS hostname/IP | `OBSGOD_HOST`, then `OBS_HOST` |
+| `DECKYSTREAM_PORT` | OBS WebSocket port, 1–65535 | `OBSGOD_PORT`, then `OBS_PORT` |
+| `DECKYSTREAM_PASSWORD` | OBS password, including an explicit empty value | `OBSGOD_PASSWORD`, then `OBS_PASSWORD` |
+| `DECKYSTREAM_PASSWORD_FILE` | Private single-line password file | `OBSGOD_PASSWORD_FILE`, then `OBS_PASSWORD_FILE` |
+
+A present primary variable replaces its corresponding `OBSGOD_*` alias. This
+includes an empty value; the host/port empty-value rules above still apply.
 
 Direct password variables take precedence over password-file environment
 variables. File `password_env` can name another environment variable without

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/obs"
+	"github.com/muesli/coral"
 )
 
 func newReplayBufferCommand(service obs.Service) *coral.Command {

@@ -46,6 +46,7 @@ IMAGES = {
     "rpm": "fedora:43@sha256:f01112b9a1f1d0504ad962d9adfa401425033f8ab067e0a821904ebdde5b8ca5",
     "apk": "alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2",
 }
+SMOKE_HOME = "/tmp/deckystream-package-user"
 # The reviewed NFPM version emits only these metadata/payload fields. A list of
 # known-dangerous scripts is insufficient: RPM also has verify, file-trigger,
 # transaction-trigger and pre/post-untransaction script families. Unknown header
@@ -426,14 +427,17 @@ def smoke(directory, summary, formats, images, previous=None):
         def execute(args, user=None):
             cmd = ["docker", "exec"]
             if user:
-                cmd += ["--user", user, "--env", "HOME=/home/package-user", "--env", "XDG_CONFIG_HOME=/home/package-user/.config"]
+                cmd += ["--user", user, "--env", "HOME=" + SMOKE_HOME, "--env", "XDG_CONFIG_HOME=" + SMOKE_HOME + "/.config"]
             cmd += [container, *args]
             p = subprocess.run(cmd, text=True, capture_output=True, timeout=45)
             calls.append({"arguments": args, "uid": user or "0", "exit_code": p.returncode, "stdout": p.stdout, "stderr": p.stderr})
             require(p.returncode == 0, "Disposable " + kind + " command failed: " + p.stderr[-1500:])
             return p.stdout
         try:
-            execute(["/bin/sh", "-eu", "-c", "mkdir -p /home/package-user/.config/deckystream /home/package-user/Videos; printf preserve > /home/package-user/.config/deckystream/fixture; printf media > /home/package-user/Videos/fixture; chmod 777 /home/package-user; chmod -R a+rX /home/package-user"])
+            # Create the private player tree as its real owner below the image's
+            # trusted sticky /tmp. With all capabilities dropped, root cannot
+            # chown a fixture or safely impersonate its later file access.
+            execute(["/bin/sh", "-eu", "-c", 'umask 077; mkdir -p "$HOME/.config/deckystream" "$HOME/Videos"; printf preserve > "$HOME/.config/deckystream/fixture"; printf media > "$HOME/Videos/fixture"'], "65534:65534")
             if kind == "rpm":
                 # Fedora ships root-owned0555 /usr/bin and expects privileged
                 # root to bypass DAC. Give only owner-write in this disposable
@@ -465,11 +469,11 @@ def smoke(directory, summary, formats, images, previous=None):
             require(value["version"] == summary["version"] + " (" + summary["source"]["revision"] + ")", "Installed package version/source mismatch")
             execute(["/usr/bin/deckystream", "--help"], "65534:65534")
             execute(["/usr/bin/deckystream", "api", "capabilities"], "65534:65534")
-            require(execute(["/usr/bin/deckystream", "config", "path"], "65534:65534").strip() == "/home/package-user/.config/deckystream/config.json", "Installed config path mismatch")
+            require(execute(["/usr/bin/deckystream", "config", "path"], "65534:65534").strip() == SMOKE_HOME + "/.config/deckystream/config.json", "Installed config path mismatch")
             execute([*install, "/packages/" + record["name"]])
             remove = {"deb": ["dpkg", "--purge", "deckystream"], "rpm": ["rpm", "-e", "deckystream"], "apk": ["apk", "del", "--no-network", "deckystream"]}[kind]
             execute(remove)
-            execute(["/bin/sh", "-eu", "-c", "test ! -e /usr/bin/deckystream; test ! -e /usr/share/doc/deckystream/SOURCE.json; test \"$(cat /home/package-user/.config/deckystream/fixture)\" = preserve; test \"$(cat /home/package-user/Videos/fixture)\" = media; test ! -e /home/package-user/.config/deckystream/config.json"])
+            execute(["/bin/sh", "-eu", "-c", 'test ! -e /usr/bin/deckystream; test ! -e /usr/share/doc/deckystream/SOURCE.json; test "$(cat "$HOME/.config/deckystream/fixture")" = preserve; test "$(cat "$HOME/Videos/fixture")" = media; test ! -e "$HOME/.config/deckystream/config.json"'], "65534:65534")
             results.append({"format": kind, "package": record["name"], "sha256": record["sha256"], "image": image,
                 "outcome": "passed", "commands": calls, "package_replacement": "previous audited source to current" if previous else "unrun; no previous audited source supplied",
                 "previous_package": {"source_revision": previous["source"]["revision"], "name": old["name"], "sha256": old["sha256"],

@@ -25,6 +25,16 @@ rollback fixture; this is not Steam/Decky/device execution. Use the latest PR
 head and actual hosted workflows for final source qualification. The initial
 checkpoint commits used `[skip ci]` and are not CI passes.
 
+The first hosted attempt at `01b6f35bf09862ad5af81a6e39fbbb0366c68999`
+passed cross-platform tests, coverage, documentation, dependency review and the
+primary package/browser stages. Lint exposed import formatting; the native
+package lifecycle exposed its root-owned mode-0777 HOME fixture, correctly
+refused by the new safety checks. The bounded follow-up formats Go and creates
+the disposable private HOME as the tested UID, preserving network isolation,
+dropped capabilities and production ownership checks. [Its receipt](docs/evidence/primary-naming-ci-repair.json)
+records fresh race/static/security checks and 12 NFPM cases; actual package
+lifecycle and the complete final matrix must be read at the latest pushed head.
+
 The README is 76 lines with the selected light/dark banner, five badges, short
 features and linked setup/development guidance. The active testing booklet was
 regenerated as 13 pages; its original MD/PDF are preserved under `docs/history`.

@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/muesli/coral"
 	"github.com/egohygiene/deckystream/internal/config"
 	api "github.com/egohygiene/deckystream/pkg/api/v1"
 	creator "github.com/egohygiene/deckystream/pkg/creator/v1"
+	"github.com/muesli/coral"
 )
 
 func creatorProfilePath(explicit string) (string, error) {

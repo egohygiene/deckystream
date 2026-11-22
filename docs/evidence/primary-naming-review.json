@@ -522,5 +522,6 @@
     "No real Steam Deck migration, actual provider session, stable release, deployment or legacy-repository retirement.",
     "Unconfirmed manager installation outcomes retain repair state; rollback does not race a still-running install.",
     "Artwork rights/production adoption remain separate owner gates; original provenance and source geometry are unchanged."
-  ]
+  ],
+  "followup": "primary-naming-ci-repair.json records formatting and the private-user NFPM fixture repair after the first hosted attempt; use the latest PR16 head workflows for final qualification."
 }

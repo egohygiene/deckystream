@@ -20,8 +20,8 @@ import (
 
 	"github.com/andreykaipov/goobs"
 	"github.com/andreykaipov/goobs/api/requests"
-	"github.com/gorilla/websocket"
 	"github.com/egohygiene/deckystream/internal/obstransport"
+	"github.com/gorilla/websocket"
 )
 
 // Config describes an OBS connection. Password must come from a secret source.
