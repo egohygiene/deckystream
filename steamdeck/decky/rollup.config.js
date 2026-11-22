@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdirSync,copyFileSync,existsSync,lstatSync,r
 import {createRequire} from "node:module";
 import {dirname,join,resolve,isAbsolute,parse} from "node:path";
 import {fileURLToPath} from "node:url";
-import ts from "typescript";
+import {transformSync} from "esbuild";
 import externalGlobals from "rollup-plugin-external-globals";
 import {generateSupport} from "../../scripts/generate-support.mjs";
 
@@ -49,7 +49,7 @@ export default {
       }
     }},
     {name:"local-qr",resolveId(id){if(id==="qrcode-generator")return fileURLToPath(import.meta.resolve(id));}},
-    {name:"typescript",transform(code,id){if(id.endsWith(".tsx")||id.endsWith(".ts"))return {code:ts.transpileModule(code,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2020}}).outputText,map:null};}},
+    {name:"typescript",transform(code,id){if(id.endsWith(".tsx")||id.endsWith(".ts"))return {code:transformSync(code,{loader:id.endsWith(".tsx")?"tsx":"ts",jsx:"automatic",format:"esm",target:"es2020",sourcefile:id}).code,map:null};}},
     externalGlobals({react:"SP_REACT","react/jsx-runtime":"SP_JSX","@decky/ui":"DFL"})
   ],
   output:{dir:output,format:"esm",exports:"default",paths:{"@decky/api":"./decky-api.js"}}

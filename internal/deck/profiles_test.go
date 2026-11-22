@@ -21,6 +21,7 @@ func profileRequest(t *testing.T, p Paths, request any) (StreamProfileResult, er
 }
 
 func TestStreamProfilesExportImportPreservesPrivateStateAndIsOffline(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -61,6 +62,7 @@ func TestStreamProfilesExportImportPreservesPrivateStateAndIsOffline(t *testing.
 }
 
 func TestStreamProfileApplyAndResetPreserveDestinationCredentialsAndIdle(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	configured, err := Configure(p, strings.NewReader(fixtureSettings))
 	if err != nil {
@@ -166,6 +168,7 @@ func TestStreamProfilesRejectUnsafeNamesVersionsDimensionsAndSecretFields(t *tes
 }
 
 func TestStreamProfilesGameBindingIsExplicitAndAmbiguousGamesDoNothing(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -241,6 +244,7 @@ func TestStreamProfilesRejectSymlinkAndOversizedStore(t *testing.T) {
 }
 
 func TestOutputResolutionMigrationAndPrepareKeeps720pCanvas(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	settings, err := Configure(p, strings.NewReader(fixtureSettings))
 	if err != nil {
@@ -297,6 +301,7 @@ func TestStreamPresetsNeverClaimDeviceQualification(t *testing.T) {
 }
 
 func TestStreamProfileEnvironmentAppliesOnlyBeforeExplicitNewOutput(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)

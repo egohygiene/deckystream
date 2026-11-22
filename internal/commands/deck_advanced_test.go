@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -71,6 +72,9 @@ func executeDeckProfileCLI(t *testing.T, input string, flags ...string) (deck.St
 }
 
 func TestDeckProfileCLIFlagsOverrideJSONAndMalformedEnvironment(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("stream-profile application requires the Linux Steam Deck runtime lock")
+	}
 	isolatedDeckAdvancedConfiguration(t)
 	t.Setenv("OBSGOD_DECK_FPS", "malformed-lower-layer")
 	t.Setenv("OBSGOD_DECK_MICROPHONE", "true")
@@ -92,6 +96,9 @@ func TestDeckProfileCLIFlagsOverrideJSONAndMalformedEnvironment(t *testing.T) {
 }
 
 func TestDeckProfileCLIUnchangedBooleanFlagDoesNotOverrideEnvironment(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("stream-profile application requires the Linux Steam Deck runtime lock")
+	}
 	isolatedDeckAdvancedConfiguration(t)
 	t.Setenv("OBSGOD_DECK_MICROPHONE", "true")
 	result, output, err := executeDeckProfileCLI(t, `{"action":"preview","preset":"balanced-720p30"}`)
@@ -136,6 +143,9 @@ func TestDeckProfileCLIRejectsInvalidFlagsAndUnknownOrMultipleJSON(t *testing.T)
 }
 
 func TestDeckProfileCLIExportIsPortableAndDoesNotResolveCredentials(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("stream-profile application requires the Linux Steam Deck runtime lock")
+	}
 	isolatedDeckAdvancedConfiguration(t)
 	// Missing generic configuration and credentials must not block portable
 	// profiles; no managed OBS credentials or setup are provisioned in this home.

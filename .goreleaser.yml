@@ -7,7 +7,8 @@ before:
     - python3 scripts/generic-release.py prepare
     - python3 scripts/nfpm-release.py prepare
 builds:
-  - binary: obsgod
+  - id: obsgod
+    binary: obsgod
     env:
       - CGO_ENABLED=0
     flags:

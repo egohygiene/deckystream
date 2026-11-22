@@ -54,6 +54,7 @@ func TestNativeConfigurationFirstRunIsReadOnlyAndHasNoInventedKey(t *testing.T) 
 }
 
 func TestNativeConfigurationReadViewDoesNotReadBackSecrets(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -86,6 +87,7 @@ func TestNativeConfigurationReadViewDoesNotReadBackSecrets(t *testing.T) {
 }
 
 func TestNativeConfigurationPartialEditPreservesAdvancedSettingsAndPassword(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	input := strings.TrimSuffix(fixtureSettings, "}") + `,"capture_mode":"game","idle_style":"image","idle_text":"Between games","width":960,"height":540,"idle_media":"` + strings.Repeat("a", 64) + `.png","idle_media_rights":"Owner-created image; retained attribution"}`
 	before, err := Configure(p, strings.NewReader(input))
@@ -112,6 +114,7 @@ func TestNativeConfigurationPartialEditPreservesAdvancedSettingsAndPassword(t *t
 }
 
 func TestNativeConfigurationDestinationAndExplicitReplacement(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	cases := []struct {
 		name, request, key, server string
 		wantOK                     bool
@@ -152,6 +155,7 @@ func TestNativeConfigurationDestinationAndExplicitReplacement(t *testing.T) {
 }
 
 func TestNativeConfigurationNewKeyRepairsBindingWithoutDiscardingPreferences(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -198,6 +202,7 @@ func TestNativeConfigurationRejectsMalformedOrOutOfRangeFieldsWithoutWrites(t *t
 }
 
 func TestNativeConfigurationFirstSaveAndPairedResolution(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	_, err := configureFields(context.Background(), p, strings.NewReader(`{"server":"rtmps://example.invalid/app","stream_key":"first-private-fixture","width":1920,"height":1080}`), configurationProbe(configurationStopped()))
 	if err != nil {
@@ -274,6 +279,7 @@ func TestNativeConfigurationRechecksStateAndCancellationBeforeWriting(t *testing
 }
 
 func TestNativeConfigurationCancellationDuringFinalObservationPreservesSavedPair(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p := testPaths(t)
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
@@ -345,6 +351,7 @@ func TestNativeConfigurationCloseRequiresIdleAuthenticatedManagedOBS(t *testing.
 }
 
 func TestNativeConfigurationRefusesUnsafeExistingFilesWithoutProbingOrWriting(t *testing.T) {
+	requireLinuxDeckRuntime(t)
 	for _, kind := range []string{"malformed", "unknown saved field", "public secret", "symlink settings", "hardlink secret", "unsafe ancestor"} {
 		t.Run(kind, func(t *testing.T) {
 			p := testPaths(t)

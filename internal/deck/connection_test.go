@@ -30,6 +30,7 @@ func configuredControl(t *testing.T) (Paths, Secrets) {
 }
 
 func TestControlPasswordChangesOnlyItsManagedPrivatePair(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	for _, body := range []string{`{"confirm":true,"password":"owner-entered-fixture"}`, `{"confirm":true,"generate":true}`} {
 		t.Run(body, func(t *testing.T) {
 			p, oldSecret := configuredControl(t)
@@ -70,6 +71,7 @@ func TestControlPasswordChangesOnlyItsManagedPrivatePair(t *testing.T) {
 }
 
 func TestControlPasswordRefusesUnknownRunningAndRacingProcesses(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	for _, state := range []string{"running", "unknown", "listener", "raced"} {
 		t.Run(state, func(t *testing.T) {
 			p, _ := configuredControl(t)
@@ -103,6 +105,7 @@ func TestControlPasswordRefusesUnknownRunningAndRacingProcesses(t *testing.T) {
 }
 
 func TestControlPasswordWriteFailureRestoresPreviousPair(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p, _ := configuredControl(t)
 	wsPath := filepath.Join(p.OBSConfig, "obs-studio/plugin_config/obs-websocket/config.json")
 	beforeSecret, _ := os.ReadFile(p.Secrets)
@@ -125,6 +128,7 @@ func TestControlPasswordWriteFailureRestoresPreviousPair(t *testing.T) {
 }
 
 func TestControlPasswordBeforeFirstLaunchAndFailedInitialWrite(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	for _, fail := range []bool{false, true} {
 		t.Run(map[bool]string{false: "first-password-change", true: "first-change-fails"}[fail], func(t *testing.T) {
 			p := testPaths(t)
@@ -160,6 +164,7 @@ func TestControlPasswordBeforeFirstLaunchAndFailedInitialWrite(t *testing.T) {
 }
 
 func TestControlPasswordRefusesParentSymlinkEscape(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	p, _ := configuredControl(t)
 	parent := filepath.Join(p.OBSConfig, "obs-studio/plugin_config")
 	outside := filepath.Join(t.TempDir(), "ordinary-plugin-config")
@@ -183,6 +188,7 @@ func TestControlPasswordRefusesParentSymlinkEscape(t *testing.T) {
 }
 
 func TestControlPasswordInputAndPrivatePathValidation(t *testing.T) {
+	requirePOSIXDeckFiles(t)
 	for _, body := range []string{`{}`, `null`, `{"confirm":true,"password":"short"}`, `{"confirm":true,"generate":true,"password":"two-modes-invalid"}`, `{"confirm":true,"generate":true,"unrecognized":"value"}`, `{"confirm":true,"password":"invalid\ncontrol-password"}`, `{"confirm":true,"generate":true}{}`} {
 		if _, err := changeControlPassword(testPaths(t), strings.NewReader(body), closedControl, writeJSON); err == nil {
 			t.Fatal("invalid credential request accepted")
