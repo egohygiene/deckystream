@@ -19,6 +19,25 @@ This naming instruction does not accept every part of the proposed identity ADR,
 choose artwork licenses, qualify a Steam Deck or authorize release/deployment.
 Keep the selected visual source and original provenance/rights records intact.
 
+## One-command Desktop installation — 2026-11-23
+
+The owner requested a one-command route outside the Decky Store and authorized
+continuing issues #17–#19 after dismissing the three scoped test CodeQL findings.
+Use a complete source/version-bound standard-library Python zipapp and the
+existing fixed-publisher release reader, safe unpacker and guarded installer.
+The paired runtime includes the matching standard plugin and retained Desktop
+recovery files. Direct Decky installation remains the standard plugin ZIP path.
+This does not authorize a new Decky API, root-filesystem changes, a silent
+dependency install, OAuth, publication or deployment. Missing dependencies need
+an explicit terminal decision or an existing authenticated Install action.
+
+Prepare deterministic delivery assets, source/notices, exact hashes and an
+unsigned review packet before requesting concrete publication approval. Stable
+excludes previews; a version assertion must match the bootstrap's own version.
+Local candidate verification precedes publication; the actual anonymous public
+command must be tested after separately approved assets exist. Device/provider
+acceptance and rights remain in #1, independent auth research in #8.
+
 ## Destination and owner entrypoint follow-through
 
 On 2026-11-22, after the assistant recommended `egohygiene/deckystream` over

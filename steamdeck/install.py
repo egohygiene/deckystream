@@ -387,7 +387,29 @@ def dependency_policy(manifest):
         yield load_module("deckystream_install_dependencies", module_path)
 
 
-async def run_dependency_setup(policy, bridge, home):
+def approve_dependency_setup(consent=None):
+    """Accept an explicit UI decision or ask the attached terminal, never a pipe.
+
+    A caller may supply True only for a separate, explicit dependency-install
+    action. Invoking the installer itself does not grant Flatpak consent.
+    """
+    if consent is not None:
+        if type(consent) is not bool:
+            raise RuntimeError("Dependency setup needs an explicit yes or no decision.")
+        return consent
+    if not sys.stdin.isatty():
+        return False
+    question = ("Install missing OBS Studio and its compatible GStreamer extension "
+                "as user Flatpaks from Flathub? A verified Flathub user remote will "
+                "be added only if missing. Existing settings and recordings are "
+                "preserved; this does not start a broadcast. [y/N] ")
+    try:
+        return input(question).strip().lower() in {"y", "yes"}
+    except EOFError:
+        return False
+
+
+async def run_dependency_setup(policy, bridge, home, *, dependency_consent=None):
     """Join the native leased transaction while the caller holds install.lock."""
     jobs = _paths.decky_locations(home)["data"] / "jobs"
     state = xdg_root("XDG_STATE_HOME", home) / _paths.app_namespace(home)
@@ -400,6 +422,20 @@ async def run_dependency_setup(policy, bridge, home):
 
     job = policy.DependencySetup(jobs, os.environ, control_lock=state / "control.lock", preflight=preflight)
     try:
+        # This observation does not mutate Flatpaks. Already compatible refs
+        # need no permission to reinstall, and blocked/unsupported contexts do
+        # not ask for consent to an operation they cannot perform.
+        observed = await job.status()
+        if observed["state"] in {"running", "cancelling"}:
+            raise RuntimeError("Native dependency setup is already running. Wait or cancel it in Decky before retrying recovery; no second transaction was started.")
+        if observed["ready"]:
+            return observed
+        if not observed["can_install"]:
+            raise RuntimeError(observed["message"])
+        if not approve_dependency_setup(dependency_consent):
+            raise RuntimeError("Dependency installation was not approved. No Flatpak dependencies were changed. Rerun this installer from a Desktop Mode terminal to approve setup, or use the Decky panel's Setup controls; your existing installation and settings are preserved.")
+        # Consent does not authorize stale state: the native worker reacquires
+        # its setup/control leases and repeats output/ref checks before writes.
         observed = await job.start(consent=True)
         if not observed["can_cancel"]:
             if observed["state"] in {"running", "cancelling"}:
@@ -428,7 +464,7 @@ async def run_dependency_setup(policy, bridge, home):
         await job.close()
 
 
-def ensure_dependencies(bridge=None, manifest=None, home=None):
+def ensure_dependencies(bridge=None, manifest=None, home=None, *, dependency_consent=None):
     if bridge is None and manifest is None and home is None:
         # The retained Desktop browser calls this helper directly. It receives
         # the same package verification and installer/control leases, rather
@@ -439,9 +475,9 @@ def ensure_dependencies(bridge=None, manifest=None, home=None):
         base, _ = app_directories(home)
         owned_directory(base, home)
         with installation_lock(base):
-            return ensure_dependencies(bridge, manifest, home)
+            return ensure_dependencies(bridge, manifest, home, dependency_consent=dependency_consent)
     with dependency_policy(manifest) as policy:
-        result = asyncio.run(run_dependency_setup(policy, bridge, home))
+        result = asyncio.run(run_dependency_setup(policy, bridge, home, dependency_consent=dependency_consent))
     print(result["message"], flush=True)
 
 
@@ -511,7 +547,7 @@ def offer_decky_guide(url):
     return False
 
 
-def install(launch=True, with_decky=True, recovery_plugin_version=None, expected_plugin_version=None):
+def install(launch=True, with_decky=True, recovery_plugin_version=None, expected_plugin_version=None, *, dependency_consent=None):
     if platform.system() != "Linux" or platform.machine() not in {"x86_64", "amd64"}:
         raise RuntimeError("This preview package requires Linux x86_64 (Steam Deck)")
     if os.getuid() == 0:
@@ -547,7 +583,7 @@ def install(launch=True, with_decky=True, recovery_plugin_version=None, expected
     require_space(base, manifest)
     with installation_lock(base):
         if with_decky:
-            ensure_dependencies(bridge, manifest, home)
+            ensure_dependencies(bridge, manifest, home, dependency_consent=dependency_consent)
             require_idle(bridge, close=True)
             with control_lock(home):
                 # Close/recheck while holding the same lock as Start/configure.

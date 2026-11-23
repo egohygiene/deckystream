@@ -1,5 +1,40 @@
 # Current work
 
+## One-command Desktop installer — issues #17–#19
+
+The owner dismissed all three scoped OBS native-test alerts; the existing
+CodeQL PR check changed to success at `ca0390cb6219b2fc50ccba8e139d28df8a8184f5`.
+PR #16 merged at `c176c05bfe7bfdbfaf6dd3bd30802a2d2d9582d5`. That evidence
+qualifies the earlier source, not this new batch. Live main metadata still
+reports unprotected and rulesets empty; no settings change was performed.
+
+The owner authorized continuing the bootstrap #17, delivery preparation #18 and
+qualification #19 under finalization #1. The source prepares a complete
+version/source-bound stdlib zipapp around maintained release verification,
+safe unpacking and transactional install/recovery. It stages scratch outside
+the runtime namespaces so an existing legacy store and control inode remain
+canonical. Verification-only mode does not execute downloaded code or touch
+Decky. The source-only build and delivery helpers publish nothing.
+
+Independent review demonstrated the retained Desktop dependency path lacked
+a separate consent prompt. Missing refs now need explicit terminal yes or the
+authenticated browser's dependency Install action. Already compatible refs
+remain observation-only. Existing native leases/state preflights still gate
+mutations after consent. Focused tests passed; this initial source checkpoint
+does not claim a final matrix, actual Decky/device/provider acceptance or a
+published public-download path. See [delivery](docs/installer-delivery.md).
+
+Existing pinned tools and injected Git/API access execute in this workspace.
+At resumption free disk was about 1 GiB and later below 700 MiB. Large local
+ACT/native builds remain capacity-gated; do not prune preserved work or spend.
+Use the actual hosted workflows for new-source evidence and record any missing
+local ACT disposition separately. Fresh Dependabot PRs #20–#22 are independent
+updates; their existence is not an approval or pass for this source.
+
+Rights/publisher/adoption, real Steam Deck tests, approved release and legacy
+retirement remain #1. Optional auth remains #8. Do not close #17–#19 merely on
+source merge; their device/public-download criteria need actual evidence.
+
 ## Primary naming and README follow-through
 
 The owner requested replacing active OBSGod naming with lowercase

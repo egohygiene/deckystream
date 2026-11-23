@@ -43,6 +43,8 @@ concrete fields and commands.
 | Compatibility adapter | Retains older command/output behavior beside a new versioned facade. |
 | API version | Documented operations/types/errors/JSON/lifecycle contract, not a published stable product release. |
 | Candidate | Exact source/artifact bytes prepared for review; distinct from release/installed runtime. |
+| Desktop bootstrap | Complete version-bound Python zipapp that verifies a matching delivery and calls the existing installer. It is not the standard Decky plugin ZIP. |
+| Delivery packet | Matching bootstrap/runtime/plugin/source/notices and unsigned manifests prepared for review; it is not a published release. |
 | Qualification receipt | Revision-bound commands/platform/outcomes: passed, failed, skipped, unavailable or unrun. |
 | Adoption proof | Actual consumer's candidate install/configure/local-audio/viewer/update/recovery/uninstall journey. |
 | Owner gate | Missing fact, permission, creative/account action or target test with a named concrete next action. |

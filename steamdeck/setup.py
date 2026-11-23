@@ -56,7 +56,9 @@ class SetupServer(ThreadingHTTPServer):
             return
         result = {"running": False, "ok": False, "message": "OBS/capture installation failed. Check Discover, disk space and your connection, then retry."}
         try:
-            installer.ensure_dependencies()
+            # The authenticated page's separate Install OBS/capture action is
+            # explicit consent; ordinary page loads and plugin repair are not.
+            installer.ensure_dependencies(dependency_consent=True)
             result = {"running": False, "ok": True, "message": "Compatible OBS with bundled WebSocket support and its capture plugin are installed. Save your settings below."}
         except (OSError, RuntimeError, subprocess.SubprocessError):
             pass

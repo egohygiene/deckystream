@@ -92,6 +92,23 @@ jobs:
           cp dist/supply-chain/AUDIT-SHA256SUMS /tmp/first-audit-sums
           python scripts/release-audit.py --revision "$GITHUB_SHA" --output dist/supply-chain
           diff -u /tmp/first-audit-sums dist/supply-chain/AUDIT-SHA256SUMS
+      - name: Reproduce and qualify the unpublished Desktop bootstrap delivery
+        run: |
+          qualification_tmp="${DECKYSTREAM_ACT_TEMP:-$RUNNER_TEMP}"
+          bootstrap_output="$qualification_tmp/deckystream-bootstrap-$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          printf 'DECKYSTREAM_BOOTSTRAP_EVIDENCE=%s\n' "$bootstrap_output" >> "$GITHUB_ENV"
+          # These stdlib-only preparation steps run as the checkout owner under
+          # ACT as well. Production path/root/session checks stay unchanged.
+          python scripts/run-user-tests.py --output-root "$bootstrap_output" -- scripts/package-bootstrap.py --version 0.1.0-deck.9 --output "$bootstrap_output/first"
+          python scripts/run-user-tests.py --output-root "$bootstrap_output" -- scripts/package-bootstrap.py --version 0.1.0-deck.9 --output "$bootstrap_output/second"
+          cmp "$bootstrap_output/first/deckystream-install.pyz" "$bootstrap_output/second/deckystream-install.pyz"
+          cmp "$bootstrap_output/first/BOOTSTRAP-SHA256SUMS" "$bootstrap_output/second/BOOTSTRAP-SHA256SUMS"
+          primary_dir=$(dirname "$DECKYSTREAM_PRIMARY_ZIP")
+          python scripts/run-user-tests.py --output-root "$bootstrap_output" -- scripts/prepare-installer-release.py --runtime "$PWD/dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz" --primary "$primary_dir" --bootstrap "$bootstrap_output/first/deckystream-install.pyz" --revision "$GITHUB_SHA" --audit "$PWD/dist/supply-chain" --output "$bootstrap_output/delivery-first"
+          python scripts/run-user-tests.py --output-root "$bootstrap_output" -- scripts/prepare-installer-release.py --runtime "$PWD/dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz" --primary "$primary_dir" --bootstrap "$bootstrap_output/second/deckystream-install.pyz" --revision "$GITHUB_SHA" --audit "$PWD/dist/supply-chain" --output "$bootstrap_output/delivery-second"
+          cmp "$bootstrap_output/delivery-first/installer-manifest.json" "$bootstrap_output/delivery-second/installer-manifest.json"
+          cmp "$bootstrap_output/delivery-first/INSTALLER-SHA256SUMS" "$bootstrap_output/delivery-second/INSTALLER-SHA256SUMS"
+          python scripts/run-user-tests.py --output-root "$bootstrap_output" -- steamdeck/tests/packaged-bootstrap.py "$bootstrap_output/second/deckystream-install.pyz" --delivery "$bootstrap_output/delivery-second" --revision "$GITHUB_SHA" --output "$bootstrap_output/qualification"
       - name: Release only opted-in private compiler caches after Go consumers
         if: env.DECKYSTREAM_LOCAL_PROFILE == 'constrained'
         run: python scripts/local-ci-resources.py trim-compiler-cache
@@ -147,5 +164,8 @@ jobs:
             ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/second.log
             ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/first/build-receipt.json
             ${{ env.DECKYSTREAM_PRIMARY_EVIDENCE }}/second/build-receipt.json
+            ${{ env.DECKYSTREAM_BOOTSTRAP_EVIDENCE }}/delivery-second/*
+            ${{ env.DECKYSTREAM_BOOTSTRAP_EVIDENCE }}/qualification/*.json
+            ${{ env.DECKYSTREAM_BOOTSTRAP_EVIDENCE }}/qualification/*.log
           if-no-files-found: error
           retention-days: 14

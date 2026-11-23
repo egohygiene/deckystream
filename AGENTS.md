@@ -5,6 +5,9 @@ This is the fresh independent `egohygiene/deckystream` repository, default
 and [optional auth research #8](https://github.com/egohygiene/deckystream/issues/8).
 Historical issue references below retain their original `szmyty/obsgod`
 meaning; use [the carry-forward mapping](docs/history/fresh-repository-issue-mapping.json).
+The current finishing batch is the one-command installer #17, verified delivery
+#18 and bootstrap qualification #19 under #1. Reuse the existing installer and
+release reader. Device acceptance and publication remain separate evidence.
 The source migration is complete; product qualification, owner tests, release
 and legacy retirement remain separate gates.
 

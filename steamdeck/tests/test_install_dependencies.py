@@ -66,9 +66,10 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
             archive.writestr(name, source)
         self.manifest = {"files": {self.archive.name: hashlib.sha256(self.archive.read_bytes()).hexdigest()}}
 
-    async def recover(self):
+    async def recover(self, dependency_consent=True):
         with install.installation_lock(self.base):
-            return await install.run_dependency_setup(self.policy, self.bridge, self.home)
+            return await install.run_dependency_setup(self.policy, self.bridge, self.home,
+                                                       dependency_consent=dependency_consent)
 
     def assert_lease_held(self, path):
         with path.open("r+") as lock:
@@ -102,9 +103,78 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
     async def test_installed_compatible_refs_are_reused_without_mutation(self):
         self.state["user"] = {native.OBS_REF: "33.0.1", native.GST_REF: "0.4.1"}
         self.save()
-        result = await self.recover()
+        with patch.object(install, "approve_dependency_setup", side_effect=AssertionError("unexpected consent prompt")):
+            result = await self.recover(dependency_consent=None)
         self.assertTrue(result["ready"])
         self.assertEqual(self.mutations(), [])
+        self.bridge.run_cli.assert_not_called()
+
+    async def test_explicit_decline_preserves_user_data_and_allows_approved_retry(self):
+        sentinel = self.home / "existing-private-settings-and-recordings"
+        sentinel.write_text("preserved")
+        with patch("builtins.input", side_effect=AssertionError("explicit decline must not prompt")):
+            with self.assertRaisesRegex(RuntimeError, "not approved"):
+                await self.recover(dependency_consent=False)
+        self.assertEqual(self.mutations(), [])
+        self.bridge.run_cli.assert_not_called()
+        self.assertEqual(sentinel.read_text(), "preserved")
+        result = await self.recover(dependency_consent=True)
+        self.assertTrue(result["ready"])
+        self.assertEqual([command[-1] for command in self.mutations()], [native.OBS_REF, native.GST_REF])
+        self.assertEqual(sentinel.read_text(), "preserved")
+
+    async def test_missing_dependencies_require_a_terminal_not_piped_input(self):
+        with patch.object(install.sys.stdin, "isatty", return_value=False), \
+                patch("builtins.input", side_effect=AssertionError("piped input cannot approve setup")):
+            with self.assertRaisesRegex(RuntimeError, "Desktop Mode terminal"):
+                await self.recover(dependency_consent=None)
+        self.assertEqual(self.mutations(), [])
+        self.bridge.run_cli.assert_not_called()
+
+    async def test_terminal_yes_describes_user_flatpaks_before_starting_setup(self):
+        self.state["remote"] = None
+        self.save()
+
+        def approve(question):
+            self.assertEqual(self.mutations(), [])
+            self.bridge.run_cli.assert_not_called()
+            for text in ("OBS Studio", "GStreamer", "user Flatpaks", "Flathub", "[y/N]"):
+                self.assertIn(text, question)
+            return " yes "
+
+        with patch.object(install.sys.stdin, "isatty", return_value=True), \
+                patch("builtins.input", side_effect=approve) as prompt:
+            result = await self.recover(dependency_consent=None)
+        self.assertTrue(result["ready"])
+        prompt.assert_called_once()
+        self.assertEqual([command[0] for command in self.mutations()], ["remote-add", "install", "install"])
+
+    async def test_terminal_defaults_no_and_eof_does_not_install(self):
+        for answer in ("", "n", "no", "not an approval", EOFError()):
+            with self.subTest(answer=type(answer).__name__ if isinstance(answer, Exception) else answer), \
+                    patch.object(install.sys.stdin, "isatty", return_value=True), \
+                    patch("builtins.input", **({"side_effect": answer} if isinstance(answer, Exception) else {"return_value": answer})):
+                with self.assertRaisesRegex(RuntimeError, "not approved"):
+                    await self.recover(dependency_consent=None)
+                self.assertEqual(self.mutations(), [])
+        self.bridge.run_cli.assert_not_called()
+
+    async def test_consent_does_not_allow_output_that_changed_during_the_prompt(self):
+        def approve(_):
+            self.bridge.run_cli.return_value = {**IDLE, "output_known": False}
+            return "y"
+
+        with patch.object(install.sys.stdin, "isatty", return_value=True), \
+                patch("builtins.input", side_effect=approve):
+            with self.assertRaises(RuntimeError):
+                await self.recover(dependency_consent=None)
+        self.assertEqual(self.mutations(), [])
+
+    async def test_truthy_values_are_not_explicit_dependency_consent(self):
+        for value in (1, "yes"):
+            with self.subTest(value=value), self.assertRaisesRegex(RuntimeError, "explicit yes or no"):
+                await self.recover(dependency_consent=value)
+            self.assertEqual(self.mutations(), [])
 
     async def test_active_unknown_recording_paused_replay_and_busy_snapshots_never_mutate(self):
         snapshots = [
@@ -127,11 +197,15 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(self.mutations(), [])
         self.assertTrue(all(call.args[0] == "status" for call in self.bridge.run_cli.call_args_list))
 
-    async def test_busy_shared_control_prevents_flatpak_queries_and_mutators(self):
+    async def test_busy_shared_control_allows_only_dependency_observation(self):
         with install.control_lock(self.home):
             with self.assertRaisesRegex(RuntimeError, "operation is busy"):
                 await self.recover()
-        self.assertEqual(self.commands(), [])
+        # Initial read-only observation avoids prompting for already installed
+        # refs. The worker still needs the shared lease before preflight/writes.
+        self.assertTrue(self.commands())
+        self.assertEqual(self.mutations(), [])
+        self.assertTrue(all(command[0] in {"list", "remotes", "info"} for command in self.commands()))
         self.bridge.run_cli.assert_not_called()
 
     async def test_busy_native_setup_does_not_start_a_second_transaction(self):
@@ -223,7 +297,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
                 return IDLE
 
             self.bridge.run_cli.side_effect = observe
-            await asyncio.to_thread(install.ensure_dependencies)
+            await asyncio.to_thread(install.ensure_dependencies, dependency_consent=True)
         self.assertEqual([command[-1] for command in self.mutations()], [native.OBS_REF, native.GST_REF])
 
     async def test_policy_comes_from_candidate_zip_and_hash_mismatch_has_no_side_effects(self):

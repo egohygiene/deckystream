@@ -2,9 +2,10 @@
 
 The primary install unit is **`deckystream-decky.zip`**. It is one ordinary Decky
 plugin, with the current compatible `deckystream` folder/package identity and `deckystream`
-plugin name. No repository migration, Store submission or release publication
-is performed by the build. `deckystream` is the planned future repository name,
-not the current update destination.
+plugin name. The current independent source and trusted release destination is
+`egohygiene/deckystream`. A build does not publish a release or submit to the
+Decky Store. The [installer delivery contract](installer-delivery.md) describes
+the separately prepared one-command Desktop entry point.
 
 The ZIP contains the panel, Python backend and its sibling modules, the Go CLI
 in `bin/deckystream`, native capture library, optional local browser setup and its
@@ -177,8 +178,11 @@ not permission to inline the LGPL module into the application bundle.
 An approved test ZIP can be installed using Decky's own plugin installation
 interface. Decky owns replacement of the plugin folder. Manual ZIP installation
 is a development/sideload route, not a claim that the plugin has a Store listing.
-The existing trusted release path remains `szmyty/obsgod`; builds do not publish
-or redirect updates. These scripts have no publication or deployment side effects.
+The build-selected trusted release repository is `egohygiene/deckystream`;
+historical `szmyty/obsgod` links retain their provenance and do not silently
+redirect updater trust. An installable public download still requires approved
+publication and an actual anonymous download check. These scripts have no
+publication or deployment side effects.
 
 Build/schema/CLI equality and unpacked backend checks do not prove installation,
 OBS startup, capture/audio, suspend/resume, or streaming behavior on a Steam Deck.
