@@ -74,6 +74,21 @@ class LocalSetupSecurity(unittest.TestCase):
         self.assertEqual(self.request("GET", "/api/action")[0], 404)
         self.assertEqual(self.request("POST", "/api/action", {"action": "start"})[0], 400)
 
+    def test_only_authenticated_dependency_action_forwards_explicit_consent(self):
+        completed = threading.Event()
+
+        def approved_install(**kwargs):
+            self.assertEqual(kwargs, {"dependency_consent": True})
+            completed.set()
+
+        with patch.object(setup.installer, "ensure_dependencies", side_effect=approved_install) as dependencies:
+            self.assertEqual(self.request("GET", "/", auth=False)[0], 200)
+            self.assertEqual(self.request("POST", "/api/action", {"action": "dependencies"}, auth=False)[0], 403)
+            dependencies.assert_not_called()
+            self.assertEqual(self.request("POST", "/api/action", {"action": "dependencies"})[0], 200)
+            self.assertTrue(completed.wait(2), "explicit dependency action did not reach setup")
+            dependencies.assert_called_once_with(dependency_consent=True)
+
     def test_connection_details_and_password_changes_require_local_authorization(self):
         for path, body in [("/api/connection", None), ("/api/action", {"action": "change-obs-password", "settings": {"confirm": True, "password": "local-fixture-not-real"}})]:
             method = "GET" if body is None else "POST"
@@ -489,7 +504,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
         self.decky.helper_request.assert_not_called()
 
     def test_changed_plugin_identity_is_rechecked_inside_final_control_lease(self):
-        def change_during_setup(*args):
+        def change_during_setup(*args, **kwargs):
             self.installed_plugin("0.3.0-test")
 
         install.ensure_dependencies.side_effect = change_during_setup

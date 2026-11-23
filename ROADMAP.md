@@ -1,5 +1,16 @@
 # Product roadmap
 
+Current finishing order: merge the qualified primary rename (#16, merged),
+then implement [bootstrap #17](https://github.com/egohygiene/deckystream/issues/17)
+and [verified delivery #18](https://github.com/egohygiene/deckystream/issues/18),
+run [qualification #19](https://github.com/egohygiene/deckystream/issues/19),
+then the shared real Steam Deck/provider test-and-fix session under #1.
+Review exact assets/rights/evidence before publication approval, verify the
+public command after approved publication, and reconcile #1 last after legacy
+retirement. Independent auth research #8 is not a manual-key v1 dependency.
+The [delivery guide](docs/installer-delivery.md) separates local preparation,
+CI artifacts and real public installation. No old criterion is pre-passed.
+
 The owner has now approved primary naming **deckystream** across the CLI, module,
 plugin and package surfaces. [PR #16](https://github.com/egohygiene/deckystream/pull/16)
 qualifies that transition and README refresh before the shared device session.

@@ -1,34 +1,47 @@
 # Current release readiness
 
-Use the [current exact-source checkpoint](pre-migration-qualified-checkpoint.md) and
-[owner packet](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/OWNER-PACKET.md)
-for the standard Decky ZIP, source/hash,
-qualification limits, numbered tests and current owner facts. Later source
-changes require affected checks and a newly pinned candidate; old passing
-receipts never qualify them.
+The current independent repository is **`egohygiene/deckystream`**, default
+`main`. The owner-selected primary CLI/module/plugin and new namespace are
+**deckystream**. [PR #16](https://github.com/egohygiene/deckystream/pull/16)
+merged that bounded rename and README work; its explicit legacy readers
+preserve validated existing stores. See [the naming contract](product-naming.md).
 
-The existing test download remains exact source `772230a`, with 70 passed local
-command checks and two unavailable. The implementation merges and later Markdown
-handoff updates do not rebuild it or relabel those receipts as a newer revision.
-Use the [remaining-work sequence](../ROADMAP.md#before-manual-testing) before
-the paired owner test/fix loop.
+Use [live finalization #1](https://github.com/egohygiene/deckystream/issues/1)
+and [continuity](../CONTINUITY.md) for the current exact source, checks and owner
+actions. [PR #23](https://github.com/egohygiene/deckystream/pull/23) tracks the
+one-command installer batch under #17–#19. Its
+[delivery contract](installer-delivery.md) prepares a matching bootstrap,
+runtime/standard ZIP, source/notices, hashes and owner packet without publishing.
+The initial draft checkpoint and passing older-source receipts do not qualify
+later integration repairs. Freeze and qualify the final clean source after
+those repairs, then identify its exact artifact bytes and immutable review
+location. No deckystream release is published at this checkpoint.
 
-Source preparation can proceed while owner tests are deferred. Actual Deck,
-loader/provider/controller/headset, full applicable matrix, required services/
-reviews and rights/adoption evidence remain explicit. Migration preparation is
-separate from executing #87; post-move install and the concrete v1 decision are
-#88, with actual destination dependency graph/review in #95.
+The paired real Steam Deck session follows that candidate preparation: install/
+dependency consent, audible local video, capture/idle/microphone behavior, explicit
+provider-viewer proof and safe session/update/recovery/removal. Actual device,
+required platform/CI/review, rights and independent adoption evidence remain
+explicit. Prepared code and native/browser checks do not pass those cases.
 
-Current repository remains `szmyty/obsgod` on `master`. There is no requirement
-to rename this archive's branch before current testing. The future approved
-`OWNER/deckystream` will use `main`; its exact owner and publication authority
-remain unresolved. No release, deployment or other-repository action is implied.
+The latest observed published Identity stable is v1.0.0. The consumer's existing
+lock explicitly uses unreleased additive source `cfb6c29`; do not relabel that pin
+or assume the anticipated new release exists. Complete the actual applicable
+release/rights/adoption decisions through the
+[branding packet](migration-brand-packet.md). Publisher/contact, final artwork
+license/approval, signing or disclosed unsigned policy, final v1 tag/assets and
+concrete publication remain owner decisions. Release publication, site
+deployment and old-repository retirement are separate actions.
 
 ## Historical packets
 
 Everything below describes its stated older candidate, including historical
 branch/API observations. Preserve the exact artifacts/commands and consult the
-current packet above for today's source and gates.
+live finalization issue above for today's source and gates. The older
+[pre-migration checkpoint](pre-migration-qualified-checkpoint.md) and
+[430cc391 owner packet](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/OWNER-PACKET.md)
+remain evidence for source `772230a`, including its 70 passed command checks and
+two unavailable checks. They are not downloads or qualification for the renamed
+installer candidate.
 
 Historical qualified follow-up: exact source **4699235**,
 [verified review installation](current-review-install.md) and

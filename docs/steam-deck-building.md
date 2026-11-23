@@ -8,6 +8,12 @@ commands below remain compatible optional Desktop/recovery builds. The
 guides describe the #76–#78 source integration; actual Deck qualification is
 still a separate owner test.
 
+The [Desktop bootstrap delivery guide](installer-delivery.md) adds a small
+stdlib-only zipapp build and joins exact matching runtime/primary artifacts
+into an unpublished owner packet. The candidate workflow builds both twice,
+compares bytes and exercises the packaged verification-only entry point before
+the existing browser/native matrix. It never publishes the packet.
+
 Use Go **1.27.4**, Node **24.19.0**, npm **11.9.0**, and Python **3.12+** for the
 packaging/test environment. Packaging also requires a working local Docker
 daemon to build the small app-filtered capture source against the pinned
@@ -15,6 +21,12 @@ bookworm builder in `steamdeck/capture/build.Dockerfile`. The compiler stage run
 without network; the image ID, package versions and symbol requirements are
 recorded in `dist/capture-build.json`. End users install the binary package and do not need
 Go, Node, npm or Docker. The Desktop helper uses the Deck's system Python 3.9+.
+
+The Go module requires **Go 1.26.0 or newer** after the production WebSocket
+security repair in [#24](https://github.com/egohygiene/deckystream/issues/24).
+Continue using the pinned **1.27.4** compiler for supported development and
+reproducible packages. This source-consumer minimum follows the fixed indirect
+`golang.org/x/net` requirement; Steam Deck users install the compiled package.
 
 ```sh
 go mod download

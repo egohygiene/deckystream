@@ -43,6 +43,8 @@ Decky removal and optional legacy retirement remain separate scopes.
 | `steamdeck/decky/dependency_setup.py` | Consented, asynchronous per-user Flatpak setup; bounded jobs and re-observation, never OBS launch or broadcasting |
 | `steamdeck/setup.*`, `steamdeck/decky/src` | Desktop setup and controller panel; project observed state rather than infer success from a click |
 | `steamdeck/install.py`, `update.py`, `uninstall.py` | Validated install/replacement/recovery/removal; preserve ordinary OBS, unrelated plugins and shared dependencies |
+| `steamdeck/bootstrap.py`, `scripts/package-bootstrap.py` | Complete version-bound stdlib zipapp; verify delivery and runtime before the existing installer; no second plugin installation implementation |
+| `scripts/prepare-installer-release.py` | Join matching clean bootstrap/runtime/primary plugin, source and audit into an unpublished review packet; no release or deployment |
 | `steamdeck/capture` | Narrow app-filtered Gamescope/PipeWire source; unusable game selection cannot become desktop capture |
 | `scripts`, `.github/workflows`, `docs/evidence` | Builds, local/CI checks, packaging and evidence; compilation is not execution on the target |
 
@@ -144,6 +146,15 @@ plugin installation. No download occurs in lifecycle initialization. Explicit
 consent reserves a bounded backend-owned job; decline preserves the plugin and
 cancel/reload re-observes actual installed refs. Its shared control lease and
 fresh output preflight prevent a legacy Start racing the dependency transaction.
+
+The [Desktop bootstrap](docs/installer-delivery.md) requires a real player
+Desktop terminal for installation and retains filtered progress in a private
+XDG cache sibling outside both runtime namespaces. This cannot create an
+ambiguous legacy store or move the canonical control lease. Verification-only
+operation never imports downloaded package code or contacts Decky. Desktop
+dependency installation now requires an explicit terminal yes or the existing
+authenticated browser dependency-install action; already compatible refs only
+need observation. Consent never bypasses the worker's fresh lease/output checks.
 
 Retained Desktop dependency recovery consumes that same policy from its verified
 candidate ZIP and shares the native setup/control leases. The

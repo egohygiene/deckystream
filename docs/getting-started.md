@@ -27,6 +27,12 @@ instructions; an authenticated CI artifact URL is not a public plugin download U
 If your candidate includes an optional Desktop installer archive, extract the
 whole archive before running its installer.
 
+The [one-command Desktop bootstrap](installer-delivery.md) is being prepared
+with verified runtime delivery and explicit dependency consent. A supplied local
+review bundle can be verified offline; its public command becomes usable only
+after the matching release assets are approved and published. Do not substitute
+a source archive or an unrelated installer version.
+
 In Desktop Mode, verify the supplied checksums from their containing folder:
 
 ```sh

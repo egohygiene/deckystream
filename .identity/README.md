@@ -8,12 +8,15 @@ approval is inferred from migration preparation.
 
 This is a manually authored `identity.project/v1` consumer source, following Ego
 Hygiene Identity's supported authoring path. The stable brand ID remains
-`decky-stream`. The intended future repository slug is **deckystream**, and the
-owner prefers lowercase display styling. The current display name still comes
-from `product.json`; installed `obsgod`/`OBSGod` identifiers are unchanged.
-The actual repository remains `szmyty/obsgod`; the destination owner/organization
-is unresolved. No repository creation, migration or installed identity transition
-is performed by these source notes.
+`decky-stream`. The owner selected the independent repository
+**`egohygiene/deckystream`** and lowercase product styling. The later primary
+naming instruction also changed the actual CLI, Go module, Decky plugin and
+fresh-install namespace to **deckystream**; see
+[the operational naming contract](../docs/product-naming.md). Explicit legacy
+readers preserve validated OBSGod data and the shared control lock. These source
+notes do not relocate data, expand updater trust or authorize publication.
+Original asset-generation records retain their historical `szmyty/obsgod`
+provenance; that is not the current repository or an unresolved destination.
 
 The owner selected **01 / aurora** in
 [the retained concept selection record](candidates/concepts/selection.json):
