@@ -8,6 +8,8 @@ meaning; use [the carry-forward mapping](docs/history/fresh-repository-issue-map
 The current finishing batch is the one-command installer #17, verified delivery
 #18 and bootstrap qualification #19 under #1. Reuse the existing installer and
 release reader. Device acceptance and publication remain separate evidence.
+Production WebSocket vulnerability repair #24 belongs ahead of final source
+qualification; do not apply the disposable-test alert disposition to it.
 The source migration is complete; product qualification, owner tests, release
 and legacy retirement remain separate gates.
 

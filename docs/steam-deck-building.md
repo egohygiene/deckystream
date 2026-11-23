@@ -22,6 +22,12 @@ without network; the image ID, package versions and symbol requirements are
 recorded in `dist/capture-build.json`. End users install the binary package and do not need
 Go, Node, npm or Docker. The Desktop helper uses the Deck's system Python 3.9+.
 
+The Go module requires **Go 1.26.0 or newer** after the production WebSocket
+security repair in [#24](https://github.com/egohygiene/deckystream/issues/24).
+Continue using the pinned **1.27.4** compiler for supported development and
+reproducible packages. This source-consumer minimum follows the fixed indirect
+`golang.org/x/net` requirement; Steam Deck users install the compiled package.
+
 ```sh
 go mod download
 npm --prefix steamdeck/decky ci --ignore-scripts

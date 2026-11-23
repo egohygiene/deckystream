@@ -21,6 +21,13 @@ Keep the selected visual source and original provenance/rights records intact.
 
 ## One-command Desktop installation — 2026-11-23
 
+Final-source qualification exposed reachable GO-2026-6278 in the existing
+Gorilla WebSocket dependency. Use the upstream-reviewed fixed pseudo-version,
+not a scanner dismissal. Its indirect x/net must also meet the official current
+fixed floor (v0.62.0), raising the source module's Go minimum to 1.26.0 while
+retaining the supported compiler pin 1.27.4. Preserve all runtime/CLI/protocol
+compatibility and requalify actual compiled artifacts after integration.
+
 The owner requested a one-command route outside the Decky Store and authorized
 continuing issues #17–#19 after dismissing the three scoped test CodeQL findings.
 Use a complete source/version-bound standard-library Python zipapp and the
@@ -67,7 +74,7 @@ with every evolving framework document or start a standards migration.
 | Record | Status | Scope |
 | --- | --- | --- |
 | [0001: managed local control](docs/decisions/0001-managed-local-control.md) | Existing behavior, documented | Isolated graphical OBS, confirmed state and capture privacy |
-| [0002: product identity](docs/decisions/0002-product-identity.md) | Working name accepted; repository slug selected; final identity/migration proposed | Decky Stream display, intended `deckystream` repository, preserved compatibility identifiers |
+| [0002: product identity](docs/decisions/0002-product-identity.md) | Operational name/repository accepted; artwork rights and production adoption proposed | Actual `egohygiene/deckystream`, primary naming and explicit legacy compatibility |
 | [0003: core and creator](docs/decisions/0003-core-and-creator-boundary.md) | Existing separation documented; companion repository proposed | Provider-neutral core, optional orchestration |
 
 “Existing behavior, documented” records source; it is not a new owner approval

@@ -2,6 +2,29 @@
 
 ## One-command Desktop installer — issues #17–#19
 
+Initial draft PR #23 at `34728b9` passed 338 local backend cases with two
+explicit skips and all 237 tooling cases; the bootstrap reproduced locally.
+Its hosted candidate stopped at reachable production advisory GO-2026-6278 in
+Gorilla WebSocket v1.5.3, so downstream package/browser/native stages were unrun.
+Issue #24 records that genuine dependency repair. The official fixed upstream
+commit uses crypto/rand for client frame masks; this is separate from OBS's
+unchanged challenge-response algorithm and the scoped CodeQL test dismissals.
+
+The minimal fixed Gorilla pseudo-version introduces an older x/net dependency.
+Official vulnerability metadata requires x/net v0.62.0 to clear its newly
+introduced advisory set, which raises the module's Go minimum to 1.26.0; the
+supported build compiler remains pinned at 1.27.4. This changes source-consumer
+toolchain requirements, not installed CLI flags, OBS protocol or runtime setup.
+The exact resulting source needs fresh checks, audits and rebuilt artifacts.
+
+Fresh Dependabot #20–#22 update pinned Actions and React DOM development types.
+The reviewed Actions require Node 24 and hosted runner 2.327.1+, supported by
+current hosted runners. ACT 0.2.97 and cached runner metadata support Node 24,
+but the actual local workflow is still capacity-gated. Their source integration
+and the vulnerability repair must qualify together before merge; source review
+is not a substitute for actual combined-source checks. Active identity/readiness
+docs now distinguish the settled repository/rename from pending artwork rights.
+
 The owner dismissed all three scoped OBS native-test alerts; the existing
 CodeQL PR check changed to success at `ca0390cb6219b2fc50ccba8e139d28df8a8184f5`.
 PR #16 merged at `c176c05bfe7bfdbfaf6dd3bd30802a2d2d9582d5`. That evidence

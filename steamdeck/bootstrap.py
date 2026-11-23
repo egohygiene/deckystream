@@ -237,7 +237,7 @@ def main(argv=None, *, bundle_path=None):
         package = verify_payload(archive, work, meta, raw_manifest, updater, releases)
         if args.verify_only:
             stage = "verified-only"
-            print("Verified deckystream " + meta["version"] + " at " + meta["revision"] + ". No package code or Decky operation was executed.")
+            print("Verified deckystream " + meta["version"] + " at " + meta["revision"] + ". No runtime package code or Decky operation was executed.")
         elif args.check:
             stage = "decky-probe"
             decky = updater.load_module("deckystream_bootstrap_probe", package / "decky.py")
