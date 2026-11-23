@@ -36,8 +36,8 @@ before posting it publicly. Never attach credentials, the private setup link,
 raw OBS logs/profiles, wallet seeds or private keys. See [security reporting](SECURITY.md)
 for a suspected vulnerability rather than posting sensitive details in an issue.
 
-For a machine-readable bundle, run `obsgod deck support-bundle > support.json`
-and attach the separate output of `obsgod version --json`. The bundle projects
+For a machine-readable bundle, run `deckystream deck support-bundle > support.json`
+and attach the separate output of `deckystream version --json`. The bundle projects
 only allowlisted state facts and filtered events; it omits settings, server URLs,
 credentials, arbitrary error text, device identifiers and local file paths.
 It reads status without launching OBS or changing output. Unknown output stays

@@ -162,7 +162,7 @@ class BackendTeardown(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)  # The cancelled Future ignores its late callback.
 
     async def test_frozen_dependency_worker_uses_system_python_and_original_libraries(self):
-        with tempfile.TemporaryDirectory(prefix="obsgod-frozen-worker-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="deckystream-frozen-worker-") as temporary:
             root = Path(temporary)
             fake = root / "flatpak"
             fake.write_text("#!" + sys.executable + "\n" +
@@ -193,7 +193,7 @@ class BackendTeardown(unittest.IsolatedAsyncioTestCase):
             with patch.object(setup.Path, "resolve", side_effect=FileNotFoundError):
                 with self.assertRaises(OSError):
                     setup.python_process({})
-            with tempfile.TemporaryDirectory(prefix="obsgod-unsafe-python-") as temporary:
+            with tempfile.TemporaryDirectory(prefix="deckystream-unsafe-python-") as temporary:
                 target = Path(temporary) / "python3"
                 target.write_text("untrusted")
                 with patch.object(setup.Path, "resolve", return_value=target):

@@ -14,7 +14,7 @@ behavior in a pull request. An issue is not a prerequisite for a small fix.
 | Steam Deck / Decky | [Building](docs/steam-deck-building.md), [standard package](docs/decky-package.md), and the relevant feature guide | `internal/deck`, `steamdeck/decky/main.py` and sibling Python modules, `steamdeck/decky/src`; tests in `steamdeck/tests` and `steamdeck/decky/tests` |
 
 The generic CLI remains supported independently of the managed Deck integration.
-The command/package/storage names remain `obsgod` / `OBSGod`; the source preview
+The command/package/storage names remain `deckystream` / `deckystream`; the source preview
 uses the selected aurora artwork and `deckystream` display name. A documentation
 or display-name change does not migrate installations or update destinations.
 

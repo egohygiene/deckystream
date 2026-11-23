@@ -10,8 +10,8 @@ def cli_path():
     root = Path(__file__).resolve().parent
     # Standard Decky packages place executables in bin/. Keep the paired
     # Desktop archive's adjacent executable as a compatible fallback.
-    packaged = root / "bin" / "obsgod"
-    return packaged if packaged.is_file() and not packaged.is_symlink() else root / "obsgod"
+    packaged = root / "bin" / "deckystream"
+    return packaged if packaged.is_file() and not packaged.is_symlink() else root / "deckystream"
 
 
 def run_cli(action, settings=None, timeout=85):
@@ -38,7 +38,7 @@ def run_cli(action, settings=None, timeout=85):
             raise ValueError()
         return result
     except (ValueError, UnicodeDecodeError):
-        return {"ok": False, "state": "unknown", "message": "Could not read OBSGod output. Check the installation and inspect OBS before broadcasting."}
+        return {"ok": False, "state": "unknown", "message": "Could not read deckystream output. Check the installation and inspect OBS before broadcasting."}
 
 
 def private_process():

@@ -56,7 +56,7 @@ class CaptureModeAdapter(unittest.IsolatedAsyncioTestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="capture-mode-adapter-")
         self.root = Path(self.temporary.name)
         (self.root / "bin").mkdir()
-        binary = self.root / "bin/obsgod"
+        binary = self.root / "bin/deckystream"
         binary.write_text("#!" + sys.executable + "\n" + CLI)
         binary.chmod(0o700)
         self.options = {}

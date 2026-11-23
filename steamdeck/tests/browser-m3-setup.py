@@ -23,15 +23,15 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive",type=Path)
     parser.add_argument("--browser",default="/usr/bin/chromium")
-    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/obsgod-m3-setup"))
+    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/deckystream-m3-setup"))
     args=parser.parse_args();args.screenshots.mkdir(parents=True,exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="obsgod-m3-setup-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-m3-setup-") as temporary:
         base=Path(temporary)
         with tarfile.open(args.archive) as archive:archive.extractall(base,filter="data")
-        package=next(base.glob("OBSGod-*"));home=base/"home with spaces";home.mkdir()
+        package=next(base.glob("deckystream-*"));home=base/"home with spaces";home.mkdir()
         env=dict(os.environ,HOME=str(home),XDG_CONFIG_HOME=str(home/".config"),XDG_DATA_HOME=str(home/".local/share"),XDG_STATE_HOME=str(home/".local/state"),XDG_CACHE_HOME=str(home/".cache"),BROWSER="/bin/true")
         subprocess.run([sys.executable,str(package/"install.py"),"--app-only","--no-launch"],env=env,check=True,capture_output=True)
-        current=home/".local/share/obsgod/current"
+        current=home/".local/share/deckystream/current"
         image=base/"owner image.png"
         image.write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="))
         process=subprocess.Popen([sys.executable,str(current/"setup.py")],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -51,7 +51,7 @@ def main():
                 page.locator("#bitrate").fill("3200")
                 page.locator("#save").click()
                 page.get_by_text("Settings saved on this device",exact=True).wait_for()
-                settings=json.loads((home/".config/obsgod/deck.json").read_text())
+                settings=json.loads((home/".config/deckystream/deck.json").read_text())
                 assert settings["width"]==960 and settings["height"]==540 and settings["bitrate"]==3200
                 page.locator("#profiles-load").click()
                 expect(page.locator("#profile-preset")).not_to_have_value("")
@@ -83,11 +83,11 @@ def main():
                 page.locator("#idle-media-import").click()
                 expect(page.locator("#idle-media-source")).to_have_value("")
                 expect(page.locator("#idle_style")).to_have_value("image")
-                settings=json.loads((home/".config/obsgod/deck.json").read_text())
+                settings=json.loads((home/".config/deckystream/deck.json").read_text())
                 assert re.fullmatch(r"[0-9a-f]{64}\.png",settings["idle_media"])
                 assert settings["idle_media_rights"]
                 assert image.exists(),"Import must preserve original media"
-                assert (home/".var/app/com.obsproject.Studio/config/obsgod/obs-studio/obsgod-media"/settings["idle_media"]).exists()
+                assert (home/".var/app/com.obsproject.Studio/config/deckystream/obs-studio/deckystream-media"/settings["idle_media"]).exists()
                 page.locator("#media-refresh").click()
                 expect(page.locator("#media-status")).to_contain_text("Recording: stopped")
                 expect(page.locator("#record-start")).to_be_enabled()
@@ -97,7 +97,7 @@ def main():
                 page.locator("#media-directory").fill(str(home/"Videos/Custom clips"))
                 page.locator("#media-save-preferences").click()
                 expect(page.locator("#media-status")).to_contain_text("saved",ignore_case=True)
-                prefs=json.loads((home/".config/obsgod/recording.json").read_text())
+                prefs=json.loads((home/".config/deckystream/recording.json").read_text())
                 assert prefs["replay_seconds"]==45 and prefs["directory"].endswith("Custom clips")
                 page.locator("#media-list").click()
                 expect(page.locator("#media-library")).to_contain_text("No finalized owned clips")

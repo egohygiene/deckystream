@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 // OBS is fulfilled by *api.Client. It deliberately contains no transport or

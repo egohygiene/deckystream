@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/internal/deck"
+	"github.com/egohygiene/deckystream/internal/deck"
 )
 
 // Run this tagged regression serially after the default package matrix: its
 // real CLI observes fixed port 4457, also used by internal/deck OBS fixtures.
 // Re-exec exercises contexts, signals and cross-process flock without OBS.
 func TestCaptureModeCommandProcess(t *testing.T) {
-	if os.Getenv("OBSGOD_TEST_CAPTURE_COMMAND") != "1" {
+	if os.Getenv("DECKYSTREAM_TEST_CAPTURE_COMMAND") != "1" {
 		return
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -31,7 +31,7 @@ func TestCaptureModeCommandProcess(t *testing.T) {
 	command.SetOut(os.Stdout)
 	command.SetErr(os.Stderr)
 	command.SetIn(os.Stdin)
-	command.SetArgs([]string{os.Getenv("OBSGOD_TEST_CAPTURE_ACTION")})
+	command.SetArgs([]string{os.Getenv("DECKYSTREAM_TEST_CAPTURE_ACTION")})
 	if command.ExecuteContext(ctx) != nil {
 		os.Exit(1)
 	}
@@ -43,7 +43,7 @@ func captureCommandProcess(t *testing.T, action string) (*exec.Cmd, *bytes.Buffe
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	t.Cleanup(cancel)
 	command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestCaptureModeCommandProcess$")
-	command.Env = append(os.Environ(), "OBSGOD_TEST_CAPTURE_COMMAND=1", "OBSGOD_TEST_CAPTURE_ACTION="+action)
+	command.Env = append(os.Environ(), "DECKYSTREAM_TEST_CAPTURE_COMMAND=1", "DECKYSTREAM_TEST_CAPTURE_ACTION="+action)
 	command.Stdin = strings.NewReader(`{"capture_mode":"game"}`)
 	output := new(bytes.Buffer)
 	command.Stdout, command.Stderr = output, output
@@ -71,7 +71,7 @@ func TestCaptureModeCommandProcessDeadlineAndSignalCannotLeaveALateWrite(t *test
 		}
 		t.Run(name, func(t *testing.T) {
 			isolatedDeckAdvancedConfiguration(t)
-			t.Setenv("OBSGOD_DECKY_STORAGE_MAP", "")
+			t.Setenv("DECKYSTREAM_DECKY_STORAGE_MAP", "")
 			p, err := deck.UserPaths()
 			if err != nil {
 				t.Fatal(err)

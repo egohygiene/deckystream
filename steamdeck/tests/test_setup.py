@@ -123,10 +123,10 @@ class DesktopProviderControls(unittest.TestCase):
         settings = {"confirm": True, "password": "owner-fixture-not-real"}
         child = Mock()
         child.communicate.return_value = (b'{"ok":true,"message":"Saved privately"}', None)
-        with patch.object(bridge, "cli_path", return_value=Path("/private/obsgod")), patch.object(bridge.subprocess, "Popen", return_value=child) as spawn:
+        with patch.object(bridge, "cli_path", return_value=Path("/private/deckystream")), patch.object(bridge.subprocess, "Popen", return_value=child) as spawn:
             result = bridge.run_cli("change-obs-password", settings, timeout=7)
         self.assertTrue(result["ok"])
-        self.assertEqual(spawn.call_args.args[0], ["/private/obsgod", "deck", "change-obs-password"])
+        self.assertEqual(spawn.call_args.args[0], ["/private/deckystream", "deck", "change-obs-password"])
         self.assertEqual(spawn.call_args.kwargs["stderr"], subprocess.DEVNULL)
         self.assertNotIn("owner-fixture-not-real", repr(spawn.call_args))
         child.communicate.assert_called_once_with(json.dumps(settings).encode(), timeout=7)
@@ -177,7 +177,7 @@ class InstallerSafety(unittest.TestCase):
         self.home.mkdir()
         self.source = Path(self.temp.name) / "package"
         self.source.mkdir()
-        self.files = {"obsgod", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "obsgod-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
+        self.files = {"deckystream", "setup.py", "bridge.py", "setup.html", "setup.js", "setup.css", "uninstall.py", "deckystream-decky.zip", "LICENSE", "THIRD_PARTY_NOTICES.md", "STEAM-DECK.md"}
         for name in self.files:
             (self.source / name).write_text("fixture " + name)
         self.manifest()
@@ -195,7 +195,7 @@ class InstallerSafety(unittest.TestCase):
         self.temp.cleanup()
 
     def test_install_repeat_backup_and_existing_obs_preservation(self):
-        binary = self.home / ".local/bin/obsgod"
+        binary = self.home / ".local/bin/deckystream"
         binary.parent.mkdir(parents=True)
         binary.write_text("previous program")
         obs = self.home / ".var/app/com.obsproject.Studio/config/obs-studio/global.ini"
@@ -204,13 +204,13 @@ class InstallerSafety(unittest.TestCase):
         with contextlib.redirect_stdout(__import__("io").StringIO()):
             current = install.install(launch=False, with_decky=False)
             install.install(launch=False, with_decky=False)
-        self.assertEqual(binary.resolve(), current.resolve() / "obsgod")
+        self.assertEqual(binary.resolve(), current.resolve() / "deckystream")
         self.assertEqual(obs.read_text(), "my scenes")
-        backups = list((self.home / ".local/share/obsgod/backups").glob("*/obsgod"))
+        backups = list((self.home / ".local/share/deckystream/backups").glob("*/deckystream"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(backups[0].read_text(), "previous program")
-        self.assertEqual((current / "obsgod").stat().st_mode & 0o777, 0o700)
-        desktop = (self.home / ".local/share/applications/obsgod-setup.desktop").read_text()
+        self.assertEqual((current / "deckystream").stat().st_mode & 0o777, 0o700)
+        desktop = (self.home / ".local/share/applications/deckystream-setup.desktop").read_text()
         self.assertIn('Exec=python3 -c "', desktop)
         self.assertIn("home with spaces", desktop)
 
@@ -222,7 +222,7 @@ class InstallerSafety(unittest.TestCase):
         self.manifest()
         with patch.dict(os.environ, {"HOME": str(self.home)}), contextlib.redirect_stdout(__import__("io").StringIO()):
             install.install(launch=False, with_decky=False)
-        desktop = self.home / ".local/share/applications/obsgod-setup.desktop"
+        desktop = self.home / ".local/share/applications/deckystream-setup.desktop"
         line = next(line[5:] for line in desktop.read_text().splitlines() if line.startswith("Exec="))
         # %% is the Desktop Entry specification's literal-percent field escape.
         self.assertIn("spaces %%20", line)
@@ -233,12 +233,12 @@ class InstallerSafety(unittest.TestCase):
         self.assertIn("Press Enter to close", result.stdout)
 
     def test_tamper_and_symlink_refused(self):
-        (self.source / "obsgod").write_text("tampered")
+        (self.source / "deckystream").write_text("tampered")
         with self.assertRaisesRegex(RuntimeError, "checksum"):
             install.install(launch=False, with_decky=False)
         self.manifest()
-        (self.source / "obsgod").unlink()
-        (self.source / "obsgod").symlink_to(self.source / "setup.py")
+        (self.source / "deckystream").unlink()
+        (self.source / "deckystream").symlink_to(self.source / "setup.py")
         with self.assertRaisesRegex(RuntimeError, "Unsafe"):
             install.install(launch=False, with_decky=False)
 
@@ -252,11 +252,11 @@ class InstallerSafety(unittest.TestCase):
 
     def test_update_same_version_replacement_and_repair_preserve_user_data(self):
         protected = [
-            self.home / ".config/obsgod/deck.json",
-            self.home / ".config/obsgod/secrets.json",
-            self.home / "Videos/OBSGod/keep.mkv",
-            self.home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini",
-            self.home / ".local/state/obsgod/diagnostics/events.json",
+            self.home / ".config/deckystream/deck.json",
+            self.home / ".config/deckystream/secrets.json",
+            self.home / "Videos/deckystream/keep.mkv",
+            self.home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini",
+            self.home / ".local/state/deckystream/diagnostics/events.json",
         ]
         for path in protected:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -265,29 +265,29 @@ class InstallerSafety(unittest.TestCase):
         with contextlib.redirect_stdout(__import__("io").StringIO()):
             current = install.install(launch=False, with_decky=False)
             original = current.resolve()
-            (self.source / "obsgod").write_text("new executable")
+            (self.source / "deckystream").write_text("new executable")
             self.manifest("0.2.0-test")
             install.install(launch=False, with_decky=False)
             updated = current.resolve()
             self.assertNotEqual(original, updated)
-            self.assertEqual((original / "obsgod").read_text(), "fixture obsgod")
-            (self.source / "obsgod").write_text("replacement with same version")
+            self.assertEqual((original / "deckystream").read_text(), "fixture deckystream")
+            (self.source / "deckystream").write_text("replacement with same version")
             self.manifest("0.2.0-test")
             install.install(launch=False, with_decky=False)
             replacement = current.resolve()
             self.assertNotEqual(replacement, updated)
-            self.assertEqual((updated / "obsgod").read_text(), "new executable")
+            self.assertEqual((updated / "deckystream").read_text(), "new executable")
             # Simulate a damaged canonical install, then rerun the same package.
-            (self.source / "obsgod").write_text("new executable")
+            (self.source / "deckystream").write_text("new executable")
             self.manifest("0.2.0-test")
-            (updated / "obsgod").write_text("damaged")
+            (updated / "deckystream").write_text("damaged")
             install.install(launch=False, with_decky=False)
-            self.assertEqual((current / "obsgod").read_text(), "new executable")
+            self.assertEqual((current / "deckystream").read_text(), "new executable")
             repaired = current.resolve()
-            (current / "obsgod").chmod(0o600)
+            (current / "deckystream").chmod(0o600)
             install.install(launch=False, with_decky=False)
             self.assertEqual(current.resolve(), repaired)
-            self.assertTrue(os.access(current / "obsgod", os.X_OK))
+            self.assertTrue(os.access(current / "deckystream", os.X_OK))
             (current / "manifest.json").unlink()
             install.install(launch=False, with_decky=False)
             self.assertTrue((current / "manifest.json").is_file())
@@ -297,7 +297,7 @@ class InstallerSafety(unittest.TestCase):
         with contextlib.redirect_stdout(__import__("io").StringIO()):
             current = install.install(launch=False, with_decky=False)
         previous = current.resolve()
-        desktop = self.home / ".local/share/applications/obsgod-setup.desktop"
+        desktop = self.home / ".local/share/applications/deckystream-setup.desktop"
         desktop.write_text("my existing desktop entry")
         self.manifest("0.2.0-test")
         replace = Path.replace
@@ -311,10 +311,10 @@ class InstallerSafety(unittest.TestCase):
             install.install(launch=False, with_decky=False)
         self.assertEqual(current.resolve(), previous)
         self.assertEqual(desktop.read_text(), "my existing desktop entry")
-        self.assertEqual((self.home / ".local/bin/obsgod").resolve(), previous / "obsgod")
+        self.assertEqual((self.home / ".local/bin/deckystream").resolve(), previous / "deckystream")
 
     def test_dangling_desktop_link_is_backed_up_without_writing_its_target(self):
-        desktop = self.home / ".local/share/applications/obsgod-setup.desktop"
+        desktop = self.home / ".local/share/applications/deckystream-setup.desktop"
         desktop.parent.mkdir(parents=True)
         target = self.home / "unrelated-file"
         desktop.symlink_to(target)
@@ -322,7 +322,7 @@ class InstallerSafety(unittest.TestCase):
             install.install(launch=False, with_decky=False)
         self.assertFalse(target.exists())
         self.assertFalse(desktop.is_symlink())
-        copies = list((self.home / ".local/share/obsgod/backups").glob("*/obsgod-setup.desktop"))
+        copies = list((self.home / ".local/share/deckystream/backups").glob("*/deckystream-setup.desktop"))
         self.assertEqual(len(copies), 1)
         self.assertEqual(copies[0].readlink(), target)
 
@@ -331,26 +331,26 @@ class InstallerSafety(unittest.TestCase):
             current = install.install(launch=False, with_decky=False)
         previous = current.resolve()
         with install.installation_lock(current.parent):
-            with self.assertRaisesRegex(RuntimeError, "Another OBSGod installer"):
+            with self.assertRaisesRegex(RuntimeError, "Another deckystream installer"):
                 install.install(launch=False, with_decky=False)
         self.assertEqual(current.resolve(), previous)
 
 
 class UnifiedInstallerSafety(unittest.TestCase):
     def manifest(self, version="0.1.0-test"):
-        with zipfile.ZipFile(self.source / "obsgod-decky.zip", "w") as archive:
-            archive.writestr("obsgod/package.json", json.dumps({"name": "obsgod", "version": version}))
+        with zipfile.ZipFile(self.source / "deckystream-decky.zip", "w") as archive:
+            archive.writestr("deckystream/package.json", json.dumps({"name": "deckystream", "version": version}))
         InstallerSafety.manifest(self, version)
 
     def installed_plugin(self, version):
-        root = self.home / "homebrew/plugins/obsgod"
+        root = self.home / "homebrew/plugins/deckystream"
         root.mkdir(parents=True, exist_ok=True)
-        (root / "package.json").write_text(json.dumps({"name": "obsgod", "version": version}))
-        (root / "plugin.json").write_text(json.dumps({"name": "OBSGod"}))
+        (root / "package.json").write_text(json.dumps({"name": "deckystream", "version": version}))
+        (root / "plugin.json").write_text(json.dumps({"name": "deckystream"}))
 
     def setUp(self):
         InstallerSafety.setUp(self)
-        self.files |= {"decky-install", "decky.py", "install.py", "Install OBSGod.desktop", "update.py", "releases.py", "Update OBSGod.desktop", "Update OBSGod.sh"}
+        self.files |= {"decky-install", "decky.py", "install.py", "Install deckystream.desktop", "update.py", "releases.py", "Update deckystream.desktop", "Update deckystream.sh"}
         for name in self.files:
             if not (self.source / name).exists():
                 (self.source / name).write_text("fixture " + name)
@@ -359,7 +359,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
         self.decky.status.return_value = {"ok": True, "version": "v3.3.1"}
         self.bridge = Mock()
         self.bridge.run_cli.return_value = {"ok": True, "state": "stopped", "configured": False, "stream": {"active": False}, "recording": False, "output_known": True, "process": "absent"}
-        self.loader = patch.object(install, "load_module", side_effect=lambda name, path: self.decky if name == "obsgod_install_decky" else self.bridge)
+        self.loader = patch.object(install, "load_module", side_effect=lambda name, path: self.decky if name == "deckystream_install_decky" else self.bridge)
         self.loader.start()
         self.dependencies = patch.object(install, "ensure_dependencies")
         self.dependencies.start()
@@ -370,7 +370,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
         InstallerSafety.tearDown(self)
 
     def test_native_capture_bundle_is_verified_installed_and_preserved(self):
-        capture = {"libgstobsgodcapture.so", "CAPTURE-SOURCE.tar.gz"}
+        capture = {"libgstdeckystreamcapture.so", "CAPTURE-SOURCE.tar.gz"}
         self.files |= capture
         for name in capture:
             (self.source / name).write_bytes(b"fixture native capture " + name.encode())
@@ -382,13 +382,13 @@ class UnifiedInstallerSafety(unittest.TestCase):
         for name in capture:
             self.assertEqual((first / name).read_bytes(), (self.source / name).read_bytes())
             self.assertEqual((first / name).stat().st_mode & 0o777, 0o600)
-        (self.source / "libgstobsgodcapture.so").write_bytes(b"tampered plugin")
+        (self.source / "libgstdeckystreamcapture.so").write_bytes(b"tampered plugin")
         with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
             install.verify_payload()
-        self.assertEqual((first / "libgstobsgodcapture.so").read_bytes(), b"fixture native capture libgstobsgodcapture.so")
+        self.assertEqual((first / "libgstdeckystreamcapture.so").read_bytes(), b"fixture native capture libgstdeckystreamcapture.so")
 
     def test_partial_native_capture_bundle_and_unexpected_files_are_refused(self):
-        for extra in ["libgstobsgodcapture.so", "CAPTURE-SOURCE.tar.gz", "unexpected-native.so"]:
+        for extra in ["libgstdeckystreamcapture.so", "CAPTURE-SOURCE.tar.gz", "unexpected-native.so"]:
             with self.subTest(extra=extra):
                 self.files.add(extra)
                 (self.source / extra).write_bytes(b"fixture")
@@ -400,16 +400,16 @@ class UnifiedInstallerSafety(unittest.TestCase):
         self.manifest()
 
     def test_default_installs_verified_plugin_before_activating_app(self):
-        current = self.home / ".local/share/obsgod/current"
+        current = self.home / ".local/share/deckystream/current"
         def verify_first(operation, candidate, manifest):
             self.assertFalse(current.exists())
             self.assertEqual(operation, "install")
-            self.assertTrue((candidate / "obsgod-decky.zip").is_file())
+            self.assertTrue((candidate / "deckystream-decky.zip").is_file())
         self.decky.helper_request.side_effect = verify_first
         with contextlib.redirect_stdout(__import__("io").StringIO()):
             installed = install.install(launch=False)
         self.assertEqual(installed.resolve().name, "0.1.0-test")
-        self.assertIn("Update " + install.DISPLAY_NAME, (self.home / ".local/share/applications/obsgod-update.desktop").read_text())
+        self.assertIn("Update " + install.DISPLAY_NAME, (self.home / ".local/share/applications/deckystream-update.desktop").read_text())
         self.decky.status.assert_called_once()
         self.decky.helper_request.assert_called_once()
         self.assertEqual([call.args[0] for call in self.bridge.run_cli.call_args_list], ["status", "status"])
@@ -418,7 +418,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
         self.decky.status.return_value = {"ok": False, "message": "Decky service unavailable. Official setup: https://decky.xyz/"}
         with self.assertRaisesRegex(RuntimeError, "No app or plugin was replaced"):
             install.install(launch=False)
-        self.assertFalse((self.home / ".local/share/obsgod/current").exists())
+        self.assertFalse((self.home / ".local/share/deckystream/current").exists())
         self.decky.helper_request.assert_not_called()
         install.ensure_dependencies.assert_not_called()
 
@@ -473,7 +473,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
             current = install.install(launch=False, with_decky=False)
         previous = current.resolve()
         self.installed_plugin(previous.name)
-        (previous / "obsgod-decky.zip").write_bytes(b"changed archived plugin")
+        (previous / "deckystream-decky.zip").write_bytes(b"changed archived plugin")
         self.manifest("0.2.0-test")
         self.decky.helper_request.side_effect = lambda action, candidate, manifest: self.installed_plugin(manifest["version"])
         with patch.object(install, "activate_release", side_effect=OSError("activation failed")), self.assertRaisesRegex(RuntimeError, "rollback is unconfirmed"):
@@ -501,7 +501,7 @@ class UnifiedInstallerSafety(unittest.TestCase):
         self.decky.helper_request.side_effect = RuntimeError("unconfirmed install")
         with self.assertRaisesRegex(RuntimeError, "plugin version/rollback is unconfirmed"):
             install.install(launch=False)
-        current = self.home / ".local/share/obsgod/current"
+        current = self.home / ".local/share/deckystream/current"
         self.assertFalse(current.exists())
         record = json.loads((current.parent / "installation-recovery.json").read_text())
         self.assertFalse(record["plugin_rollback_confirmed"])
@@ -539,7 +539,7 @@ class DependencyCompatibility(unittest.TestCase):
 
     def test_missing_native_policy_never_falls_back_to_flatpak_mutation(self):
         with patch.object(install.subprocess, "run") as run, self.assertRaisesRegex(RuntimeError, "verified native dependency setup"):
-            install.ensure_dependencies(Mock(), {"files": {"obsgod-decky.zip": "0" * 64}}, Path.home())
+            install.ensure_dependencies(Mock(), {"files": {"deckystream-decky.zip": "0" * 64}}, Path.home())
         run.assert_not_called()
 
     def test_boundary_and_current_versions_are_supported(self):

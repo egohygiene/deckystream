@@ -7,28 +7,45 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/egohygiene/deckystream/internal/naming"
 )
 
 func isolateEnvironment(t *testing.T) string {
 	t.Helper()
-	for _, key := range []string{"OBS_HOST", "OBS_PORT", "OBS_PASSWORD", "OBS_PASSWORD_FILE", "OBSGOD_HOST", "OBSGOD_PORT", "OBSGOD_PASSWORD", "OBSGOD_PASSWORD_FILE", "OBSGOD_CONFIG", "OBSGOD_CONNECTION_PROFILE"} {
+	keys := []string{"OBS_HOST", "OBS_PORT", "OBS_PASSWORD", "OBS_PASSWORD_FILE", "DECKYSTREAM_HOST", "DECKYSTREAM_PORT", "DECKYSTREAM_PASSWORD", "DECKYSTREAM_PASSWORD_FILE", "DECKYSTREAM_CONFIG", "DECKYSTREAM_CONNECTION_PROFILE"}
+	for current, legacy := range legacyEnvironment {
+		keys = append(keys, current, legacy)
+	}
+	for _, key := range keys {
 		t.Setenv(key, "")
 		// Empty passwords intentionally override a configured reference, so remove
 		// these two bindings while leaving cleanup to testing's environment guard.
-		if key == "OBS_PASSWORD" || key == "OBSGOD_PASSWORD" {
+		if key == "OBS_PASSWORD" || key == "DECKYSTREAM_PASSWORD" || key == "OBSGOD_PASSWORD" {
 			if err := os.Unsetenv(key); err != nil {
 				t.Fatal(err)
 			}
 		}
 	}
 	root := t.TempDir()
+	root, err := naming.NormalizeHome(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", root)
+	t.Setenv("USERPROFILE", root)
+	t.Setenv("APPDATA", root)
 	t.Setenv("XDG_CONFIG_HOME", root)
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	t.Setenv("DECKY_HOME", filepath.Join(root, "homebrew"))
 	return root
 }
 
 func writeConfig(t *testing.T, root, document string) string {
 	t.Helper()
-	path := filepath.Join(root, "obsgod", "config.json")
+	path := filepath.Join(root, "deckystream", "config.json")
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -55,14 +72,14 @@ func TestConfigurationLayersAndConnectionProfiles(t *testing.T) {
 	if err != nil || resolved.Config.Host != "legacy.example" || resolved.Config.Port != 4458 {
 		t.Fatalf("legacy environment should override selected file profile: %+v %v", resolved.Public(), err)
 	}
-	t.Setenv("OBSGOD_HOST", "canonical.example")
-	t.Setenv("OBSGOD_PORT", "4459")
+	t.Setenv("DECKYSTREAM_HOST", "canonical.example")
+	t.Setenv("DECKYSTREAM_PORT", "4459")
 	resolved, err = Resolve(base, Options{Path: path})
 	if err != nil || resolved.Config.Host != "canonical.example" || resolved.Config.Port != 4459 {
 		t.Fatalf("canonical environment should override aliases: %+v %v", resolved.Public(), err)
 	}
 	flagHost, flagPort := "flag.example", uint32(4460)
-	t.Setenv("OBSGOD_PORT", "bad-value-is-not-an-effective-port")
+	t.Setenv("DECKYSTREAM_PORT", "bad-value-is-not-an-effective-port")
 	resolved, err = Resolve(base, Options{Path: path, Host: &flagHost, Port: &flagPort})
 	if err != nil || resolved.Config.Host != flagHost || resolved.Config.Port != flagPort {
 		t.Fatalf("explicit flags should override environment, even malformed lower port: %+v %v", resolved.Public(), err)
@@ -80,7 +97,7 @@ func TestOptionalDefaultAndExplicitMissingConfig(t *testing.T) {
 	if err == nil {
 		t.Fatal("explicit missing configuration must fail")
 	}
-	t.Setenv("OBSGOD_CONFIG", filepath.Join(root, "absent.json"))
+	t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(root, "absent.json"))
 	if _, err := Resolve(base, Options{}); err == nil {
 		t.Fatal("explicit environment config must not silently disappear")
 	}
@@ -143,17 +160,17 @@ func TestPrivateSecretReferenceAndFlagPrecedence(t *testing.T) {
 
 func TestSecretEnvironmentReferenceIsNotExpandedIntoDiagnostics(t *testing.T) {
 	root := isolateEnvironment(t)
-	path := writeConfig(t, root, `{"version":1,"connection":{"password_env":"TEST_OBSGOD_SECRET"}}`)
-	t.Setenv("TEST_OBSGOD_SECRET", "private-credential-marker")
+	path := writeConfig(t, root, `{"version":1,"connection":{"password_env":"TEST_DECKYSTREAM_SECRET"}}`)
+	t.Setenv("TEST_DECKYSTREAM_SECRET", "private-credential-marker")
 	resolved, err := Resolve(Config{Host: "localhost", Port: 4455}, Options{Path: path})
 	if err != nil || resolved.Config.Password != "private-credential-marker" {
 		t.Fatal("environment reference did not resolve")
 	}
 	encoded, _ := json.Marshal(resolved.Public())
-	if strings.Contains(string(encoded), "private-credential-marker") || strings.Contains(string(encoded), "TEST_OBSGOD_SECRET") {
+	if strings.Contains(string(encoded), "private-credential-marker") || strings.Contains(string(encoded), "TEST_DECKYSTREAM_SECRET") {
 		t.Fatal("public diagnostics should show only a generic secret source")
 	}
-	if err := os.Unsetenv("TEST_OBSGOD_SECRET"); err != nil {
+	if err := os.Unsetenv("TEST_DECKYSTREAM_SECRET"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Resolve(Config{Host: "localhost", Port: 4455}, Options{Path: path}); err == nil {

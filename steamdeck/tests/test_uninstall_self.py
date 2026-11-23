@@ -21,23 +21,23 @@ class InstalledSelfRemoval(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name) / "player"
         self.home.mkdir(mode=0o700)
-        self.base = self.home / ".local/share/obsgod"
+        self.base = self.home / ".local/share/deckystream"
         self.release = self.base / "releases/v1"
         self.release.mkdir(parents=True, mode=0o700)
         (self.base / "current").symlink_to(self.release)
         for name in ("uninstall.py", "bridge.py", "paths.py", "product.py", "decky.py"):
             shutil.copyfile(ROOT / name, self.release / name)
-        for relative in (".config/obsgod/secrets.json", ".local/state/obsgod/diagnostics/keep.json",
-                         "homebrew/settings/obsgod/keep", "Videos/OBSGod/keep.mkv"):
+        for relative in (".config/deckystream/secrets.json", ".local/state/deckystream/diagnostics/keep.json",
+                         "homebrew/settings/deckystream/keep", "Videos/deckystream/keep.mkv"):
             path = self.home / relative
             path.parent.mkdir(parents=True)
             path.write_text("owned fixture sentinel")
-        cli = self.release / "obsgod"
+        cli = self.release / "deckystream"
         cli.write_text("#!" + sys.executable + "\n" +
                        "import json,os,sys\nfrom pathlib import Path\n" +
                        "home=Path(os.environ['HOME']);action=sys.argv[-1]\n" +
                        "with (home/'calls.jsonl').open('a') as stream:stream.write(json.dumps(action)+'\\n')\n" +
-                       "if action=='restart':\n (home/'.local/state/obsgod/diagnostics/unexpected-restart').write_text('mutation')\n" +
+                       "if action=='restart':\n (home/'.local/state/deckystream/diagnostics/unexpected-restart').write_text('mutation')\n" +
                        "print(" + repr(json.dumps(IDLE)) + ")\n")
         cli.chmod(0o700)
         self.helper = self.release / "decky-install"
@@ -58,7 +58,7 @@ class InstalledSelfRemoval(unittest.TestCase):
     def assert_only_read_observations(self, count=3):
         calls = [json.loads(line) for line in (self.home / "calls.jsonl").read_text().splitlines()]
         self.assertEqual(calls, ["status"] * count)
-        self.assertFalse((self.home / ".local/state/obsgod/diagnostics/unexpected-restart").exists())
+        self.assertFalse((self.home / ".local/state/deckystream/diagnostics/unexpected-restart").exists())
 
     def test_isolated_python_self_uninstall_keeps_helper_identity_and_imports_read_only(self):
         before = self.helper.stat()
@@ -81,8 +81,8 @@ class InstalledSelfRemoval(unittest.TestCase):
         self.assertEqual((observed["inode"], observed["ctime_ns"]), (before.st_ino, before.st_ctime_ns))
         self.assertEqual(observed["caches"], [])
         self.assertEqual({path.name for path in self.base.iterdir()}, {"update.lock", "install.lock"})
-        self.assertEqual({path.name for path in (self.home / ".local/state/obsgod").iterdir()}, {"control.lock"})
-        self.assertTrue((self.home / "Videos/OBSGod/keep.mkv").exists())
+        self.assertEqual({path.name for path in (self.home / ".local/state/deckystream").iterdir()}, {"control.lock"})
+        self.assertTrue((self.home / "Videos/deckystream/keep.mkv").exists())
         self.assertTrue(json.loads(result.stdout)["export"]["preserved_after_wipe"])
         self.assert_only_read_observations(4)
 
@@ -107,7 +107,7 @@ class InstalledSelfRemoval(unittest.TestCase):
         self.assertNotEqual(after.st_ctime_ns, before.st_ctime_ns)
         self.assertEqual(after.st_mode & 0o7777, 0o700)
         self.assertFalse((self.release / "__pycache__").exists())
-        self.assertTrue((self.home / ".config/obsgod/secrets.json").exists())
+        self.assertTrue((self.home / ".config/deckystream/secrets.json").exists())
         # Only a fresh, explicit inventory can authorize removing this changed
         # release; a second execution has no normalization left to perform.
         retried = self.command("-I", "--purge-settings")

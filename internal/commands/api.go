@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/egohygiene/deckystream/internal/config"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/config"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 type apiConnector func(context.Context, config.Config) (*api.Client, error)
@@ -37,7 +37,7 @@ func newAPICommand(connection *config.Config, path *string, connect apiConnector
 		connect = connectAPI
 	}
 	root := &coral.Command{Use: "api", Short: "Versioned public OBS API adapter; emits one JSON result, preserves legacy commands"}
-	root.Example = "  obsgod api capabilities\n  obsgod api snapshot\n  obsgod api stream start --approve"
+	root.Example = "  deckystream api capabilities\n  deckystream api snapshot\n  deckystream api stream start --approve"
 	root.PersistentFlags().Bool("json", true, "Emit versioned JSON (always enabled for this command family)")
 	root.AddCommand(&coral.Command{Use: "capabilities", Short: "Discover the public contract offline", Args: coral.NoArgs, RunE: func(cmd *coral.Command, _ []string) error { return writeAPI(cmd, "capabilities", api.Discover(), nil) }})
 	withClient := func(op string, action func(context.Context, *api.Client) (any, error)) func(*coral.Command, []string) error {

@@ -13,7 +13,7 @@ end
 function Link(element)
   local target = element.target
   if target:match('^#') or target:match('^[%a][%w+.-]*:') then return element end
-  local base = 'https://github.com/szmyty/obsgod/blob/a2137bf214c77efda3ce3fb87879f88004c6477c/'
+  local base = 'https://github.com/egohygiene/deckystream/blob/main/'
   if target:match('^%.%./') then
     element.target = base .. target:sub(4)
   else

@@ -11,8 +11,8 @@ import tarfile
 import zipfile
 
 REPO = Path(__file__).resolve().parents[1]
-FILES = ("update.py", "releases.py", "paths.py", "product.py", "decky.py", "decky-install", "Update OBSGod.desktop", "Update OBSGod.sh", "LICENSE", "THIRD_PARTY_NOTICES.md")
-EXECUTABLES = {"decky-install", "Update OBSGod.desktop", "Update OBSGod.sh"}
+FILES = ("update.py", "releases.py", "paths.py", "product.py", "decky.py", "decky-install", "Update deckystream.desktop", "Update deckystream.sh", "LICENSE", "THIRD_PARTY_NOTICES.md")
+EXECUTABLES = {"decky-install", "Update deckystream.desktop", "Update deckystream.sh"}
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
         root = roots.pop()
         manifest = json.load(runtime.extractfile(root + "/manifest.json"))
         version = manifest.get("version", "")
-        if not re.fullmatch(r"[0-9][A-Za-z0-9.-]{0,79}", version) or root != "OBSGod-" + version:
+        if not re.fullmatch(r"[0-9][A-Za-z0-9.-]{0,79}", version) or root != "deckystream-" + version:
             raise SystemExit("Invalid runtime version")
         if manifest.get("revision") != revision or manifest.get("dirty") is not False or manifest.get("platform") != "linux/amd64" or manifest.get("updater_version") != version:
             raise SystemExit("Use a clean runtime candidate built from the current source revision")
@@ -52,10 +52,10 @@ def main():
     timestamp = datetime.fromtimestamp(max(epoch, 315532800), timezone.utc).timetuple()[:6]
     dist = REPO / "dist"
     dist.mkdir(exist_ok=True)
-    output_path = dist / ("obsgod-one-click-update_" + version + "_linux_amd64.zip")
+    output_path = dist / ("deckystream-one-click-update_" + version + "_linux_amd64.zip")
     with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as output:
         for name, data in sorted(files.items()):
-            info = zipfile.ZipInfo("OBSGod-Updater/" + name, timestamp)
+            info = zipfile.ZipInfo("deckystream-Updater/" + name, timestamp)
             info.create_system = 3
             info.external_attr = (0o100755 if name in EXECUTABLES else 0o100644) << 16
             info.compress_type = zipfile.ZIP_DEFLATED

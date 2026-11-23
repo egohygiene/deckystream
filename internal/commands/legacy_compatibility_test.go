@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/andreykaipov/goobs"
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obs"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obs"
 )
 
 type legacyCLIRequest struct {

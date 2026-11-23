@@ -38,13 +38,13 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.env["XDG_STATE_HOME"] = str(self.home / ".local/state")
         self.env["DECKY_HOME"] = str(self.home / "homebrew")
         for name in ("DECKY_PLUGIN_DIR", "DECKY_PLUGIN_SETTINGS_DIR", "DECKY_PLUGIN_RUNTIME_DIR",
-                     "DECKY_PLUGIN_LOG_DIR", "OBSGOD_DECKY_STORAGE_MAP"):
+                     "DECKY_PLUGIN_LOG_DIR", "DECKYSTREAM_DECKY_STORAGE_MAP"):
             self.env.pop(name, None)
         self.environment = patch.dict(os.environ, self.env, clear=True)
         self.environment.start()
         self.package = self.root / "package"
         self.package.mkdir()
-        self.archive = self.package / "obsgod-decky.zip"
+        self.archive = self.package / "deckystream-decky.zip"
         self.write_policy(native.MODULE.read_bytes())
         self.root_patch = patch.object(install, "ROOT", self.package)
         self.root_patch.start()
@@ -52,7 +52,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.policy = self.loaded_policy.__enter__()
         self.bridge = Mock()
         self.bridge.run_cli.return_value = IDLE
-        self.base = self.home / ".local/share/obsgod"
+        self.base = self.home / ".local/share/deckystream"
         install.owned_directory(self.base, self.home)
 
     async def asyncTearDown(self):
@@ -61,7 +61,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.environment.stop()
         await native.DependencySetupTests.asyncTearDown(self)
 
-    def write_policy(self, source, name="obsgod/dependency_setup.py"):
+    def write_policy(self, source, name="deckystream/dependency_setup.py"):
         with zipfile.ZipFile(self.archive, "w") as archive:
             archive.writestr(name, source)
         self.manifest = {"files": {self.archive.name: hashlib.sha256(self.archive.read_bytes()).hexdigest()}}
@@ -83,8 +83,8 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((action, timeout), ("status", 6))
             self.assertEqual(self.mutations(), [])
             self.assert_lease_held(self.base / "install.lock")
-            self.assert_lease_held(self.home / ".local/state/obsgod/control.lock")
-            self.assert_lease_held(self.home / "homebrew/data/obsgod/jobs/dependencies/setup.lock")
+            self.assert_lease_held(self.home / ".local/state/deckystream/control.lock")
+            self.assert_lease_held(self.home / "homebrew/data/deckystream/jobs/dependencies/setup.lock")
             return IDLE
 
         self.bridge.run_cli.side_effect = observe
@@ -135,7 +135,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.bridge.run_cli.assert_not_called()
 
     async def test_busy_native_setup_does_not_start_a_second_transaction(self):
-        job = self.policy.DependencySetup(self.home / "homebrew/data/obsgod/jobs", self.env)
+        job = self.policy.DependencySetup(self.home / "homebrew/data/deckystream/jobs", self.env)
         job._initialize()
         self.assertTrue(job._acquire())
         try:
@@ -216,7 +216,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
                 patch.object(install, "load_module", wraps=install.load_module) as loader:
             # Only the bridge is synthetic. The ZIP policy and workers are real.
             original = loader._mock_wraps
-            loader.side_effect = lambda name, path: self.bridge if name == "obsgod_install_bridge" else original(name, path)
+            loader.side_effect = lambda name, path: self.bridge if name == "deckystream_install_bridge" else original(name, path)
 
             def observe(action, timeout):
                 self.assert_lease_held(self.base / "install.lock")
@@ -237,7 +237,7 @@ class InstallerDependencyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.commands(), [])
 
     async def test_legacy_zip_without_native_policy_is_not_an_automatic_fallback(self):
-        self.write_policy(b"not a native setup worker", "obsgod/main.py")
+        self.write_policy(b"not a native setup worker", "deckystream/main.py")
         with self.assertRaisesRegex(RuntimeError, "current Decky plugin"):
             with install.dependency_policy(self.manifest):
                 self.fail("legacy unguarded dependency path was reached")

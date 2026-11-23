@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type resilienceOBS struct {
@@ -35,7 +35,7 @@ func (c resilienceOBS) Observe(ctx context.Context) (resilienceObservation, erro
 	if err != nil {
 		return resilienceObservation{}, err
 	}
-	return resilienceObservation{Managed: runtime.Profile == "OBSGod" && runtime.Collection == "OBSGod", Active: stream.Active || stream.Reconnecting || runtime.Recording || replay}, nil
+	return resilienceObservation{Managed: runtime.Profile == "deckystream" && runtime.Collection == "deckystream", Active: stream.Active || stream.Reconnecting || runtime.Recording || replay}, nil
 }
 func (c resilienceOBS) Rebind(ctx context.Context, settings Settings, route AudioRouting) (bool, error) {
 	changed, err := c.client.RebindAudioInput(ctx, GameAudio, "pulse_output_capture", route.OutputMonitor)

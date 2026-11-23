@@ -36,6 +36,13 @@ test("controls use confirmed stream/operation state; unknown output keeps recove
   assert.equal(controls({...idle,recording:true}).startDisabled,true);
 });
 
+test("a legacy managed runtime retains recovery Stop but cannot begin new output",()=>{
+  const previous={...idle,legacy_runtime:true};
+  assert.equal(controls(previous).startDisabled,true);
+  assert.equal(controls(previous).testDisabled,true);
+  assert.equal(controls({...live,legacy_runtime:true}).stopDisabled,false);
+});
+
 test("old polls cannot overwrite an action generation or newer backend snapshot",()=>{
   const view=createView();
   observe(view,idle,100,1,0);

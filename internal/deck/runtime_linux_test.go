@@ -27,7 +27,7 @@ func TestLaunchUsesSessionBackendAndOnlyManagedConfiguration(t *testing.T) {
 			t.Fatalf("unsupported or unsafe launch argument: %s", forbidden)
 		}
 	}
-	if !strings.Contains(args, "--command=/usr/bin/env com.obsproject.Studio XDG_CONFIG_HOME="+p.OBSConfig+" GST_PLUGIN_PATH_1_0=") || !strings.Contains(args, "--profile OBSGod --collection OBSGod") {
+	if !strings.Contains(args, "--command=/usr/bin/env com.obsproject.Studio XDG_CONFIG_HOME="+p.OBSConfig+" GST_PLUGIN_PATH_1_0=") || !strings.Contains(args, "--profile deckystream --collection deckystream") {
 		t.Fatal("launch escapes managed configuration", args)
 	}
 	if !graphicalSession([]string{"WAYLAND_DISPLAY=wayland-0"}) || !graphicalSession([]string{"DISPLAY=:1"}) {
@@ -41,9 +41,9 @@ func TestLaunchUsesSessionBackendAndOnlyManagedConfiguration(t *testing.T) {
 func TestSessionEnvironmentPreservesUserFlatpakRootsAndStorageContext(t *testing.T) {
 	for key, value := range map[string]string{
 		"XDG_DATA_HOME": t.TempDir(), "XDG_CACHE_HOME": t.TempDir(),
-		"OBSGOD_DECKY_STORAGE_MAP": "/private/storage-fixture/map.json",
-		"OBSGOD_DECKY_RUNTIME_DIR": "/private/decky-persistent-fixture",
-		"OBSGOD_DECKY_LOG_DIR":     "/private/decky-log-fixture",
+		"DECKYSTREAM_DECKY_STORAGE_MAP": "/private/storage-fixture/map.json",
+		"DECKYSTREAM_DECKY_RUNTIME_DIR": "/private/decky-persistent-fixture",
+		"DECKYSTREAM_DECKY_LOG_DIR":     "/private/decky-log-fixture",
 	} {
 		t.Setenv(key, value)
 	}
@@ -53,7 +53,7 @@ func TestSessionEnvironmentPreservesUserFlatpakRootsAndStorageContext(t *testing
 		key, value, _ := strings.Cut(field, "=")
 		values[key] = value
 	}
-	for _, key := range []string{"XDG_DATA_HOME", "XDG_CACHE_HOME", "OBSGOD_DECKY_STORAGE_MAP", "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR"} {
+	for _, key := range []string{"XDG_DATA_HOME", "XDG_CACHE_HOME", "DECKYSTREAM_DECKY_STORAGE_MAP", "DECKYSTREAM_DECKY_RUNTIME_DIR", "DECKYSTREAM_DECKY_LOG_DIR"} {
 		if values[key] != os.Getenv(key) || sessionKeys[key] {
 			t.Fatal("user storage/Flatpak roots were dropped or imported from a different graphical session", key)
 		}
@@ -92,6 +92,10 @@ type fixtureRequest struct {
 }
 
 func startManagedFixture(t *testing.T, rejectAuth bool, recording bool, active bool, program ...string) <-chan fixtureRequest {
+	return startManagedFixtureIdentity(t, "deckystream", rejectAuth, recording, active, program...)
+}
+
+func startManagedFixtureIdentity(t *testing.T, identity string, rejectAuth bool, recording bool, active bool, program ...string) <-chan fixtureRequest {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:"+Port)
 	if err != nil {
@@ -132,9 +136,9 @@ func startManagedFixture(t *testing.T, rejectAuth bool, recording bool, active b
 			case "GetVersion":
 				data = map[string]any{"obsVersion": "33.0.1", "obsWebSocketVersion": "5.6.3"}
 			case "GetProfileList":
-				data = map[string]any{"currentProfileName": "OBSGod"}
+				data = map[string]any{"currentProfileName": identity}
 			case "GetSceneCollectionList":
-				data = map[string]any{"currentSceneCollectionName": "OBSGod"}
+				data = map[string]any{"currentSceneCollectionName": identity}
 			case "GetCurrentProgramScene":
 				data = map[string]any{"sceneName": scene}
 			case "GetRecordStatus":
@@ -607,7 +611,7 @@ pathlib.Path(` + strconv.Quote(report) + `).write_text(json.dumps(report))
 			if observed.Config != p.OBSConfig || !observed.WebSocketReady {
 				t.Fatalf("OBS did not receive prepared private configuration: %+v", observed)
 			}
-			expected := []string{"--profile", "OBSGod", "--collection", "OBSGod", "--multi"}
+			expected := []string{"--profile", "deckystream", "--collection", "deckystream", "--multi"}
 			if !visible {
 				expected = append(expected, "--minimize-to-tray")
 			}

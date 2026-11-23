@@ -51,9 +51,9 @@ passwords are never part of this file. Private input identifiers/labels stay in
 the local device UI; support exports project allowlisted state only.
 
 ```sh
-printf '%s\n' '{"action":"devices"}' | obsgod deck mixer
-printf '%s\n' '{"action":"configure","preferences":{"microphone_enabled":true,"microphone_muted":true}}' | obsgod deck mixer
-printf '%s\n' '{"action":"configure","preferences":{"microphone_muted":true}}' | obsgod deck mixer
+printf '%s\n' '{"action":"devices"}' | deckystream deck mixer
+printf '%s\n' '{"action":"configure","preferences":{"microphone_enabled":true,"microphone_muted":true}}' | deckystream deck mixer
+printf '%s\n' '{"action":"configure","preferences":{"microphone_muted":true}}' | deckystream deck mixer
 ```
 
 Use [device acceptance](m3-device-acceptance.md) and the

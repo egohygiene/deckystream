@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 type videoItem struct {
@@ -55,7 +55,7 @@ func newVideoFixture(t *testing.T) *videoFixture {
 	if err := png.Encode(&encoded, im); err != nil {
 		t.Fatal(err)
 	}
-	f := &videoFixture{scene: IdleScene, profile: "OBSGod", collection: "OBSGod", active: true, visible: true, scenes: map[string]map[string]*videoItem{}, inputs: map[string]*videoInput{}, image: "data:image/png;base64," + base64.StdEncoding.EncodeToString(encoded.Bytes())}
+	f := &videoFixture{scene: IdleScene, profile: "deckystream", collection: "deckystream", active: true, visible: true, scenes: map[string]map[string]*videoItem{}, inputs: map[string]*videoInput{}, image: "data:image/png;base64," + base64.StdEncoding.EncodeToString(encoded.Bytes())}
 	for _, scene := range []string{IdleScene, LiveScene, GameScene} {
 		f.scenes[scene] = map[string]*videoItem{}
 	}
@@ -245,7 +245,7 @@ func TestGameVideoNeverFallsBackToDisplayAndExcludesUnknownSources(t *testing.T)
 			}
 			if input := f.inputs[GameCaptureInput]; input != nil {
 				pipeline := input.settings["pipeline"].(string)
-				if !strings.Contains(pipeline, "obsgodgamescopesrc app-id=42") || strings.Contains(pipeline, "pipewiresrc") {
+				if !strings.Contains(pipeline, "deckystreamgamescopesrc app-id=42") || strings.Contains(pipeline, "pipewiresrc") {
 					t.Fatalf("unsafe game pipeline %q", pipeline)
 				}
 			}

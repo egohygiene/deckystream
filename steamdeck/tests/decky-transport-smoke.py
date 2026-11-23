@@ -123,7 +123,7 @@ def native_dependency_fixture(work, home, environment):
     account = pwd.getpwuid(os.getuid())
     # Unix socket paths have a small fixed limit; the package work/TMPDIR path
     # may be long under local CI. Keep only these disposable sockets in /tmp.
-    runtime_temp = tempfile.TemporaryDirectory(prefix="obsgod-native-session-", dir="/tmp")
+    runtime_temp = tempfile.TemporaryDirectory(prefix="deckystream-native-session-", dir="/tmp")
     runtime = Path(runtime_temp.name)
     commands = work / "fixture-bin"
     commands.mkdir()
@@ -133,7 +133,7 @@ def native_dependency_fixture(work, home, environment):
 import json, os, sys
 from pathlib import Path
 args = sys.argv[1:]
-with Path(os.environ['OBSGOD_TEST_FLATPAK_LOG']).open('a') as log:
+with Path(os.environ['DECKYSTREAM_TEST_FLATPAK_LOG']).open('a') as log:
     log.write(json.dumps(args) + '\n')
 obs = 'com.obsproject.Studio'
 gst = obs + '.Plugin.Gstreamer'
@@ -157,7 +157,7 @@ elif args == ['info', '--user', '--show-metadata', obs_ref]:
 elif args == ['info', '--user', '--show-metadata', gst_ref]:
     print('[ExtensionOf]\nref=' + obs_ref + '\n')
 else:
-    Path(os.environ['OBSGOD_TEST_FLATPAK_LOG']).with_suffix('.forbidden').write_text(json.dumps(args))
+    Path(os.environ['DECKYSTREAM_TEST_FLATPAK_LOG']).with_suffix('.forbidden').write_text(json.dumps(args))
     print('Forbidden Flatpak fixture mutation, launch or unsupported command', file=sys.stderr)
     raise SystemExit(90)
 ''')
@@ -177,12 +177,12 @@ else:
     env = dict(environment, XDG_RUNTIME_DIR=str(runtime),
                DBUS_SESSION_BUS_ADDRESS="unix:path=" + str(runtime / "bus"),
                DECKY_USER_HOME=str(home), DECKY_USER=account.pw_name,
-               OBSGOD_TEST_ACCOUNT_HOOK=str(account_hook), OBSGOD_TEST_FLATPAK_LOG=str(command_log),
+               DECKYSTREAM_TEST_ACCOUNT_HOOK=str(account_hook), DECKYSTREAM_TEST_FLATPAK_LOG=str(command_log),
                PYTHONPATH=str(python) + os.pathsep + environment.get("PYTHONPATH", ""),
                PATH=str(commands) + os.pathsep + environment["PATH"])
     for name in ("FLATPAK_USER_DIR", "FLATPAK_SYSTEM_DIR", "DECKY_PLUGIN_DIR",
                  "DECKY_PLUGIN_SETTINGS_DIR", "DECKY_PLUGIN_RUNTIME_DIR", "DECKY_PLUGIN_LOG_DIR",
-                 "OBSGOD_DECKY_STORAGE_MAP", "OBSGOD_DECKY_RUNTIME_DIR", "OBSGOD_DECKY_LOG_DIR"):
+                 "DECKYSTREAM_DECKY_STORAGE_MAP", "DECKYSTREAM_DECKY_RUNTIME_DIR", "DECKYSTREAM_DECKY_LOG_DIR"):
         env.pop(name, None)
     stop = threading.Event()
     sockets, threads = [], []
@@ -244,40 +244,40 @@ async def runtime_installer_upgrade_with_session(fixture, args, work, plugins, l
     previous.mkdir()
     with tarfile.open(args.previous_archive) as archive:
         archive.extractall(previous, filter="data")
-    previous_package = next(previous.glob("OBSGod-*"))
+    previous_package = next(previous.glob("deckystream-*"))
     await fixture.execute(previous_app_install_command(previous_package), env)
-    current = home / ".local/share/obsgod/current"
+    current = home / ".local/share/deckystream/current"
     previous_release = current.resolve()
-    configured = subprocess.run([str(current / "obsgod"), "deck", "configure"],
+    configured = subprocess.run([str(current / "deckystream"), "deck", "configure"],
         input=json.dumps({"server":"rtmps://example.invalid/app", "stream_key":"fixture-stream-key-never-real"}),
         env=env, capture_output=True, text=True, check=True)
     assert "fixture-stream-key-never-real" not in configured.stdout + configured.stderr
     protected = [
-        home / ".config/obsgod/deck.json", home / ".config/obsgod/secrets.json",
-        home / "Videos/OBSGod/keep.mkv", home / ".local/state/obsgod/diagnostics/keep.json",
-        home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini",
+        home / ".config/deckystream/deck.json", home / ".config/deckystream/secrets.json",
+        home / "Videos/deckystream/keep.mkv", home / ".local/state/deckystream/diagnostics/keep.json",
+        home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini",
         home / ".var/app/com.obsproject.Studio/config/obs-studio/global.ini",
     ]
     for path in protected[2:]:
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_bytes(b"preserved fixture user data")
     snapshots = {path:path.read_bytes() for path in protected}
-    history = home / ".local/state/obsgod/diagnostics/events.json"
+    history = home / ".local/state/deckystream/diagnostics/events.json"
     saved_event = {"time":"2026-11-11T00:00:00Z","code":"operation.succeeded"}
     history.write_text(json.dumps([saved_event]))
     history.chmod(0o600)
-    old_metadata = json.loads(zipfile.ZipFile(previous_package / "obsgod-decky.zip").read("obsgod/package.json"))
-    if (plugins / "obsgod").exists():
-        shutil.rmtree(plugins / "obsgod")  # Disposable fixture only.
-    with zipfile.ZipFile(previous_package / "obsgod-decky.zip") as archive:
+    old_metadata = json.loads(zipfile.ZipFile(previous_package / "deckystream-decky.zip").read("deckystream/package.json"))
+    if (plugins / "deckystream").exists():
+        shutil.rmtree(plugins / "deckystream")  # Disposable fixture only.
+    with zipfile.ZipFile(previous_package / "deckystream-decky.zip") as archive:
         archive.extractall(plugins)
-    loader.plugins["OBSGod"] = fixture.Plugin("OBSGod", old_metadata["version"], "obsgod")
+    loader.plugins["deckystream"] = fixture.Plugin("deckystream", old_metadata["version"], "deckystream")
 
     candidate = work / "candidate runtime with spaces %20"
     candidate.mkdir()
     with tarfile.open(args.runtime_archive) as archive:
         archive.extractall(candidate,filter="data")
-    package = next(candidate.glob("OBSGod-*"))
+    package = next(candidate.glob("deckystream-*"))
     manifest = json.loads((package / "manifest.json").read_text())
     for _ in range(2):
         output = await fixture.execute([sys.executable,str(package / "install.py"),"--no-launch"],env)
@@ -285,17 +285,17 @@ async def runtime_installer_upgrade_with_session(fixture, args, work, plugins, l
         assert all(path.read_bytes() == value for path,value in snapshots.items())
         assert saved_event in json.loads(history.read_text()), "diagnostic history was reset"
         assert json.loads((current / "manifest.json").read_text())["version"] == manifest["version"]
-        assert json.loads((plugins / "obsgod/package.json").read_text())["version"] == manifest["version"]
-        assert settings.getSetting("pluginOrder") == ["Alpha","OBSGod","Beta"]
+        assert json.loads((plugins / "deckystream/package.json").read_text())["version"] == manifest["version"]
+        assert settings.getSetting("pluginOrder") == ["Alpha","deckystream","Beta"]
         assert settings.getSetting("frozenPlugins") == ["Alpha"]
         assert settings.getSetting("hiddenPlugins") == ["Beta"]
         assert all((plugins/name/"keep").read_text() == "unrelated plugin data" for name in ["alpha","beta"])
-        assert (home / ".local/share/applications/obsgod-update.desktop").is_file()
+        assert (home / ".local/share/applications/deckystream-update.desktop").is_file()
         assert (current / "update.py").is_file() and (current / "releases.py").is_file()
-        assert all((current / name).is_file() for name in ["paths.py","product.py","Uninstall OBSGod.desktop"])
-        assert (home / ".local/share/applications/obsgod-uninstall.desktop").is_file()
-        with zipfile.ZipFile(package / "obsgod-decky.zip") as shipped:
-            for name in ["obsgod/LICENSE.qrcode-generator.txt","obsgod/dist/LICENSE.qrcode-generator.txt"]:
+        assert all((current / name).is_file() for name in ["paths.py","product.py","Uninstall deckystream.desktop"])
+        assert (home / ".local/share/applications/deckystream-uninstall.desktop").is_file()
+        with zipfile.ZipFile(package / "deckystream-decky.zip") as shipped:
+            for name in ["deckystream/LICENSE.qrcode-generator.txt","deckystream/dist/LICENSE.qrcode-generator.txt"]:
                 assert "MIT" in shipped.read(name).decode(), "QR dependency license missing"
         assert not (current.parent / "installation-recovery.json").exists()
     assert previous_release.is_dir(), "previous runtime was removed"
@@ -319,33 +319,33 @@ async def runtime_installer_upgrade_with_session(fixture, args, work, plugins, l
 async def desktop_uninstall(fixture, env, home, current, plugins, loader, settings, snapshots,
                             history, saved_event):
     """Exercise the shipped launcher and real authenticated Decky removal path."""
-    command=fixture.desktop_command(current / "Uninstall OBSGod.desktop",as_uri=True)
+    command=fixture.desktop_command(current / "Uninstall deckystream.desktop",as_uri=True)
     inventory=await fixture.execute(command+["--purge-settings","--dry-run","--json"],env,
                                     input_data=b"\n",cwd=home)
     # The Desktop wrapper adds its terminal-hold prompt after the JSON line.
     plan=json.loads(inventory.splitlines()[0])
     assert plan["ok"] and plan["dry_run"] and plan["remove_plugin"]
-    assert "OBSGod" in loader.plugins and (plugins / "obsgod").is_dir()
+    assert "deckystream" in loader.plugins and (plugins / "deckystream").is_dir()
     assert current.is_dir() and all(path.read_bytes()==data for path,data in snapshots.items())
     output=await fixture.execute(command+["--purge-settings","--yes","--json"],env,
                                  input_data=b"\n",cwd=home)
     result=json.loads(output.splitlines()[0])
     assert result["ok"] and result["mode"]=="uninstall",output
-    assert "OBSGod" not in loader.plugins and not (plugins / "obsgod").exists()
+    assert "deckystream" not in loader.plugins and not (plugins / "deckystream").exists()
     assert settings.getSetting("pluginOrder")==["Alpha","Beta"]
     assert settings.getSetting("frozenPlugins")==["Alpha"]
     assert settings.getSetting("hiddenPlugins")==["Beta"]
     assert all((plugins/name/"keep").read_text()=="unrelated plugin data" for name in ["alpha","beta"])
-    assert not current.exists() and not (home / ".local/bin/obsgod").exists()
-    assert not (home / ".config/obsgod").exists()
-    assert not (home / ".var/app/com.obsproject.Studio/config/obsgod").exists()
-    assert not (home / ".local/share/applications/obsgod-uninstall.desktop").exists()
-    preserved=[home / "Videos/OBSGod/keep.mkv",
-               home / ".local/state/obsgod/diagnostics/keep.json",
+    assert not current.exists() and not (home / ".local/bin/deckystream").exists()
+    assert not (home / ".config/deckystream").exists()
+    assert not (home / ".var/app/com.obsproject.Studio/config/deckystream").exists()
+    assert not (home / ".local/share/applications/deckystream-uninstall.desktop").exists()
+    preserved=[home / "Videos/deckystream/keep.mkv",
+               home / ".local/state/deckystream/diagnostics/keep.json",
                home / ".var/app/com.obsproject.Studio/config/obs-studio/global.ini"]
     assert all(path.read_bytes()==snapshots[path] for path in preserved)
     assert saved_event in json.loads(history.read_text())
-    print("PASS: actual shipped Uninstall Desktop/file-URI launcher reviewed inventory and explicit --yes; pinned authenticated Decky uninstall removed only OBSGod files/registry/order entry, selected app/settings/managed OBS; unselected recordings, diagnostics, ordinary OBS and unrelated plugins/order/frozen/hidden entries preserved. Confirmation input is explicit fixture consent; ownership/Steam/CDP/process lifecycle remain fixtures.")
+    print("PASS: actual shipped Uninstall Desktop/file-URI launcher reviewed inventory and explicit --yes; pinned authenticated Decky uninstall removed only deckystream files/registry/order entry, selected app/settings/managed OBS; unselected recordings, diagnostics, ordinary OBS and unrelated plugins/order/frozen/hidden entries preserved. Confirmation input is explicit fixture consent; ownership/Steam/CDP/process lifecycle remain fixtures.")
 
 
 async def desktop_updater_upgrade(fixture, args, work, env, previous_package, package,
@@ -364,15 +364,15 @@ async def desktop_updater_upgrade(fixture, args, work, env, previous_package, pa
     selected_updater=updater_zip or args.updater_zip
     with zipfile.ZipFile(selected_updater) as archive:
         archive.extractall(extracted)
-    updater = extracted / "OBSGod-Updater"
+    updater = extracted / "deckystream-Updater"
     assert (updater / "update.py").is_file()
     original_updater={file.name:hashlib.sha256(file.read_bytes()).hexdigest() for file in updater.iterdir() if file.is_file()}
     initial_backups=list((current.parent / "backups").glob("updater-*/secrets.json"))
     network = work / (fixture_name + "-updater-network-fixture")
     network.mkdir()
     version = manifest["version"]
-    archive_name = "obsgod-deck_" + version + "_linux_amd64.tar.gz"
-    base_url = "https://github.com/szmyty/obsgod/releases/download/v" + version + "/"
+    archive_name = "deckystream-deck_" + version + "_linux_amd64.tar.gz"
+    base_url = "https://github.com/egohygiene/deckystream/releases/download/v" + version + "/"
     release = {"tag_name": "v" + version, "target_commitish": manifest["revision"],
                "draft": False, "prerelease": "-" in version,
                "assets": [{"name": name, "browser_download_url": base_url + name}
@@ -398,10 +398,10 @@ async def desktop_updater_upgrade(fixture, args, work, env, previous_package, pa
     response_file = network / "responses.json"
     response_file.write_text(json.dumps(responses))
     (network / "sitecustomize.py").write_text(
-        "import runpy\nrunpy.run_path(" + repr(env["OBSGOD_TEST_ACCOUNT_HOOK"]) + ")\n" +
+        "import runpy\nrunpy.run_path(" + repr(env["DECKYSTREAM_TEST_ACCOUNT_HOOK"]) + ")\n" +
         "import json,os,urllib.request\n"
         "from pathlib import Path\n"
-        "_responses=json.loads(Path(os.environ['OBSGOD_UPDATE_TEST_RESPONSES']).read_text())\n"
+        "_responses=json.loads(Path(os.environ['DECKYSTREAM_UPDATE_TEST_RESPONSES']).read_text())\n"
         "def _fixture_open(request,*args,**kwargs):\n"
         "    url=request.full_url if isinstance(request,urllib.request.Request) else request\n"
         "    if url not in _responses: raise OSError('unexpected fixture network request')\n"
@@ -410,7 +410,7 @@ async def desktop_updater_upgrade(fixture, args, work, env, previous_package, pa
         "    return _fixture_open(request,*args,**kwargs)\n"
         "urllib.request.urlopen=_fixture_open\n"
         "urllib.request.OpenerDirector.open=_fixture_opener_open\n")
-    test_env = dict(env, OBSGOD_UPDATE_TEST_RESPONSES=str(response_file),
+    test_env = dict(env, DECKYSTREAM_UPDATE_TEST_RESPONSES=str(response_file),
                     PYTHONPATH=str(network) + os.pathsep + env.get("PYTHONPATH", ""))
     # Legacy updaters use urlopen; current releases use a redirect-restricted
     # custom opener. Both fixture boundaries must remain hermetic and deny any
@@ -418,7 +418,7 @@ async def desktop_updater_upgrade(fixture, args, work, env, previous_package, pa
     await fixture.execute([sys.executable, "-c", """
 import json,os,urllib.request
 from pathlib import Path
-responses=json.loads(Path(os.environ['OBSGOD_UPDATE_TEST_RESPONSES']).read_text())
+responses=json.loads(Path(os.environ['DECKYSTREAM_UPDATE_TEST_RESPONSES']).read_text())
 for open_url in (urllib.request.urlopen,urllib.request.build_opener().open):
     for url,path in responses.items():
         for request in (url,urllib.request.Request(url)):
@@ -442,21 +442,21 @@ print('PASS: legacy urlopen and custom opener use only exact staged fixture URLs
     # Start from the actual legacy app and plugin again; preserve its real key
     # and user data while exercising all current updater stages.
     await fixture.execute(previous_app_install_command(previous_package), env)
-    with zipfile.ZipFile(previous_package / "obsgod-decky.zip") as archive:
-        shutil.rmtree(plugins / "obsgod")  # Disposable fixture only.
+    with zipfile.ZipFile(previous_package / "deckystream-decky.zip") as archive:
+        shutil.rmtree(plugins / "deckystream")  # Disposable fixture only.
         archive.extractall(plugins)
-    old_metadata = json.loads((plugins / "obsgod/package.json").read_text())
-    loader.plugins["OBSGod"] = fixture.Plugin("OBSGod", old_metadata["version"], "obsgod")
-    desktop_command = fixture.desktop_command(updater / "Update OBSGod.desktop", as_uri=True)
+    old_metadata = json.loads((plugins / "deckystream/package.json").read_text())
+    loader.plugins["deckystream"] = fixture.Plugin("deckystream", old_metadata["version"], "deckystream")
+    desktop_command = fixture.desktop_command(updater / "Update deckystream.desktop", as_uri=True)
     output = await fixture.execute(desktop_command, test_env, cwd=current.parent)
     assert b"DONE:" in output and b"4/4 Verified" in output, output
     assert version in dialog.read_text()
     assert json.loads((current / "manifest.json").read_text())["revision"] == manifest["revision"]
-    assert json.loads((plugins / "obsgod/package.json").read_text())["version"] == version
+    assert json.loads((plugins / "deckystream/package.json").read_text())["version"] == version
     assert all(path.read_bytes() == data for path, data in snapshots.items())
     assert saved_event in json.loads(history.read_text())
     assert json.loads((current.parent / "update-status.json").read_text())["state"] == "complete"
-    assert settings.getSetting("pluginOrder") == ["Alpha", "OBSGod", "Beta"]
+    assert settings.getSetting("pluginOrder") == ["Alpha", "deckystream", "Beta"]
     assert not list(current.parent.glob(".update-*"))
 
     # A repeated Desktop invocation is an honest no-update result. Explicit
@@ -473,13 +473,13 @@ print('PASS: legacy urlopen and custom opener use only exact staged fixture URLs
     responses[base_url + archive_name] = str(corrupted)
     response_file.write_text(json.dumps(responses))
     activated = current.resolve()
-    plugin_digest = hashlib.sha256((plugins / "obsgod/package.json").read_bytes()).hexdigest()
+    plugin_digest = hashlib.sha256((plugins / "deckystream/package.json").read_bytes()).hexdigest()
     process = await asyncio.create_subprocess_exec(sys.executable, str(updater / "update.py"), "--repair",
         env=test_env, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
     output, _ = await asyncio.wait_for(process.communicate(), 30)
     assert process.returncode == 1 and b"checksum does not match" in output, output
     assert current.resolve() == activated
-    assert hashlib.sha256((plugins / "obsgod/package.json").read_bytes()).hexdigest() == plugin_digest
+    assert hashlib.sha256((plugins / "deckystream/package.json").read_bytes()).hexdigest() == plugin_digest
     assert all(path.read_bytes() == data for path, data in snapshots.items())
     assert b"fixture-stream-key-never-real" not in output
     assert json.loads((current.parent / "update-status.json").read_text())["state"] == "interrupted-or-failed"
@@ -494,7 +494,7 @@ async def run(args):
     fixture = fixture_module()
     helpers, router, browser = fixture.upstream_modules(args.upstream)
     await old_transport_reproduction(router, helpers)
-    with tempfile.TemporaryDirectory(prefix="obsgod-decky-transport-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-decky-transport-") as temporary:
         work = Path(temporary)
         home = work / "home with spaces %20"
         home.mkdir()
@@ -505,7 +505,7 @@ async def run(args):
             folder.mkdir()
             (folder / "plugin.json").write_text(json.dumps({"name":name}))
             (folder / "keep").write_text("unrelated plugin data")
-        metadata = json.loads(zipfile.ZipFile(args.plugin_zip).read("obsgod/package.json"))
+        metadata = json.loads(zipfile.ZipFile(args.plugin_zip).read("deckystream/package.json"))
         source = work / "plugin.zip"
         shutil.copyfile(args.plugin_zip, source)
         source.chmod(0o600)
@@ -517,8 +517,8 @@ async def run(args):
         app = web.Application(middlewares=[helpers.csrf_middleware])
         ws = router.WSRouter(asyncio.get_running_loop(), app)
         loader = fixture.Loader(ws, plugins)
-        # The old OBSGod plugin may be absent on a fresh install.
-        loader.plugins.pop("OBSGod")
+        # The old deckystream plugin may be absent on a fresh install.
+        loader.plugins.pop("deckystream")
         settings = fixture.Settings()
         installer = browser.PluginBrowser(str(plugins), loader.plugins, loader, settings)
         connection_count = 0
@@ -592,8 +592,8 @@ async def run(args):
                     assert result["version"] == metadata["version"]
                 assert connection_count == 1, "installer opened a competing frontend connection"
             assert prompt_count == 2, "unrelated prompt behavior changed"
-            assert json.loads((plugins / "obsgod/package.json").read_text())["version"] == metadata["version"]
-            assert settings.getSetting("pluginOrder") == ["Alpha","OBSGod","Beta"]
+            assert json.loads((plugins / "deckystream/package.json").read_text())["version"] == metadata["version"]
+            assert settings.getSetting("pluginOrder") == ["Alpha","deckystream","Beta"]
             assert settings.getSetting("frozenPlugins") == ["Alpha"]
             assert settings.getSetting("hiddenPlugins") == ["Beta"]
             assert all((plugins/name/"keep").read_text()=="unrelated plugin data" for name in ["alpha","beta"])
@@ -613,20 +613,20 @@ async def run(args):
                 output, _ = await asyncio.wait_for(blocked.communicate(json.dumps({"operation":"uninstall"}).encode()),30)
                 refusal = json.loads(output)
                 assert blocked.returncode == 1 and not refusal["ok"] and "DECKY_HOME" in refusal["message"]
-                assert "OBSGod" in loader.plugins and (plugins / "obsgod").is_dir()
+                assert "deckystream" in loader.plugins and (plugins / "deckystream").is_dir()
                 await fixture.execute([str(args.helper.resolve())],os.environ,
                     input_data=json.dumps({"operation":"uninstall","uninstall_existing":True}).encode())
-            assert "OBSGod" not in loader.plugins and not (plugins / "obsgod").exists()
+            assert "deckystream" not in loader.plugins and not (plugins / "deckystream").exists()
             absent=await fixture.execute([str(args.helper.resolve())],os.environ,
                 input_data=json.dumps({"operation":"uninstall"}).encode())
             assert json.loads(absent)["removed"] is True
             with zipfile.ZipFile(args.plugin_zip) as archive:
                 archive.extractall(plugins)
-            settings.setSetting("pluginOrder",["Alpha","OBSGod","Beta"])
+            settings.setSetting("pluginOrder",["Alpha","deckystream","Beta"])
             legacy=await fixture.execute([str(args.helper.resolve())],os.environ,
                 input_data=json.dumps({"operation":"uninstall","uninstall_existing":True}).encode())
             assert json.loads(legacy)["removed"] is True
-            assert "OBSGod" not in loader.plugins and not (plugins / "obsgod").exists()
+            assert "deckystream" not in loader.plugins and not (plugins / "deckystream").exists()
             assert settings.getSetting("pluginOrder")==["Alpha","Beta"]
             assert settings.getSetting("frozenPlugins")==["Alpha"]
             assert settings.getSetting("hiddenPlugins")==["Beta"]

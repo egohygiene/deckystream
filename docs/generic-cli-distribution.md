@@ -1,6 +1,6 @@
 # Generic CLI snapshot contract
 
-These archives contain the generic `obsgod` CLI. They are distinct from the
+These archives contain the generic `deckystream` CLI. They are distinct from the
 Steam Deck runtime, Decky plugin and one-click updater. They do not install OBS,
 Flatpak, Decky, capture libraries or provider integrations. Cross-compilation is
 not native-platform support or a published stable release.

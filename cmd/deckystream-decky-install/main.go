@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/szmyty/obsgod/internal/deckyinstall"
+	"github.com/egohygiene/deckystream/internal/deckyinstall"
 )
 
 func main() {
@@ -29,12 +29,12 @@ func main() {
 	var report deckyinstall.Report
 	if err == nil {
 		report, err = deckyinstall.Run(ctx, input)
-		message = "Decky confirmed the requested OBSGod version is installed and enabled"
+		message = "Decky confirmed the requested deckystream version is installed and enabled"
 		if input.Operation == "probe" {
 			message = "Decky service and its connected Steam frontend are ready"
 		}
 		if input.Operation == "uninstall" {
-			message = "Decky confirms OBSGod is absent from its loaded plugins"
+			message = "Decky confirms deckystream is absent from its loaded plugins"
 		}
 		if err != nil {
 			message = err.Error()

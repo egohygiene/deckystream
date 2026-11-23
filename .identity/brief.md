@@ -1,4 +1,4 @@
-# Decky Stream brief
+# deckystream brief
 
 Status: **01 / aurora creative direction selected by the owner**. Candidate
 vector/raster masters and exports are implemented for source-preview review;
@@ -12,10 +12,12 @@ projects. Its release support claims must match actual hardware qualification.
 
 Selected user-facing name and source-preview display: **deckystream**. Intended repository slug:
 **deckystream** (owner preference updated 2026-11-14 from `decky-stream`).
-The owner prefers lowercase, single-word naming. The selected artwork batch
-applies display styling while preserving installed compatibility identifiers.
-Current repository: https://github.com/szmyty/obsgod . CLI/storage/plugin IDs stay
-`obsgod`/`OBSGod` until an independently qualified compatibility migration.
+The owner prefers lowercase, single-word naming. The selected artwork is unchanged. Current repository:
+https://github.com/egohygiene/deckystream . The owner has authorized primary
+CLI/plugin/package and fresh-install identities `deckystream`, with explicit
+legacy handling for old owned `obsgod`/`OBSGod` stores. See
+[the naming contract](../docs/product-naming.md). The rename needs new
+qualification and does not approve artwork rights or publication.
 
 Primary audience: Steam Deck users configuring privately in Desktop Mode and
 controlling streaming, recording, replay and microphone choices in Gaming Mode.

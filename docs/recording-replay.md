@@ -16,9 +16,9 @@ Save waits for a new finalized file rather than returning a previous replay path
 
 ## Storage and recovery
 
-Defaults: the XDG Videos directory's `OBSGod` child, a 60-second replay buffer
+Defaults: the XDG Videos directory's `deckystream` child, a 60-second replay buffer
 limited to 256 MiB, and a 1 GiB free-space reserve. Without a user-dirs preference,
-the directory remains `~/Videos/OBSGod`. XDG preferences are parsed as data,
+the directory remains `~/Videos/deckystream`. XDG preferences are parsed as data,
 without a shell. Existing installations keep compatibility IDs and credentials.
 
 Desktop Setup exposes an absolute local directory, 15–120 replay seconds,
@@ -64,21 +64,21 @@ external media before explicitly wiping the private index/configuration.
 The same local preferences and output controls are available through JSON stdin:
 
 ```sh
-printf '%s\n' '{"action":"status"}' | obsgod deck media
-printf '%s\n' '{"action":"record-start"}' | obsgod deck media
-printf '%s\n' '{"action":"record-stop"}' | obsgod deck media
-printf '%s\n' '{"action":"replay-start"}' | obsgod deck media
-printf '%s\n' '{"action":"replay-save"}' | obsgod deck media
-printf '%s\n' '{"action":"replay-stop"}' | obsgod deck media
-printf '%s\n' '{"action":"list"}' | obsgod deck media
-printf '%s\n' '{"action":"prune","older_than_days":30}' | obsgod deck media
+printf '%s\n' '{"action":"status"}' | deckystream deck media
+printf '%s\n' '{"action":"record-start"}' | deckystream deck media
+printf '%s\n' '{"action":"record-stop"}' | deckystream deck media
+printf '%s\n' '{"action":"replay-start"}' | deckystream deck media
+printf '%s\n' '{"action":"replay-save"}' | deckystream deck media
+printf '%s\n' '{"action":"replay-stop"}' | deckystream deck media
+printf '%s\n' '{"action":"list"}' | deckystream deck media
+printf '%s\n' '{"action":"prune","older_than_days":30}' | deckystream deck media
 ```
 
 Use an ID from the library to export, or the IDs from a fresh cleanup preview to
 confirm deletion. Export and deletion accept only unchanged indexed finalized
 files. No secret values belong in these requests. Stored preferences are
-version 1 in `$XDG_CONFIG_HOME/obsgod/recording.json` (usual fallback
-`~/.config/obsgod/recording.json`); they contain no stream key or OBS password.
+version 1 in `$XDG_CONFIG_HOME/deckystream/recording.json` (usual fallback
+`~/.config/deckystream/recording.json`); they contain no stream key or OBS password.
 
 ## Qualification boundary
 

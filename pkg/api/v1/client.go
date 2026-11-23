@@ -14,7 +14,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type backend interface {

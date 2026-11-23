@@ -7,3 +7,7 @@ __pycache__/
 coverage-summary.txt
 steamdeck/decky/dist/
 .local-ci/
+
+# Local CLI builds and the legacy executable alias are not source artifacts.
+/deckystream
+/obsgod

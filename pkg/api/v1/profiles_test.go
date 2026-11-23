@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/gorilla/websocket"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 func profileConnection(t *testing.T, response map[string]any, code int) (*Client, func() []string) {

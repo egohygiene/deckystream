@@ -1,9 +1,10 @@
 # Architecture
 
-deckystream is a local OBS controller with a Steam Deck integration. The working
-display name comes from `product.json`; compatible executable, Go module, plugin
-identity and storage namespace remain `obsgod`/`OBSGod`. A display-name change
-does not migrate an installation or establish new repository ownership.
+deckystream is a local OBS controller with a Steam Deck integration. Its primary
+CLI, module, plugin and fresh-install namespace use `deckystream`; `product.json`
+records primary and explicit legacy identities. Existing validated stores retain
+their original paths and control-lock inode. See [the naming and upgrade
+contract](docs/product-naming.md) for aliases and the old-controller handoff.
 
 This is the canonical component and boundary description. See
 [vocabulary](ONTOLOGY.md), [decisions](DECISIONS.md), [roadmap](ROADMAP.md),
@@ -14,7 +15,7 @@ The selected aurora profile keeps original raster concepts, a separately authore
 vector source and one recorded generated hero master distinct. Pinned local
 exports feed ordinary PNG downloads, the offline gallery, README/site and the
 bundled compact UI mark. `product.json` supplies lowercase display styling;
-compatibility IDs and empty Identity approval/token layers remain unchanged.
+the naming migration leaves Identity approval/token layers unchanged.
 The decorative gradient is separate from observed streaming status. Rendering
 and provenance checks do not imply rights, publisher or actual device approval.
 
@@ -35,9 +36,9 @@ Decky removal and optional legacy retirement remain separate scopes.
 | `pkg/api/v1` | Versioned facade with independent public models/errors, bounded serialized operations and invocation approvals; confirmed-state operations plus a closed typed legacy compatibility surface |
 | `pkg/automation` | Context-aware OBS control/observation/workflows and legacy request implementations through pinned `goobs`; no application installation, provider API or UI |
 | `internal/obstransport` | Private legacy dialer/User-Agent construction seam; no raw transport option in the public API |
-| `pkg/creator/v1` | Optional creator adapter consuming the public facade, with environment-backed RTMP providers; used by `obsgod creator` |
+| `pkg/creator/v1` | Optional creator adapter consuming the public facade, with environment-backed RTMP providers; used by `deckystream creator` |
 | `internal/deck` | Managed Linux/Flatpak OBS lifecycle, serialized controls, private settings, capture, audio and local media; owns only its managed instance/data |
-| `steamdeck/bridge.py`, `steamdeck/decky/main.py` | Unprivileged JSON invocation of `obsgod deck`; no duplicate OBS WebSocket implementation |
+| `steamdeck/bridge.py`, `steamdeck/decky/main.py` | Unprivileged JSON invocation of `deckystream deck`; no duplicate OBS WebSocket implementation |
 | `steamdeck/decky/storage.py` | Decky-owned map/receipt/job/log boundaries around the retained canonical XDG credentials and managed state/control lock |
 | `steamdeck/decky/dependency_setup.py` | Consented, asynchronous per-user Flatpak setup; bounded jobs and re-observation, never OBS launch or broadcasting |
 | `steamdeck/setup.*`, `steamdeck/decky/src` | Desktop setup and controller panel; project observed state rather than infer success from a click |
@@ -84,7 +85,7 @@ flowchart TD
 ```
 
 `pkg/api/v1` provides independent types/errors and schema-versioned JSON through
-`obsgod api`. Operations are serialized, bounded by context/timeouts and close
+`deckystream api`. Operations are serialized, bounded by context/timeouts and close
 the acquired transport on cancellation, SDK response timeout or correlation loss
 before reuse. Explicit per-operation
 approvals preserve output-change authorization. The facade covers snapshots,
@@ -96,7 +97,7 @@ All 39 legacy request operations now follow `internal/obs -> pkg/api/v1.Client.L
 names, configuration, output formatting, exact status timecodes and request-ACK
 mutation semantics. The facade's typed `LegacyRequest`/`LegacyResult` allowlist
 cannot accept arbitrary OBS requests or raw JSON; it is a Go compatibility
-surface, not a new `obsgod api` JSON command. Each legacy mutating invocation maps
+surface, not a new `deckystream api` JSON command. Each legacy mutating invocation maps
 only its explicit action to the matching approval. Normal public v1 methods keep
 their stronger observation/readback contracts and existing approval requirements.
 

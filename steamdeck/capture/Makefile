@@ -1,7 +1,7 @@
 CC ?= cc
 PKG_CONFIG ?= pkg-config
-SRC ?= gstobsgodcapture.c
-OUTPUT ?= libgstobsgodcapture.so
+SRC ?= gstdeckystreamcapture.c
+OUTPUT ?= libgstdeckystreamcapture.so
 PACKAGES = gstreamer-1.0 gstreamer-base-1.0 gstreamer-video-1.0 libpipewire-0.3
 CFLAGS ?= -O2
 

@@ -104,7 +104,9 @@ class Fixture(unittest.TestCase):
         self.put("executable", "#!/bin/sh\nexit 0\n")
         (self.source / "executable").chmod(0o755)
         (self.source / "license-link").symlink_to("LICENSE")
-        self.put("scripts/generate-product.py", (ROOT / "scripts/generate-product.py").read_text())
+        # The historical source fixture must retain its original installed
+        # identity contract after the live project migrates its primary names.
+        self.put("scripts/generate-product.py", (ROOT / "scripts/tests/fixtures/legacy-generate-product.py").read_text())
         self.product(M.SOURCE_REPOSITORY)
         criteria = [{"id": str(i) + ".AC1", "original_text": "Original criterion " + str(i),
                      "source_status": "historical_receipt_not_acceptance"} for i in range(1, 4)]

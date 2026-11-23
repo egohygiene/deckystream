@@ -2,8 +2,8 @@
 
 The owner selected **01 / aurora**: an open orbital ring, flowing S-shaped stream
 ribbon, aqua/violet finish and a near-black field. The source-preview display is
-lowercase **deckystream**. Stable brand ID `decky-stream`, installed `obsgod` /
-`OBSGod` names, repository trust and storage remain compatible.
+lowercase **deckystream**. Stable brand ID `decky-stream`, installed `deckystream` /
+`deckystream` names, repository trust and storage remain compatible.
 
 Read the [exact-source local results and remaining device/rights gates](aurora-integration-checkpoint.md)
 and [current review packet](aurora-owner-packet.md).

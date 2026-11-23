@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/egohygiene/deckystream/internal/obs"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/obs"
 )
 
 func newLabelCommand(service obs.Service) *coral.Command {

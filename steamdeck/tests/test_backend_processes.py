@@ -118,10 +118,10 @@ asyncio.run(run())
 @unittest.skipUnless(sys.platform == "linux", "Linux parent-death contract")
 class BackendProcessOwnership(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="obsgod-backend-process-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="deckystream-backend-process-")
         self.root = Path(self.temporary.name)
         (self.root / "bin").mkdir()
-        helper = self.root / "bin/obsgod"
+        helper = self.root / "bin/deckystream"
         helper.write_text("#!" + sys.executable + "\n" + HELPER)
         helper.chmod(0o700)
         self.owner_source = self.root / "owner.py"
@@ -288,7 +288,7 @@ class BackendProcessOwnership(unittest.TestCase):
 from pathlib import Path
 source, root = Path(sys.argv[1]), Path(sys.argv[2])
 args = [sys.executable, str(source), '--owned-command', str(os.getpid()),
-        str(root / 'bin/obsgod'), 'deck', 'start']
+        str(root / 'bin/deckystream'), 'deck', 'start']
 # Delay before the guard starts, modelling late subprocess attachment/exec.
 code = 'import os,sys,time; time.sleep(.4); os.execv(sys.argv[1],sys.argv[1:])'
 child = subprocess.Popen([sys.executable, '-c', code] + args, stdin=subprocess.PIPE)
@@ -310,7 +310,7 @@ time.sleep(60)
 
     def test_guard_executes_authorized_command_for_living_owner(self):
         completed = subprocess.run([sys.executable, str(BACKEND), "--owned-command",
-                                    str(os.getpid()), str(self.root / "bin/obsgod"), "deck", "status"],
+                                    str(os.getpid()), str(self.root / "bin/deckystream"), "deck", "status"],
                                    input=b"\x01", stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3)
         self.assertEqual(completed.returncode, 0, completed.stderr.decode())
         self.assertTrue(json.loads(completed.stdout)["ok"])

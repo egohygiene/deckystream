@@ -27,8 +27,8 @@ SPEC.loader.exec_module(G)
 ROOT, MAX_TOTAL, MAX_FILE = G.ROOT, G.MAX_TOTAL, G.MAX_FILE
 FORMATS = ("deb", "rpm", "apk")
 DOCS = G.BASE_FILES | {"SOURCE.json"}
-PAYLOAD = {"usr/bin/obsgod"} | {"usr/share/doc/obsgod/" + name for name in DOCS}
-DIRECTORIES = {"usr", "usr/bin", "usr/share", "usr/share/doc", "usr/share/doc/obsgod"}
+PAYLOAD = {"usr/bin/deckystream"} | {"usr/share/doc/deckystream/" + name for name in DOCS}
+DIRECTORIES = {"usr", "usr/bin", "usr/share", "usr/share/doc", "usr/share/doc/deckystream"}
 # Exact architecture labels from NFPM v2.49.0 embedded in GoReleaser v2.20.2.
 # Both GOARM=6 and GOARM=7 use Debian armhf; package labels alone do not
 # qualify native CPU or distribution compatibility.
@@ -46,6 +46,7 @@ IMAGES = {
     "rpm": "fedora:43@sha256:f01112b9a1f1d0504ad962d9adfa401425033f8ab067e0a821904ebdde5b8ca5",
     "apk": "alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2",
 }
+SMOKE_HOME = "/tmp/deckystream-package-user"
 # The reviewed NFPM version emits only these metadata/payload fields. A list of
 # known-dangerous scripts is insufficient: RPM also has verify, file-trigger,
 # transaction-trigger and pre/post-untransaction script families. Unknown header
@@ -272,17 +273,17 @@ def audit_package(name, data, target, kind, version, identity, documents):
     regular = {n: item for n, item in files.items() if not item["directory"]}
     require(set(regular) == PAYLOAD, "Package exact inventory mismatch")
     for name_, expected in documents.items():
-        item = regular["usr/share/doc/obsgod/" + name_]
+        item = regular["usr/share/doc/deckystream/" + name_]
         require(item["data"] == expected and item["mode"] == 0o644, "Package notice/source content or mode mismatch")
-    require(regular["usr/bin/obsgod"]["mode"] == 0o755, "Package executable mode mismatch")
+    require(regular["usr/bin/deckystream"]["mode"] == 0o755, "Package executable mode mismatch")
     arch = target[1] + ("v" + target[2] if target[2] else "")
     expected_version = version.replace("-", "_" if kind == "apk" else "~", 1)
-    require(metadata.get("Package") == "obsgod" and metadata.get("Architecture") == ARCH[arch][kind]
+    require(metadata.get("Package") == "deckystream" and metadata.get("Architecture") == ARCH[arch][kind]
             and metadata.get("Version") == expected_version, "Package name/version/architecture mismatch")
     if kind == "rpm":
-        require(metadata.get("BuildHost") == "reproducible.obsgod.invalid", "RPM build host is not deterministic")
-    flattened = {doc: regular["usr/share/doc/obsgod/" + doc] for doc in G.BASE_FILES}
-    flattened["obsgod"] = regular["usr/bin/obsgod"]
+        require(metadata.get("BuildHost") == "reproducible.deckystream.invalid", "RPM build host is not deterministic")
+    flattened = {doc: regular["usr/share/doc/deckystream/" + doc] for doc in G.BASE_FILES}
+    flattened["deckystream"] = regular["usr/bin/deckystream"]
     result = G.audit_payload(name, data, flattened, target, version, identity, {k: v for k, v in documents.items() if k in ("THIRD_PARTY_NOTICES.md", "GO-NOTICES.json", "GENERIC-CLI.md")})
     result.update({"format": kind, "package_metadata": metadata,
                    "files": {n: {"sha256": G.sha(v["data"]), "mode": v["mode"]} for n, v in sorted(regular.items())}})
@@ -294,7 +295,7 @@ def audit(directory, revision, target=None):
     require(directory.is_dir() and not directory.is_symlink(), "Unsafe package artifact directory")
     metadata = json.loads((directory / "metadata.json").read_bytes())
     version = metadata.get("version", "")
-    require(metadata.get("commit") == revision and metadata.get("project_name") == "obsgod"
+    require(metadata.get("commit") == revision and metadata.get("project_name") == "deckystream"
             and re.fullmatch(r"0\.0\.0-dev\.g[0-9a-f]{7,40}", version)
             and revision.startswith(version.split(".g", 1)[1]), "Snapshot source/version mismatch")
     targets = {t for t in G.TARGETS if t[0] == "linux"}
@@ -319,7 +320,7 @@ def audit(directory, revision, target=None):
         provenance_name = name + ".provenance.unsigned.json"
         provenance = json.loads(sidecars[provenance_name])
         build = provenance["predicate"]["buildDefinition"]
-        build["buildType"] = "urn:obsgod:nfpm-cli-snapshot"
+        build["buildType"] = "urn:deckystream:nfpm-cli-snapshot"
         build["externalParameters"]["format"] = kind
         build["resolvedDependencies"].append({"uri": "scripts/nfpm-release.py", "digest": {"sha256": G.sha(G.git_file(revision, "scripts/nfpm-release.py"))}})
         sidecars[provenance_name] = G.canonical(provenance)
@@ -362,7 +363,7 @@ def focused(output, goreleaser):
     output.parent.mkdir(parents=True, exist_ok=True)
     config, staging = focused_configuration(G.git_file(identity["revision"], ".goreleaser.yml").decode(), output)
     require(not staging.exists() and not any(p.is_symlink() for p in (staging, *staging.parents)), "Focused notice staging must be new and safe")
-    with tempfile.TemporaryDirectory(prefix="obsgod-focused-config-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-focused-config-") as temporary:
         path = Path(temporary) / "goreleaser.yml"
         path.write_text(config)
         subprocess.run([str(goreleaser), "release", "--snapshot", "--skip=publish,sign", "--parallelism", "2", "--config", str(path)], cwd=ROOT, check=True)
@@ -371,7 +372,7 @@ def focused(output, goreleaser):
 
 def package_fixture(directory, records):
     """Copy only verified public packages; keep private artifact modes intact."""
-    temporary = tempfile.TemporaryDirectory(prefix="obsgod-package-input-")
+    temporary = tempfile.TemporaryDirectory(prefix="deckystream-package-input-")
     fixture = Path(temporary.name)
     try:
         for record in records:
@@ -426,14 +427,17 @@ def smoke(directory, summary, formats, images, previous=None):
         def execute(args, user=None):
             cmd = ["docker", "exec"]
             if user:
-                cmd += ["--user", user, "--env", "HOME=/home/package-user", "--env", "XDG_CONFIG_HOME=/home/package-user/.config"]
+                cmd += ["--user", user, "--env", "HOME=" + SMOKE_HOME, "--env", "XDG_CONFIG_HOME=" + SMOKE_HOME + "/.config"]
             cmd += [container, *args]
             p = subprocess.run(cmd, text=True, capture_output=True, timeout=45)
             calls.append({"arguments": args, "uid": user or "0", "exit_code": p.returncode, "stdout": p.stdout, "stderr": p.stderr})
             require(p.returncode == 0, "Disposable " + kind + " command failed: " + p.stderr[-1500:])
             return p.stdout
         try:
-            execute(["/bin/sh", "-eu", "-c", "mkdir -p /home/package-user/.config/obsgod /home/package-user/Videos; printf preserve > /home/package-user/.config/obsgod/fixture; printf media > /home/package-user/Videos/fixture; chmod 777 /home/package-user; chmod -R a+rX /home/package-user"])
+            # Create the private player tree as its real owner below the image's
+            # trusted sticky /tmp. With all capabilities dropped, root cannot
+            # chown a fixture or safely impersonate its later file access.
+            execute(["/bin/sh", "-eu", "-c", 'umask 077; mkdir -p "$HOME/.config/deckystream" "$HOME/Videos"; printf preserve > "$HOME/.config/deckystream/fixture"; printf media > "$HOME/Videos/fixture"'], "65534:65534")
             if kind == "rpm":
                 # Fedora ships root-owned0555 /usr/bin and expects privileged
                 # root to bypass DAC. Give only owner-write in this disposable
@@ -442,7 +446,7 @@ def smoke(directory, summary, formats, images, previous=None):
             # Debian's minimal image intentionally prunes /usr/share/doc/*.
             # Include only this package's docs for the lifecycle assertion;
             # leave image/host package-manager configuration unchanged.
-            install = {"deb": ["dpkg", "--path-include=/usr/share/doc/obsgod", "--path-include=/usr/share/doc/obsgod/*", "--install"],
+            install = {"deb": ["dpkg", "--path-include=/usr/share/doc/deckystream", "--path-include=/usr/share/doc/deckystream/*", "--install"],
                        "rpm": ["rpm", "-U", "--replacepkgs", "--oldpackage"],
                        "apk": ["apk", "add", "--allow-untrusted", "--no-network"]}[kind]
             # An optional separately audited older source can exercise a genuine
@@ -461,15 +465,15 @@ def smoke(directory, summary, formats, images, previous=None):
             for filename, expected in record["files"].items():
                 digest = execute(["sha256sum", "/" + filename]).split()[0]
                 require(digest == expected["sha256"], "Installed package file differs from audit")
-            value = json.loads(execute(["/usr/bin/obsgod", "version", "--json"], "65534:65534"))
+            value = json.loads(execute(["/usr/bin/deckystream", "version", "--json"], "65534:65534"))
             require(value["version"] == summary["version"] + " (" + summary["source"]["revision"] + ")", "Installed package version/source mismatch")
-            execute(["/usr/bin/obsgod", "--help"], "65534:65534")
-            execute(["/usr/bin/obsgod", "api", "capabilities"], "65534:65534")
-            require(execute(["/usr/bin/obsgod", "config", "path"], "65534:65534").strip() == "/home/package-user/.config/obsgod/config.json", "Installed config path mismatch")
+            execute(["/usr/bin/deckystream", "--help"], "65534:65534")
+            execute(["/usr/bin/deckystream", "api", "capabilities"], "65534:65534")
+            require(execute(["/usr/bin/deckystream", "config", "path"], "65534:65534").strip() == SMOKE_HOME + "/.config/deckystream/config.json", "Installed config path mismatch")
             execute([*install, "/packages/" + record["name"]])
-            remove = {"deb": ["dpkg", "--purge", "obsgod"], "rpm": ["rpm", "-e", "obsgod"], "apk": ["apk", "del", "--no-network", "obsgod"]}[kind]
+            remove = {"deb": ["dpkg", "--purge", "deckystream"], "rpm": ["rpm", "-e", "deckystream"], "apk": ["apk", "del", "--no-network", "deckystream"]}[kind]
             execute(remove)
-            execute(["/bin/sh", "-eu", "-c", "test ! -e /usr/bin/obsgod; test ! -e /usr/share/doc/obsgod/SOURCE.json; test \"$(cat /home/package-user/.config/obsgod/fixture)\" = preserve; test \"$(cat /home/package-user/Videos/fixture)\" = media; test ! -e /home/package-user/.config/obsgod/config.json"])
+            execute(["/bin/sh", "-eu", "-c", 'test ! -e /usr/bin/deckystream; test ! -e /usr/share/doc/deckystream/SOURCE.json; test "$(cat "$HOME/.config/deckystream/fixture")" = preserve; test "$(cat "$HOME/Videos/fixture")" = media; test ! -e "$HOME/.config/deckystream/config.json"'], "65534:65534")
             results.append({"format": kind, "package": record["name"], "sha256": record["sha256"], "image": image,
                 "outcome": "passed", "commands": calls, "package_replacement": "previous audited source to current" if previous else "unrun; no previous audited source supplied",
                 "previous_package": {"source_revision": previous["source"]["revision"], "name": old["name"], "sha256": old["sha256"],

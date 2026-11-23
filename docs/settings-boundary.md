@@ -108,7 +108,7 @@ The candidate workflow additionally runs the unchanged packaged Python adapter
 and Go executable under real independent file locks:
 
 ```sh
-python3 steamdeck/tests/packaged-settings-boundary.py dist/obsgod-decky.zip --revision QUALIFIED_FULL_COMMIT --output /new/private/evidence
+python3 steamdeck/tests/packaged-settings-boundary.py dist/deckystream-decky.zip --revision QUALIFIED_FULL_COMMIT --output /new/private/evidence
 ```
 
 That check holds the shared control lock past the full UI budget and then

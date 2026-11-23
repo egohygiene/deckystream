@@ -1,19 +1,19 @@
 # Steam Deck preview qualification
 
-## Current Roadmap 1 candidate
+## Current candidate selection
 
-Candidate `0.1.0-deck.5` is locally qualified at exact source
-`2287ed4c2f3fcc9b8ec42bbd68ac531063b5d578` and available as a **draft review
-artifact**, not a release. Read [the acceptance/review packet](roadmap1-acceptance.md)
-for downloads, hashes, criterion-level evidence, failed-run repairs and gates.
-Go 56/Python 56/Node 8, static/security, actual-package browsers, pinned Decky
-installer/updater fixtures, reproducible builds and native OBS media/lifecycle
-checks passed. One optional existing-OBS test was skipped. Cross-builds were
-not executed. Real Steam Deck/Kick acceptance and owner review remain open.
+Use the exact successful renamed build recorded in
+[finalization #1](https://github.com/egohygiene/deckystream/issues/1), its manifest
+and checksums. The operational naming transition requires fresh source/artifact
+qualification; an older `obsgod` package is not relabeled as the new plugin.
+The [testing booklet](testing-booklet.md) describes our device session and the
+[naming contract](product-naming.md) covers existing installations.
 
-GitHub Actions jobs were created but no steps ran: GitHub reports an account
-billing lock. Their failure/cancelled conclusions do not establish code-test
-results. Clearing that lock and running required checks remains a closure gate.
+The public repository's hosted workflows run. Read their actual conclusions at
+the selected revision, including platform, dependency-review and package checks.
+The [pre-rename qualification guide](history/steam-deck-qualification-before-primary-rename.md)
+retains older candidate counts, pins and account refusals unchanged as history.
+No old software receipt is a new source, Steam Deck or provider-viewer pass.
 
 ## Historical previews and evidence interpretation
 
@@ -41,12 +41,13 @@ No user stream key, live provider account or paid resource is used by cloud test
 | Environment | Evidence meaning |
 | --- | --- |
 | Linux x86_64 cloud | Unit/protocol, race, static, installer, browser and native OBS checks can run here. |
-| Native OBS container | Real OBS 30.2.3 / GStreamer 1.26.2 / PipeWire / PulseAudio / software H.264/AAC, with synthetic game video and local RTMP. |
+| Native OBS container | Real pinned OBS/GStreamer/PipeWire/PulseAudio with synthetic game video, software encoding and local RTMP; record actual versions per run. |
 | Simulated Decky host | Actual ZIP frontend and SDK browser imports; loader calls and Steam components are fixtures. |
-| Linux ARM64 / Windows x86_64 / macOS ARM64 | CLI cross-build checks only; these are not Steam Deck runtime qualifications. |
+| Hosted macOS / Windows | Generic CLI builds/tests run on the named hosted runners; they do not qualify the managed Steam Deck runtime. |
+| Other cross-build targets | Compilation and archive auditing are separate from native runtime execution. |
 | Steam Deck / SteamOS | Unavailable here: actual Flatpak sandbox, Gamescope, AMD VAAPI, audio devices, controller focus and session lifecycle. |
 | Kick viewer | Unrun here: user URL/key and real channel picture/audio must be checked on the device. |
-| GitHub Actions | Current candidate jobs did not start because GitHub reports an account billing lock; local results are not CI receipts. |
+| GitHub Actions | Read the current public repository workflow runs at the selected revision; unavailable or skipped jobs are not passes. Local results remain separate. |
 
 The native harness verifies moving, nonblank recorded video, nonblank streamed
 video, audio content, repeated start/stop, failed-start cleanup and no unexpected
@@ -54,5 +55,8 @@ late connection when a receiver appears. See [reproduction](steam-deck-building.
 Source repairs were prompted by real integration failures: a first-run wizard,
 zero scene scale, preview-dependent capture startup and a transient PipeWire node.
 
-The broader #7–#14 issues remain open. In particular, #10 requires real-device
-acceptance; #12's stable v1 requirements are not satisfied by this preview release.
+Remaining product acceptance is tracked in
+[finalization #1](https://github.com/egohygiene/deckystream/issues/1), with original
+criteria and historical statuses preserved. Optional auth research stays in #8.
+A source merge, renamed artifact or local harness does not close device/viewer
+or stable-release gates.

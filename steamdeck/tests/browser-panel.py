@@ -22,21 +22,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("plugin_zip", type=Path)
     parser.add_argument("--browser", default="/usr/bin/chromium")
-    parser.add_argument("--screenshots", type=Path, default=Path("/tmp/obsgod-panel"))
+    parser.add_argument("--screenshots", type=Path, default=Path("/tmp/deckystream-panel"))
     args = parser.parse_args()
     args.screenshots.mkdir(parents=True, exist_ok=True)
     decky = Path(__file__).resolve().parents[1] / "decky"
-    with tempfile.TemporaryDirectory(prefix="obsgod-panel-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-panel-") as directory:
         root = Path(directory)
         with zipfile.ZipFile(args.plugin_zip) as archive:
             archive.extractall(root)
         # Decky's real PluginWrapper selects ESMODULE_V1 only when the shipped
         # package.json declares type=module. Direct browser imports alone cannot
         # detect an archive that the real loader would incorrectly eval as IIFE.
-        package=json.loads((root / "obsgod/package.json").read_text())
+        package=json.loads((root / "deckystream/package.json").read_text())
         assert package.get("type")=="module", "Decky would select its legacy eval loader"
-        metadata=json.loads((root / "obsgod/plugin.json").read_text())
-        assert metadata["name"]=="OBSGod" and metadata["api_version"]==1
+        metadata=json.loads((root / "deckystream/plugin.json").read_text())
+        assert metadata["name"]=="deckystream" and metadata["api_version"]==1
         assert "root" not in metadata["flags"] and "_root" not in metadata["flags"]
         subprocess.run(["node", "tests/build-fixture.mjs", str(root / "runtime.js")], cwd=decky, check=True)
         shutil.copyfile(decky / "tests/fixture.html", root / "index.html")
@@ -58,7 +58,7 @@ def main():
                 page.wait_for_function("[...document.querySelectorAll('img[data-brand=aurora]')].every(image=>image.complete&&image.naturalWidth>0)")
                 decorative_sources = marks.evaluate_all("images=>images.map(image=>image.src)")
                 assert all(source.startswith("data:image/svg+xml,") for source in decorative_sources)
-                assert page.evaluate("plugin.name") == "OBSGod", "display-name change must preserve loader identity"
+                assert page.evaluate("plugin.name") == "deckystream", "display-name change must preserve loader identity"
                 page.get_by_text("Status updates automatically",exact=True).wait_for()
                 page.get_by_text("System audio: Not confirmed",exact=True).wait_for()
                 page.get_by_text("Microphone: disabled",exact=True).wait_for()
@@ -88,9 +88,9 @@ def main():
                 page.get_by_role("button",name="Hide capture help",exact=True).click()
                 assert page.get_by_text("system audio may include other apps",exact=False).count() == 0
                 page.get_by_role("button",name="Setup and recording help",exact=True).click()
-                page.get_by_text("Test clips save to Videos/OBSGod",exact=False).wait_for()
+                page.get_by_text("Test clips save to Videos/deckystream",exact=False).wait_for()
                 page.get_by_role("button",name="Hide setup help",exact=True).click()
-                console=page.get_by_role("log",name="OBSGod diagnostic console")
+                console=page.get_by_role("log",name="deckystream diagnostic console")
                 console.get_by_text("No diagnostic events yet.",exact=False).wait_for()
                 assert page.get_by_role("button",name="Copy console log").is_disabled()
                 assert page.get_by_role("button",name="Refresh status").bounding_box()["y"] < console.bounding_box()["y"]
@@ -172,7 +172,7 @@ def main():
                 page.get_by_role("button",name="Copy console log").click()
                 page.get_by_text("Copied 20 diagnostic events.",exact=False).wait_for()
                 copied=page.evaluate("navigator.clipboard.readText()")
-                assert "OBSGod plugin 0.1.0-console-fixture" in copied
+                assert "deckystream plugin 0.1.0-console-fixture" in copied
                 assert "20 diagnostic events (newest first)" in copied
                 assert "History event 14" in copied and "History event 0" in copied
                 assert copied.index("History event 14") < copied.index("History event 0")

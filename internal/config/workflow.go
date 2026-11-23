@@ -2,11 +2,10 @@ package config
 
 import (
 	"errors"
-	"os"
 	"sort"
 	"strconv"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func WorkflowNames(explicit string) ([]string, error) {
@@ -38,7 +37,7 @@ func ResolveWorkflow(explicit, name string) (automation.WorkflowPlan, string, er
 		return automation.WorkflowPlan{}, "", err
 	}
 	if name == "" {
-		name = os.Getenv("OBSGOD_WORKFLOW")
+		name = environmentValue("DECKYSTREAM_WORKFLOW")
 	}
 	if name == "" {
 		name = document.DefaultWorkflow
@@ -48,12 +47,12 @@ func ResolveWorkflow(explicit, name string) (automation.WorkflowPlan, string, er
 		return automation.WorkflowPlan{}, "", errors.New("workflow profile is unavailable; use workflow list and select a configured name")
 	}
 	fields := map[string]*string{
-		"OBSGOD_WORKFLOW_OBS_PROFILE":       &plan.OBSProfile,
-		"OBSGOD_WORKFLOW_SCENE_COLLECTION":  &plan.SceneCollection,
-		"OBSGOD_WORKFLOW_STARTING_SCENE":    &plan.StartingScene,
-		"OBSGOD_WORKFLOW_LIVE_SCENE":        &plan.LiveScene,
-		"OBSGOD_WORKFLOW_READINESS_TIMEOUT": &plan.ReadinessTimeout,
-		"OBSGOD_WORKFLOW_POST_START_DELAY":  &plan.PostStartDelay,
+		"DECKYSTREAM_WORKFLOW_OBS_PROFILE":       &plan.OBSProfile,
+		"DECKYSTREAM_WORKFLOW_SCENE_COLLECTION":  &plan.SceneCollection,
+		"DECKYSTREAM_WORKFLOW_STARTING_SCENE":    &plan.StartingScene,
+		"DECKYSTREAM_WORKFLOW_LIVE_SCENE":        &plan.LiveScene,
+		"DECKYSTREAM_WORKFLOW_READINESS_TIMEOUT": &plan.ReadinessTimeout,
+		"DECKYSTREAM_WORKFLOW_POST_START_DELAY":  &plan.PostStartDelay,
 	}
 	// Fixed order keeps validation deterministic; environment values are never
 	// interpolated into errors, shell expressions or paths.
@@ -63,7 +62,7 @@ func ResolveWorkflow(explicit, name string) (automation.WorkflowPlan, string, er
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
+		if value := environmentValue(key); value != "" {
 			*fields[key] = value
 		}
 	}
@@ -71,10 +70,10 @@ func ResolveWorkflow(explicit, name string) (automation.WorkflowPlan, string, er
 		key         string
 		destination *bool
 	}{
-		{"OBSGOD_WORKFLOW_RECORDING_ENABLED", &plan.RecordingEnabled},
-		{"OBSGOD_WORKFLOW_REPLAY_BUFFER_ENABLED", &plan.ReplayBufferEnabled},
+		{"DECKYSTREAM_WORKFLOW_RECORDING_ENABLED", &plan.RecordingEnabled},
+		{"DECKYSTREAM_WORKFLOW_REPLAY_BUFFER_ENABLED", &plan.ReplayBufferEnabled},
 	} {
-		if value := os.Getenv(option.key); value != "" {
+		if value := environmentValue(option.key); value != "" {
 			parsed, err := strconv.ParseBool(value)
 			if err != nil {
 				return automation.WorkflowPlan{}, "", errors.New("workflow output environment options must be true or false")

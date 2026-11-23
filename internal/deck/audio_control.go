@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type audioReceipt struct {

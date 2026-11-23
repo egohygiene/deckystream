@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obs"
+	appversion "github.com/egohygiene/deckystream/internal/version"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obs"
-	appversion "github.com/szmyty/obsgod/internal/version"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
 )
 
 func NewRoot(cfg *config.Config, service obs.Service, buildVersion string) *coral.Command {
@@ -22,7 +22,8 @@ func NewRoot(cfg *config.Config, service obs.Service, buildVersion string) *cora
 
 	rootCmd := &coral.Command{
 		Use:           appversion.Name,
-		Short:         "obsgod is a command-line remote control for OBS",
+		Aliases:       []string{"obsgod"}, // Explicit compatibility spelling; installed binary is deckystream.
+		Short:         "deckystream is a command-line remote control for OBS",
 		Version:       appversion.Display(buildVersion),
 		SilenceErrors: true,
 		SilenceUsage:  true,
@@ -77,17 +78,17 @@ func NewRoot(cfg *config.Config, service obs.Service, buildVersion string) *cora
 		return nil
 	}
 
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "OBS connection config file (env: OBSGOD_CONFIG; default: XDG obsgod/config.json)")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "OBS connection config file (env: DECKYSTREAM_CONFIG; default: XDG deckystream/config.json)")
 	rootCmd.PersistentFlags().BoolVar(&display.verbose, "verbose", false, "Write credential-free command/stage diagnostics to stderr")
 	rootCmd.PersistentFlags().BoolVar(&display.noColor, "no-color", false, "Disable optional terminal color in verbose diagnostics (also respects NO_COLOR/TERM)")
-	rootCmd.PersistentFlags().StringVar(&connectionProfile, "connection-profile", "", "Named connection profile (env: OBSGOD_CONNECTION_PROFILE)")
+	rootCmd.PersistentFlags().StringVar(&connectionProfile, "connection-profile", "", "Named connection profile (env: DECKYSTREAM_CONNECTION_PROFILE)")
 	rootCmd.PersistentFlags().StringVar(&passwordFile, "password-file", "", "Private single-line OBS password file; avoids secret command arguments")
-	rootCmd.PersistentFlags().StringVar(&cfg.Host, "host", cfg.Host, "OBS host (env: OBSGOD_HOST or legacy OBS_HOST)")
+	rootCmd.PersistentFlags().StringVar(&cfg.Host, "host", cfg.Host, "OBS host (env: DECKYSTREAM_HOST or legacy OBS_HOST)")
 	rootCmd.PersistentFlags().StringVar(&cfg.Password, "password", cfg.Password, "OBS password; prefer --password-file or OBS_PASSWORD to avoid shell history")
 	// pflag prints a string flag's default in help; environment-backed passwords
 	// are configuration values, never help text.
 	rootCmd.PersistentFlags().Lookup("password").DefValue = ""
-	rootCmd.PersistentFlags().Uint32VarP(&cfg.Port, "port", "p", cfg.Port, "OBS port (env: OBSGOD_PORT or legacy OBS_PORT)")
+	rootCmd.PersistentFlags().Uint32VarP(&cfg.Port, "port", "p", cfg.Port, "OBS port (env: DECKYSTREAM_PORT or legacy OBS_PORT)")
 	// Generated help/reference/completions must be independent of the invoking
 	// user's environment. Actual effective values remain available in config show.
 	rootCmd.PersistentFlags().Lookup("host").DefValue = "localhost"

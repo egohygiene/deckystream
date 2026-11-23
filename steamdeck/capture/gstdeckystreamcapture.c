@@ -17,7 +17,7 @@
 #include <string.h>
 
 #ifndef PACKAGE
-#define PACKAGE "obsgod"
+#define PACKAGE "deckystream"
 #endif
 
 #define GAME_SCOPE_APP_ID 0x70001u
@@ -26,7 +26,7 @@
 #define MAX_DIMENSION 4096u
 #define MAX_FRAME_BYTES (64u * 1024u * 1024u)
 
-typedef struct _GstObsGodCapture {
+typedef struct _GstDeckystreamCapture {
   GstPushSrc parent;
   GMutex mutex;
   GCond changed;
@@ -61,11 +61,11 @@ typedef struct _GstObsGodCapture {
   gint64 received_us;
   gint64 next_us;
   guint64 sequence;
-} GstObsGodCapture;
+} GstDeckystreamCapture;
 
-typedef struct _GstObsGodCaptureClass { GstPushSrcClass parent_class; } GstObsGodCaptureClass;
+typedef struct _GstDeckystreamCaptureClass { GstPushSrcClass parent_class; } GstDeckystreamCaptureClass;
 
-G_DEFINE_TYPE(GstObsGodCapture, gst_obsgod_capture, GST_TYPE_PUSH_SRC)
+G_DEFINE_TYPE(GstDeckystreamCapture, gst_deckystream_capture, GST_TYPE_PUSH_SRC)
 
 enum { PROP_NONE, PROP_APP_ID, PROP_TARGET, PROP_STALE_MS };
 
@@ -75,7 +75,7 @@ static GstStaticPadTemplate source_template = GST_STATIC_PAD_TEMPLATE(
                   "height=(int)[1,4096], framerate=(fraction)30/1, "
                   "pixel-aspect-ratio=(fraction)1/1"));
 
-static void fail_locked(GstObsGodCapture *self)
+static void fail_locked(GstDeckystreamCapture *self)
 {
   self->failed = TRUE;
   self->negotiated = FALSE;
@@ -136,7 +136,7 @@ static gboolean selected_id(const struct spa_pod *value, int64_t *id)
 static void node_param(void *data, int seq, uint32_t id, uint32_t index,
                         uint32_t next, const struct spa_pod *param)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   (void)seq;
   (void)index;
   (void)next;
@@ -165,7 +165,7 @@ static const struct pw_node_events node_events = {
 static void registry_global(void *data, uint32_t id, uint32_t permissions,
                              const char *type, uint32_t version, const struct spa_dict *props)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   (void)permissions;
   if (strcmp(type, PW_TYPE_INTERFACE_Node) || !props)
     return;
@@ -199,7 +199,7 @@ static void registry_global(void *data, uint32_t id, uint32_t permissions,
 
 static void registry_remove(void *data, uint32_t id)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   g_mutex_lock(&self->mutex);
   if (!self->stopping && id == self->producer_id)
     fail_locked(self);
@@ -214,7 +214,7 @@ static const struct pw_registry_events registry_events = {
 
 static void core_done(void *data, uint32_t id, int seq)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   (void)id;
   g_mutex_lock(&self->mutex);
   if (seq == self->registry_sync)
@@ -227,7 +227,7 @@ static void core_done(void *data, uint32_t id, int seq)
 
 static void core_error(void *data, uint32_t id, int seq, int result, const char *message)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   (void)id;
   (void)seq;
   (void)result;
@@ -247,7 +247,7 @@ static const struct pw_core_events core_events = {
 static void stream_state(void *data, enum pw_stream_state old,
                          enum pw_stream_state state, const char *error)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   (void)old;
   (void)error; /* Never export server-supplied text. */
   if (state == PW_STREAM_STATE_ERROR || state == PW_STREAM_STATE_UNCONNECTED) {
@@ -260,7 +260,7 @@ static void stream_state(void *data, enum pw_stream_state old,
 
 static void stream_format(void *data, uint32_t id, const struct spa_pod *param)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   struct spa_video_info_raw video = {0};
   const struct spa_pod_prop *selection;
   int64_t echoed = 0;
@@ -318,7 +318,7 @@ static void stream_format(void *data, uint32_t id, const struct spa_pod *param)
 
 static void stream_process(void *data)
 {
-  GstObsGodCapture *self = data;
+  GstDeckystreamCapture *self = data;
   struct pw_buffer *received;
   /* Bound work per callback even if another thread continually supplies data. */
   for (guint count = 0; count < 8 &&
@@ -387,7 +387,7 @@ static const struct pw_stream_events stream_events = {
   .process = stream_process
 };
 
-static void disconnect_capture(GstObsGodCapture *self)
+static void disconnect_capture(GstDeckystreamCapture *self)
 {
   g_mutex_lock(&self->mutex);
   self->stopping = TRUE;
@@ -431,7 +431,7 @@ static void disconnect_capture(GstObsGodCapture *self)
 
 static gboolean capture_start(GstBaseSrc *base)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)base;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)base;
   static gsize initialized;
   const char *stage = "loop";
   if (self->app_id == 0 || self->app_id == 769 || self->app_id > G_MAXUINT32 ||
@@ -453,7 +453,7 @@ static gboolean capture_start(GstBaseSrc *base)
   self->registry_sync = self->probe_sync = -1;
   g_mutex_unlock(&self->mutex);
   gint64 deadline = g_get_monotonic_time() + 5 * G_TIME_SPAN_SECOND;
-  self->loop = pw_thread_loop_new("obsgod-game-capture", NULL);
+  self->loop = pw_thread_loop_new("deckystream-game-capture", NULL);
   if (!self->loop || pw_thread_loop_start(self->loop) < 0)
     goto failed;
   pw_thread_loop_lock(self->loop);
@@ -506,7 +506,7 @@ static gboolean capture_start(GstBaseSrc *base)
     goto failed;
   stage = "format-negotiation";
   pw_thread_loop_lock(self->loop);
-  self->stream = pw_stream_new(self->core, "OBSGod app-scoped capture",
+  self->stream = pw_stream_new(self->core, "deckystream app-scoped capture",
     pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
       PW_KEY_MEDIA_ROLE, "Screen", PW_KEY_TARGET_OBJECT, self->producer_serial, NULL));
   if (!self->stream) {
@@ -552,13 +552,13 @@ failed:
 
 static gboolean capture_stop(GstBaseSrc *base)
 {
-  disconnect_capture((GstObsGodCapture *)base);
+  disconnect_capture((GstDeckystreamCapture *)base);
   return TRUE;
 }
 
 static gboolean capture_unlock(GstBaseSrc *base)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)base;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)base;
   g_mutex_lock(&self->mutex);
   self->flushing = TRUE;
   g_cond_broadcast(&self->changed);
@@ -568,7 +568,7 @@ static gboolean capture_unlock(GstBaseSrc *base)
 
 static gboolean capture_unlock_stop(GstBaseSrc *base)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)base;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)base;
   g_mutex_lock(&self->mutex);
   self->flushing = FALSE;
   g_mutex_unlock(&self->mutex);
@@ -577,7 +577,7 @@ static gboolean capture_unlock_stop(GstBaseSrc *base)
 
 static GstCaps *capture_caps(GstBaseSrc *base, GstCaps *filter)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)base;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)base;
   GstCaps *caps;
   g_mutex_lock(&self->mutex);
   if (self->negotiated)
@@ -599,7 +599,7 @@ static GstCaps *capture_caps(GstBaseSrc *base, GstCaps *filter)
 
 static GstFlowReturn capture_create(GstPushSrc *push, GstBuffer **output)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)push;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)push;
   GstBuffer *buffer = NULL;
   gsize bytes;
   g_mutex_lock(&self->mutex);
@@ -644,7 +644,7 @@ static GstFlowReturn capture_create(GstPushSrc *push, GstBuffer **output)
 static void set_property(GObject *object, guint property, const GValue *value,
                          GParamSpec *spec)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)object;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)object;
   if (GST_STATE(self) > GST_STATE_READY) {
     GST_WARNING_OBJECT(self, "Capture properties are immutable while active");
     return;
@@ -659,7 +659,7 @@ static void set_property(GObject *object, guint property, const GValue *value,
 
 static void get_property(GObject *object, guint property, GValue *value, GParamSpec *spec)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)object;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)object;
   switch (property) {
   case PROP_APP_ID: g_value_set_uint64(value, self->app_id); break;
   case PROP_TARGET: g_value_set_string(value, self->target); break;
@@ -670,15 +670,15 @@ static void get_property(GObject *object, guint property, GValue *value, GParamS
 
 static void finalize(GObject *object)
 {
-  GstObsGodCapture *self = (GstObsGodCapture *)object;
+  GstDeckystreamCapture *self = (GstDeckystreamCapture *)object;
   disconnect_capture(self);
   g_free(self->target);
   g_cond_clear(&self->changed);
   g_mutex_clear(&self->mutex);
-  G_OBJECT_CLASS(gst_obsgod_capture_parent_class)->finalize(object);
+  G_OBJECT_CLASS(gst_deckystream_capture_parent_class)->finalize(object);
 }
 
-static void gst_obsgod_capture_class_init(GstObsGodCaptureClass *klass)
+static void gst_deckystream_capture_class_init(GstDeckystreamCaptureClass *klass)
 {
   GObjectClass *object = G_OBJECT_CLASS(klass);
   GstElementClass *element = GST_ELEMENT_CLASS(klass);
@@ -696,9 +696,9 @@ static void gst_obsgod_capture_class_init(GstObsGodCaptureClass *klass)
     g_param_spec_uint("stale-ms", "Stale-frame limit", "Render black after this many milliseconds without a valid source frame",
       250, 10000, 2000, G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY | G_PARAM_STATIC_STRINGS));
   gst_element_class_add_static_pad_template(element, &source_template);
-  gst_element_class_set_static_metadata(element, "OBSGod app-only Gamescope capture",
+  gst_element_class_set_static_metadata(element, "deckystream app-only Gamescope capture",
     "Source/Video", "Validated game-scoped PipeWire capture; unsupported selection fails closed",
-    "OBSGod contributors");
+    "deckystream contributors");
   base->start = capture_start;
   base->stop = capture_stop;
   base->unlock = capture_unlock;
@@ -707,7 +707,7 @@ static void gst_obsgod_capture_class_init(GstObsGodCaptureClass *klass)
   GST_PUSH_SRC_CLASS(klass)->create = capture_create;
 }
 
-static void gst_obsgod_capture_init(GstObsGodCapture *self)
+static void gst_deckystream_capture_init(GstDeckystreamCapture *self)
 {
   g_mutex_init(&self->mutex);
   g_cond_init(&self->changed);
@@ -721,10 +721,10 @@ static void gst_obsgod_capture_init(GstObsGodCapture *self)
 
 static gboolean plugin_init(GstPlugin *plugin)
 {
-  return gst_element_register(plugin, "obsgodgamescopesrc", GST_RANK_NONE,
-                              gst_obsgod_capture_get_type());
+  return gst_element_register(plugin, "deckystreamgamescopesrc", GST_RANK_NONE,
+                              gst_deckystream_capture_get_type());
 }
 
-GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR, obsgodcapture,
+GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR, deckystreamcapture,
   "App-scoped Gamescope PipeWire capture", plugin_init, "1.0.0", "MIT/X11",
-  "OBSGod", "https://github.com/szmyty/obsgod")
+  "deckystream", "https://github.com/egohygiene/deckystream")

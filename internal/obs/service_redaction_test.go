@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/andreykaipov/goobs"
-	"github.com/szmyty/obsgod/internal/config"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	"github.com/egohygiene/deckystream/internal/config"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 func TestLegacyConnectionFailureRetainsContextWithoutRawSecrets(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/andreykaipov/goobs"
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obs"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obs"
 )
 
 func TestHelpDoesNotConnectToOBS(t *testing.T) {
@@ -37,10 +37,18 @@ func TestHelpDoesNotConnectToOBS(t *testing.T) {
 
 func isolatedCommandConfig(t *testing.T) config.Config {
 	t.Helper()
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	for _, name := range []string{"OBS_HOST", "OBS_PORT", "OBS_PASSWORD", "OBS_PASSWORD_FILE", "OBSGOD_HOST", "OBSGOD_PORT", "OBSGOD_PASSWORD", "OBSGOD_PASSWORD_FILE", "OBSGOD_CONFIG", "OBSGOD_CONNECTION_PROFILE"} {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("USERPROFILE", root)
+	t.Setenv("APPDATA", root)
+	t.Setenv("XDG_CONFIG_HOME", root)
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	t.Setenv("DECKY_HOME", filepath.Join(root, "homebrew"))
+	for _, name := range []string{"OBS_HOST", "OBS_PORT", "OBS_PASSWORD", "OBS_PASSWORD_FILE", "DECKYSTREAM_HOST", "DECKYSTREAM_PORT", "DECKYSTREAM_PASSWORD", "DECKYSTREAM_PASSWORD_FILE", "DECKYSTREAM_CONFIG", "DECKYSTREAM_CONNECTION_PROFILE", "OBSGOD_HOST", "OBSGOD_PORT", "OBSGOD_PASSWORD", "OBSGOD_PASSWORD_FILE", "OBSGOD_CONFIG", "OBSGOD_CONNECTION_PROFILE"} {
 		t.Setenv(name, "")
-		if name == "OBS_PASSWORD" || name == "OBSGOD_PASSWORD" {
+		if name == "OBS_PASSWORD" || name == "DECKYSTREAM_PASSWORD" || name == "OBSGOD_PASSWORD" {
 			if err := os.Unsetenv(name); err != nil {
 				t.Fatal(err)
 			}
@@ -53,7 +61,7 @@ func TestOfflineCommandsIgnoreBrokenConnectionConfiguration(t *testing.T) {
 	for _, args := range [][]string{{"--help"}, {"--version"}, {"version", "--json"}, {"completion", "bash"}, {"completion", "zsh"}, {"completion", "fish"}, {"__complete", "stream", ""}, {"__completeNoDesc", "stream", ""}, {"config", "path"}} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
 			cfg := isolatedCommandConfig(t)
-			t.Setenv("OBSGOD_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
+			t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
 			t.Setenv("OBS_PASSWORD", "private-credential-marker")
 			var dialCount int
 			service := obs.NewServiceWithDialer(&cfg, "test-build", func(string, ...goobs.Option) (*goobs.Client, error) {
@@ -80,7 +88,7 @@ func TestGenericCLIResolvesLayersBeforeLazyConnection(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"version":1,"connection":{"host":"file.example","port":4456},"profiles":{"studio":{"host":"profile.example"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("OBSGOD_HOST", "environment.example")
+	t.Setenv("DECKYSTREAM_HOST", "environment.example")
 	var address string
 	service := obs.NewServiceWithDialer(&cfg, "", func(actual string, _ ...goobs.Option) (*goobs.Client, error) {
 		address = actual
@@ -95,7 +103,7 @@ func TestGenericCLIResolvesLayersBeforeLazyConnection(t *testing.T) {
 
 func TestConfigShowRedactsAndNeverConnects(t *testing.T) {
 	cfg := isolatedCommandConfig(t)
-	t.Setenv("OBSGOD_PASSWORD", "private-credential-marker")
+	t.Setenv("DECKYSTREAM_PASSWORD", "private-credential-marker")
 	var count int
 	service := obs.NewServiceWithDialer(&cfg, "", func(string, ...goobs.Option) (*goobs.Client, error) {
 		count++
@@ -119,7 +127,7 @@ func TestConfigShowRedactsAndNeverConnects(t *testing.T) {
 
 func TestDeckCommandsRemainIndependentOfGenericConfiguration(t *testing.T) {
 	cfg := isolatedCommandConfig(t)
-	t.Setenv("OBSGOD_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
+	t.Setenv("DECKYSTREAM_CONFIG", filepath.Join(t.TempDir(), "not-created.json"))
 	command := NewRoot(&cfg, nil, "")
 	var called bool
 	for _, child := range command.Commands() {

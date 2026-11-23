@@ -18,12 +18,12 @@ import tempfile
 import time
 
 
-BINARY = Path("/src/dist/obsgod")
+BINARY = Path("/src/dist/deckystream")
 OUTPUT = Path("/work/output")
 FIXTURE_HOME = Path("/work/home")
-CONFIG = FIXTURE_HOME / ".config/obsgod/deck.json"
-CREDENTIALS = FIXTURE_HOME / ".config/obsgod/secrets.json"
-WEBSOCKET = FIXTURE_HOME / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/plugin_config/obs-websocket/config.json"
+CONFIG = FIXTURE_HOME / ".config/deckystream/deck.json"
+CREDENTIALS = FIXTURE_HOME / ".config/deckystream/secrets.json"
+WEBSOCKET = FIXTURE_HOME / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/plugin_config/obs-websocket/config.json"
 ORDINARY = FIXTURE_HOME / ".var/app/com.obsproject.Studio/config/obs-studio"
 SENSITIVE = set()
 
@@ -173,8 +173,8 @@ async def workflow_snapshot(password):
 def settings_workflow(password, initial_settings, initial_key, initial_hash):
     """Exercise the real CLI configuration/approval/OBS path without output."""
     before = asyncio.run(workflow_snapshot(password))
-    assert before["profile"] == "OBSGod" and before["collection"] == "OBSGod", "Workflow fixture is outside its managed OBS identity"
-    target = next((scene for scene in ["OBSGod Idle", "OBSGod Live"] if scene in before["scenes"]), None)
+    assert before["profile"] == "deckystream" and before["collection"] == "deckystream", "Workflow fixture is outside its managed OBS identity"
+    target = next((scene for scene in ["deckystream Idle", "deckystream Live"] if scene in before["scenes"]), None)
     assert target, "Workflow fixture has no existing managed idle/live scene"
     previous_secret, previous_ws = CREDENTIALS.read_bytes(), WEBSOCKET.read_bytes()
     with tempfile.TemporaryDirectory(prefix="workflow-control-", dir=FIXTURE_HOME) as directory:
@@ -191,7 +191,7 @@ def settings_workflow(password, initial_settings, initial_key, initial_hash):
                 "readiness_timeout": "5s", "post_start_delay": "0s"}}}))
         config.chmod(0o600)
         environment = {key: value for key, value in os.environ.items()
-                       if not key.startswith(("OBS_", "OBSGOD_"))}
+                       if not key.startswith(("OBS_", "DECKYSTREAM_"))}
         result = subprocess.run([str(BINARY), "--config", str(config), "workflow", "apply", "managed", "--approve"],
                                 input=b"", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                 env=environment, timeout=15)

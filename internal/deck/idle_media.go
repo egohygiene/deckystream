@@ -27,7 +27,7 @@ const idleVideoLimit int64 = 256 << 20
 var idleMediaName = regexp.MustCompile(`^[0-9a-f]{64}\.(png|jpg|mp4|webm)$`)
 
 func idleMediaDirectory(p Paths) string {
-	return filepath.Join(p.OBSConfig, "obs-studio", "obsgod-media")
+	return filepath.Join(p.OBSConfig, "obs-studio", "deckystream-media")
 }
 
 // validateIdleMediaSettings validates the portable metadata, never a caller's
@@ -286,6 +286,9 @@ func PreviewIdle(p Paths, s Settings) IdlePreview {
 // ConfigureIdle changes only the next owned idle scene preferences. It never
 // launches OBS, configures a service, or starts/stops any output.
 func ConfigureIdle(ctx context.Context, p Paths, reader io.Reader) (Result, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return Result{}, err
+	}
 	var input struct {
 		Style              string  `json:"idle_style"`
 		Text               *string `json:"idle_text,omitempty"`

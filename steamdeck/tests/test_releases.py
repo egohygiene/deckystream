@@ -9,7 +9,7 @@ import unittest
 import urllib.error
 from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location("obsgod_releases", Path(__file__).resolve().parents[1] / "releases.py")
+spec = importlib.util.spec_from_file_location("deckystream_releases", Path(__file__).resolve().parents[1] / "releases.py")
 releases = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(releases)
 REPOSITORY_URL = "https://github.com/" + releases.REPOSITORY
@@ -18,10 +18,28 @@ API_URL = "https://api.github.com/repos/" + releases.REPOSITORY
 
 
 class ReleaseChecks(unittest.TestCase):
+    def test_download_accept_header_uses_the_validated_exact_hostname(self):
+        cases = [
+            (releases.RELEASES_URL, "application/vnd.github+json"),
+            (API_URL + "/commits/v1.0.0", "application/vnd.github+json"),
+            (RAW_URL + "/" + "a" * 40 + "/manifest.json", "application/octet-stream"),
+            (REPOSITORY_URL + "/releases/download/v1.0.0/deckystream-decky.zip", "application/octet-stream"),
+        ]
+        for url, expected in cases:
+            with self.subTest(url=url), patch.object(releases, "_open_url", return_value=io.BytesIO(b"fixture")) as opened:
+                self.assertEqual(releases._read_url(url), b"fixture")
+                request = opened.call_args.args[0]
+                self.assertEqual(request.get_header("Accept"), expected)
+                self.assertEqual(request.get_header("User-agent"), "deckystream-updater")
+        with patch.object(releases, "_open_url") as opened:
+            with self.assertRaises(releases.ReleaseError):
+                releases._read_url("https://untrusted.invalid/api.github.com/manifest.json")
+            opened.assert_not_called()
+
     def fixture(self, version="0.1.0-deck.10", raw=False):
         revision = "1" * 40
-        archive = "obsgod-deck_" + version + "_linux_amd64.tar.gz"
-        manifest = {"version": version, "revision": revision, "platform": "linux/amd64", "dirty": False, "updater_version": version, "files": {name: "a" * 64 for name in ["obsgod", "obsgod-decky.zip", "setup.py", "bridge.py"]}}
+        archive = "deckystream-deck_" + version + "_linux_amd64.tar.gz"
+        manifest = {"version": version, "revision": revision, "platform": "linux/amd64", "dirty": False, "updater_version": version, "files": {name: "a" * 64 for name in ["deckystream", "deckystream-decky.zip", "setup.py", "bridge.py"]}}
         data = json.dumps(manifest).encode()
         base = RAW_URL + "/" + "2" * 40 + "/" if raw else REPOSITORY_URL + "/releases/download/v" + version + "/"
         values = {
@@ -59,7 +77,7 @@ class ReleaseChecks(unittest.TestCase):
     def test_immutable_legacy_artifact_accepted_and_mutable_or_foreign_rejected(self):
         release, values, _ = self.fixture(raw=True)
         self.assertTrue(self.run_check([release], values)["available"])
-        for bad in [release["body"].replace("2" * 40, "master"), release["body"].replace(releases.REPOSITORY, "attacker/obsgod")]:
+        for bad in [release["body"].replace("2" * 40, "master"), release["body"].replace(releases.REPOSITORY, "attacker/deckystream")]:
             result = self.run_check([dict(release, body=bad)], {})
             self.assertFalse(result["ok"])
             self.assertEqual(result["state"], "unsupported")
@@ -118,7 +136,7 @@ class ReleaseChecks(unittest.TestCase):
     def test_download_checksum_and_source_url_fail_before_installation(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "archive"
-            candidate = {"archive_url": REPOSITORY_URL + "/releases/download/v1.0.0/obsgod-deck_1.0.0_linux_amd64.tar.gz", "archive_sha256": hashlib.sha256(b"expected").hexdigest()}
+            candidate = {"archive_url": REPOSITORY_URL + "/releases/download/v1.0.0/deckystream-deck_1.0.0_linux_amd64.tar.gz", "archive_sha256": hashlib.sha256(b"expected").hexdigest()}
             with patch.object(releases, "_open_url", return_value=io.BytesIO(b"corrupted")):
                 with self.assertRaisesRegex(releases.ReleaseError, "checksum"):
                     releases.download_archive(candidate, path)
@@ -151,7 +169,7 @@ class ReleaseChecks(unittest.TestCase):
     def test_installed_versions_detect_mismatch_without_reading_secrets(self):
         with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {"HOME": temporary}):
             home = Path(temporary)
-            release = home / ".local/share/obsgod/releases/0.1.0-deck.10"
+            release = home / ".local/share/deckystream/releases/0.1.0-deck.10"
             release.mkdir(parents=True)
             (release.parent.parent / "current").symlink_to(release)
             (release / "manifest.json").write_text(json.dumps({"version": "0.1.0-deck.10", "revision": "1" * 40, "updater_version": "0.1.0-deck.10"}))
@@ -166,7 +184,7 @@ class ReleaseChecks(unittest.TestCase):
     def test_decky_explicit_user_context_finds_xdg_install_without_global_home_change(self):
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary) / "deck"
-            release = home / "data/obsgod/releases/0.1.0-deck.7"
+            release = home / "data/deckystream/releases/0.1.0-deck.7"
             release.mkdir(parents=True)
             (release.parent.parent / "current").symlink_to(release)
             (release / "manifest.json").write_text(json.dumps({"version": "0.1.0-deck.7", "revision": "1" * 40}))
@@ -216,14 +234,14 @@ class PluginReleaseChecks(unittest.TestCase):
         revision = "1" * 40
         base = REPOSITORY_URL + "/releases/download/v" + version + "/"
         receipt = {"version": version, "revision": revision, "dirty": False,
-                   "platform": "linux/amd64", "archive": "obsgod-decky.zip", "sha256": "a" * 64}
+                   "platform": "linux/amd64", "archive": "deckystream-decky.zip", "sha256": "a" * 64}
         entry = {"tag_name": "v" + version, "prerelease": "-" in version, "draft": False,
                  "assets": [{"name": name, "browser_download_url": base + name}
-                            for name in ("obsgod-decky.zip", "build-receipt.json", "SHA256SUMS")]}
+                            for name in ("deckystream-decky.zip", "build-receipt.json", "SHA256SUMS")]}
         values = {releases.RELEASES_URL: json.dumps([entry]).encode(),
                   API_URL + "/commits/v" + version: json.dumps({"sha": revision}).encode(),
                   base + "build-receipt.json": json.dumps(receipt).encode(),
-                  base + "SHA256SUMS": ("a" * 64 + "  obsgod-decky.zip\n").encode()}
+                  base + "SHA256SUMS": ("a" * 64 + "  deckystream-decky.zip\n").encode()}
         return entry, receipt, values, base
 
     def test_standard_plugin_release_compares_loaded_version_and_never_downloads(self):
@@ -311,10 +329,10 @@ class PluginReplacementGuard(unittest.TestCase):
         self.temp.cleanup()
 
     def plugin(self, version):
-        root = self.home / "homebrew/plugins/obsgod"
+        root = self.home / "homebrew/plugins/deckystream"
         root.mkdir(parents=True, exist_ok=True)
-        (root / "package.json").write_text(json.dumps({"name": "obsgod", "version": version}))
-        (root / "plugin.json").write_text(json.dumps({"name": "OBSGod"}))
+        (root / "package.json").write_text(json.dumps({"name": "deckystream", "version": version}))
+        (root / "plugin.json").write_text(json.dumps({"name": "deckystream"}))
         return root
 
     def test_absent_equal_older_newer_and_unknown_installed_plugin(self):

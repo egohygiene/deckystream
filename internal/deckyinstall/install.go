@@ -1,4 +1,4 @@
-// Package deckyinstall installs only the verified OBSGod plugin through the
+// Package deckyinstall installs only the verified deckystream plugin through the
 // existing Decky service. It never edits root-owned plugin files directly.
 package deckyinstall
 
@@ -28,6 +28,7 @@ type Input struct {
 	SHA256            string `json:"sha256"`
 	Version           string `json:"version"`
 	UninstallExisting bool   `json:"uninstall_existing,omitempty"`
+	LegacyPlugin      bool   `json:"legacy_plugin,omitempty"`
 }
 
 var hashPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
@@ -36,7 +37,7 @@ var tokenPattern = regexp.MustCompile(`^[A-Za-z0-9-]{16,128}$`)
 
 func validate(input Input) (string, error) {
 	if !hashPattern.MatchString(input.SHA256) || !versionPattern.MatchString(input.Version) || !filepath.IsAbs(input.ZIPPath) || strings.ContainsAny(input.ZIPPath, "\x00\r\n") {
-		return "", errors.New("invalid OBSGod installer request")
+		return "", errors.New("invalid deckystream installer request")
 	}
 	info, err := os.Lstat(input.ZIPPath)
 	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Size() > 32*1024*1024 {
@@ -62,7 +63,7 @@ func validate(input Input) (string, error) {
 	var total uint64
 	seen := map[string]bool{}
 	for _, file := range archive.File {
-		if file.Name != path.Clean(file.Name) || !strings.HasPrefix(file.Name, "obsgod/") || strings.Contains(file.Name, "\\") || !file.Mode().IsRegular() || seen[file.Name] {
+		if file.Name != path.Clean(file.Name) || !strings.HasPrefix(file.Name, "deckystream/") || strings.Contains(file.Name, "\\") || !file.Mode().IsRegular() || seen[file.Name] {
 			return "", errors.New("unsafe or duplicate plugin ZIP path; nothing was sent to Decky")
 		}
 		seen[file.Name] = true
@@ -90,8 +91,8 @@ func validate(input Input) (string, error) {
 		Type         string            `json:"type"`
 		RemoteBinary []json.RawMessage `json:"remote_binary"`
 	}
-	if readJSON("obsgod/plugin.json", &plugin) != nil || readJSON("obsgod/package.json", &metadata) != nil || plugin.Name != "OBSGod" || len(plugin.Flags) != 0 || plugin.APIVersion != 1 || metadata.Name != "obsgod" || metadata.Version != input.Version || metadata.Type != "module" || len(metadata.RemoteBinary) != 0 || !seen["obsgod/bin/obsgod"] || !seen["obsgod/main.py"] || !seen["obsgod/dist/index.js"] {
-		return "", errors.New("ZIP is not the expected unprivileged OBSGod release")
+	if readJSON("deckystream/plugin.json", &plugin) != nil || readJSON("deckystream/package.json", &metadata) != nil || plugin.Name != "deckystream" || len(plugin.Flags) != 0 || plugin.APIVersion != 1 || metadata.Name != "deckystream" || metadata.Version != input.Version || metadata.Type != "module" || len(metadata.RemoteBinary) != 0 || !seen["deckystream/bin/deckystream"] || !seen["deckystream/main.py"] || !seen["deckystream/dist/index.js"] {
+		return "", errors.New("ZIP is not the expected unprivileged deckystream release")
 	}
 	resolved, err := filepath.EvalSymlinks(input.ZIPPath)
 	if err != nil {
@@ -180,13 +181,16 @@ var deckyVersionPattern = regexp.MustCompile(`^v?3\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9
 func runAt(ctx context.Context, input Input, endpoint string) (Report, error) {
 	var report Report
 	if input.Operation != "" && input.Operation != "install" && input.Operation != "probe" && input.Operation != "uninstall" {
-		return report, errors.New("invalid OBSGod installer operation")
+		return report, errors.New("invalid deckystream installer operation")
 	}
 	if input.UninstallExisting && input.Operation != "uninstall" {
 		return report, errors.New("existing-folder removal is only valid for uninstall")
 	}
+	if input.LegacyPlugin && (input.Operation != "uninstall" || !input.UninstallExisting || !versionPattern.MatchString(input.Version)) {
+		return report, errors.New("legacy plugin selection is only valid for explicitly confirmed removal")
+	}
 	if input.Operation == "probe" || input.Operation == "uninstall" {
-		if input.ZIPPath != "" || input.SHA256 != "" || input.Version != "" {
+		if input.ZIPPath != "" || input.SHA256 != "" || input.Version != "" && !input.LegacyPlugin {
 			return report, errors.New("probe/uninstall cannot include an installation request")
 		}
 	} else {
@@ -202,7 +206,7 @@ func runAt(ctx context.Context, input Input, endpoint string) (Report, error) {
 		return report, err
 	}
 	value, _ := json.Marshal(input)
-	script := strings.Replace(frontendScript, "__OBSGOD_REQUEST__", string(value), 1)
+	script := strings.Replace(frontendScript, "__DECKYSTREAM_REQUEST__", string(value), 1)
 	for _, tab := range []string{"SP", "Steam Shared Context presented by Valve™", "SharedJSContext", "Steam"} {
 		result, err := evaluate(ctx, endpoint, token, tab, script)
 		if err != nil {
@@ -214,11 +218,13 @@ func runAt(ctx context.Context, input Input, endpoint string) (Report, error) {
 		if !result.OK {
 			messages := map[string]string{
 				"unsupported":                    "Decky's frontend is incompatible with this installer. Update Decky Loader using its official instructions and retry",
-				"busy":                           "Another OBSGod Decky installation is running. Let it finish, then retry",
-				"install-unconfirmed":            "Decky did not confirm the requested OBSGod installation. Saved settings were preserved; inspect Decky and retry to verify or repair",
+				"busy":                           "Another deckystream Decky installation is running. Let it finish, then retry",
+				"install-unconfirmed":            "Decky did not confirm the requested deckystream installation. Saved settings were preserved; inspect Decky and retry to verify or repair",
 				"probe-failed":                   "Decky's version or plugin service could not be verified. Keep Steam open in Desktop Mode, check Decky and retry",
-				"uninstall-unconfirmed":          "Decky did not confirm OBSGod removal. Existing app/settings were preserved; inspect Decky and retry",
-				"uninstall-location-unconfirmed": "The loaded OBSGod plugin is outside the verified Decky location. Set DECKY_HOME to your actual Decky root, review the removal inventory and retry; existing files were preserved",
+				"legacy-present":                 "The previous plugin is still installed. Use the Desktop migration installer to close its managed OBS and replace it before installing the renamed plugin",
+				"legacy-version-mismatch":        "The previous plugin version changed during migration. Refresh the installation inventory before retrying; no plugin was removed",
+				"uninstall-unconfirmed":          "Decky did not confirm deckystream removal. Existing app/settings were preserved; inspect Decky and retry",
+				"uninstall-location-unconfirmed": "The loaded deckystream plugin is outside the verified Decky location. Set DECKY_HOME to your actual Decky root, review the removal inventory and retry; existing files were preserved",
 			}
 			if message, ok := messages[result.Code]; ok {
 				return report, errors.New(message)

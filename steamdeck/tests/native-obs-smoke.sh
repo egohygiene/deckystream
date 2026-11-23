@@ -61,11 +61,11 @@ wait_for_fixture_service WirePlumber "$wireplumber_pid" /work/wireplumber.log wi
 pulseaudio --daemonize=no --exit-idle-time=-1 >/work/pulse.log 2>&1 &
 pulse_pid=$!
 wait_for_fixture_service PulseAudio "$pulse_pid" /work/pulse.log timeout 1 pactl info
-pactl load-module module-null-sink sink_name=obsgod_game >/dev/null
-pactl load-module module-null-sink sink_name=obsgod_decoy >/dev/null
+pactl load-module module-null-sink sink_name=deckystream_game >/dev/null
+pactl load-module module-null-sink sink_name=deckystream_decoy >/dev/null
 # A tagged game's actual sink must win over an unrelated default sink. Distinct
 # tones make a wrong route detectable in the encoded recording/RTMP samples.
-pactl set-default-sink obsgod_decoy
+pactl set-default-sink deckystream_decoy
 # Keep one synthetic producer node across consumer reconnects. The former test
 # pipewiresink could destroy its node or stall on teardown, making repeated local
 # output tests exercise that fixture race. This producer supplies moving screen
@@ -73,9 +73,9 @@ pactl set-default-sink obsgod_decoy
 # input and every Start keeps its actual rendered-frame gate.
 gcc -O2 -Wall -Wextra -Werror -o /work/video-fixture /src/steamdeck/tests/capture-fixture.c $(pkg-config --cflags --libs libpipewire-0.3)
 /work/video-fixture gamescope missing >/work/video-producer.log 2>&1 &
-env SteamAppId=424242 SteamGameId=424242 gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=440 volume=0.2 ! audioconvert ! pulsesink device=obsgod_game >/work/audio-producer.log 2>&1 &
+env SteamAppId=424242 SteamGameId=424242 gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=440 volume=0.2 ! audioconvert ! pulsesink device=deckystream_game >/work/audio-producer.log 2>&1 &
 game_audio_pid=$!
-gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=880 volume=0.2 ! audioconvert ! pulsesink device=obsgod_decoy >/work/decoy-audio-producer.log 2>&1 &
+gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=880 volume=0.2 ! audioconvert ! pulsesink device=deckystream_decoy >/work/decoy-audio-producer.log 2>&1 &
 decoy_audio_pid=$!
 
 audio_input_state() {
@@ -123,13 +123,13 @@ printf '%s\n' 'ordinary OBS configuration must remain unchanged' > "$ordinary/pr
 mkdir -p /work/plugin-src
 tar xf /work/gstreamer-source.tar.gz -C /work/plugin-src --strip-components=1
 printf '%s\n' 'const char *obs_gstreamer_version = "v0.4.1-smoke";' > /work/plugin-src/version.c
-plugin="$HOME/.var/app/com.obsproject.Studio/config/obsgod/obs-studio/plugins/obs-gstreamer/bin/64bit"
+plugin="$HOME/.var/app/com.obsproject.Studio/config/deckystream/obs-studio/plugins/obs-gstreamer/bin/64bit"
 mkdir -p "$plugin"
 gcc -shared -fPIC -O2 -o "$plugin/obs-gstreamer.so" /work/plugin-src/gstreamer*.c /work/plugin-src/version.c $(pkg-config --cflags --libs libobs gstreamer-app-1.0 gstreamer-audio-1.0 gstreamer-video-1.0 gstreamer-net-1.0)
-printf '%s\n' '{"version":1,"server":"rtmp://127.0.0.1:1935/live","stream_key":"fixture-key","bitrate":3000,"fps":30,"encoder":"x264","microphone":false,"capture_mode":"screen"}' | /src/dist/obsgod deck configure > /work/output/configure.json
+printf '%s\n' '{"version":1,"server":"rtmp://127.0.0.1:1935/live","stream_key":"fixture-key","bitrate":3000,"fps":30,"encoder":"x264","microphone":false,"capture_mode":"screen"}' | /src/dist/deckystream deck configure > /work/output/configure.json
 pw-dump > /work/output/pipewire-nodes.json
-/src/dist/obsgod deck test-recording > /work/output/test-recording.json
-python3 /src/steamdeck/tests/native-audio.py snapshot obsgod_game.monitor >/work/output/audio-route-recording.json
+/src/dist/deckystream deck test-recording > /work/output/test-recording.json
+python3 /src/steamdeck/tests/native-audio.py snapshot deckystream_game.monitor >/work/output/audio-route-recording.json
 clip=$(python3 -c 'import json;print(json.load(open("/work/output/test-recording.json"))["recording_path"])')
 ffprobe -v error -show_streams -show_format -of json "$clip" > /work/output/recording-probe.json
 ffmpeg -v error -ss 2 -i "$clip" -frames:v 1 -y /work/output/capture.png
@@ -138,7 +138,7 @@ ffmpeg -v error -ss 1 -i "$clip" -an -vf fps=1 -frames:v 3 -f framemd5 -y /work/
 ffmpeg -hide_banner -i "$clip" -af volumedetect -vn -f null - >/work/output/recording-audio.txt 2>&1
 ffmpeg -v error -ss 1 -i "$clip" -t 2 -vn -ar 48000 -ac 1 -c:a pcm_s16le -y /work/output/recording-audio.wav
 python3 /src/steamdeck/tests/native-audio.py measure /work/output/recording-audio.wav 440 >/work/output/recording-audio-metrics.json
-OBSGOD_DISPOSABLE_MEDIA_FIXTURE=1 python3 /src/steamdeck/tests/native-media.py > /work/output/native-media-summary.json
+DECKYSTREAM_DISPOSABLE_MEDIA_FIXTURE=1 python3 /src/steamdeck/tests/native-media.py > /work/output/native-media-summary.json
 python3 /src/steamdeck/tests/native-profiles.py > /work/output/native-profiles-summary.json
 # Repair cannot rely on a clean OBS profile: restore a muted, zero-gain input
 # whose output tracks were disabled and monitoring was accidentally enabled.
@@ -147,16 +147,16 @@ python3 /src/steamdeck/tests/native-audio.py seed >/work/output/audio-stale-stat
 ffmpeg -hide_banner -listen 1 -i rtmp://127.0.0.1:1935/live/fixture-key -c copy -y /work/output/received.flv >/work/rtmp.log 2>&1 &
 receiver=$!
 pw-dump >/work/output/nodes-before-stream.json
-/src/dist/obsgod deck start > /work/output/start.json
-python3 /src/steamdeck/tests/native-audio.py snapshot obsgod_game.monitor >/work/output/audio-route-stream.json
-/src/dist/obsgod deck start > /work/output/start-again.json
+/src/dist/deckystream deck start > /work/output/start.json
+python3 /src/steamdeck/tests/native-audio.py snapshot deckystream_game.monitor >/work/output/audio-route-stream.json
+/src/dist/deckystream deck start > /work/output/start-again.json
 python3 /src/steamdeck/tests/native-media.py --stream-active > /work/output/native-live-media-summary.json
-OBSGOD_DISPOSABLE_AUDIO_FIXTURE=1 python3 /src/steamdeck/tests/native-resilience.py --game-pid "$game_audio_pid" > /work/output/audio-hotplug.json
-OBSGOD_DISPOSABLE_AUDIO_FIXTURE=1 python3 /src/steamdeck/tests/native-mixer.py > /work/output/native-mixer-summary.json
+DECKYSTREAM_DISPOSABLE_AUDIO_FIXTURE=1 python3 /src/steamdeck/tests/native-resilience.py --game-pid "$game_audio_pid" > /work/output/audio-hotplug.json
+DECKYSTREAM_DISPOSABLE_AUDIO_FIXTURE=1 python3 /src/steamdeck/tests/native-mixer.py > /work/output/native-mixer-summary.json
 sleep 4
-/src/dist/obsgod deck status > /work/output/status-live.json
-/src/dist/obsgod deck stop > /work/output/stop.json
-/src/dist/obsgod deck stop > /work/output/stop-again.json
+/src/dist/deckystream deck status > /work/output/status-live.json
+/src/dist/deckystream deck stop > /work/output/stop.json
+/src/dist/deckystream deck stop > /work/output/stop-again.json
 wait "$receiver" || true
 ffprobe -v error -show_streams -show_format -of json /work/output/received.flv > /work/output/stream-probe.json
 ffmpeg -v error -ss 2 -i /work/output/received.flv -frames:v 1 -f rawvideo -pix_fmt rgb24 -y /work/output/stream-frame.rgb
@@ -168,10 +168,10 @@ stream_audio_route() {
   local route_name=$1 route_monitor=$2 route_frequency=$3
   ffmpeg -hide_banner -listen 1 -i rtmp://127.0.0.1:1935/live/fixture-key -c copy -y "/work/output/$route_name.flv" >"/work/$route_name-receiver.log" 2>&1 &
   local route_receiver=$!
-  /src/dist/obsgod deck start >"/work/output/$route_name-start.json"
+  /src/dist/deckystream deck start >"/work/output/$route_name-start.json"
   python3 /src/steamdeck/tests/native-audio.py snapshot "$route_monitor" >"/work/output/$route_name-route.json"
   sleep 3
-  /src/dist/obsgod deck stop >"/work/output/$route_name-stop.json"
+  /src/dist/deckystream deck stop >"/work/output/$route_name-stop.json"
   wait "$route_receiver" || true
   ffmpeg -v error -ss 1 -i "/work/output/$route_name.flv" -t 2 -vn -ar 48000 -ac 1 -c:a pcm_s16le -y "/work/output/$route_name.wav"
   python3 /src/steamdeck/tests/native-audio.py measure "/work/output/$route_name.wav" "$route_frequency" >"/work/output/$route_name-audio-metrics.json"
@@ -183,20 +183,20 @@ stream_audio_route() {
 kill "$game_audio_pid"
 wait "$game_audio_pid" || true
 wait_for_fixture_service PulseAudio "$pulse_pid" /work/pulse.log audio_input_absent "$game_audio_pid"
-stream_audio_route audio-default-fallback obsgod_decoy.monitor 880
+stream_audio_route audio-default-fallback deckystream_decoy.monitor 880
 
 # Change the default device between starts and verify a fresh monitor choice.
-gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=440 volume=0.2 ! audioconvert ! pulsesink device=obsgod_game >/work/new-default-audio-producer.log 2>&1 &
+gst-launch-1.0 -q audiotestsrc is-live=true wave=sine freq=440 volume=0.2 ! audioconvert ! pulsesink device=deckystream_game >/work/new-default-audio-producer.log 2>&1 &
 new_default_audio_pid=$!
 wait_for_fixture_service NewDefaultTone "$new_default_audio_pid" /work/new-default-audio-producer.log audio_input_present "$new_default_audio_pid"
-pactl set-default-sink obsgod_game
-stream_audio_route audio-default-changed obsgod_game.monitor 440
+pactl set-default-sink deckystream_game
+stream_audio_route audio-default-changed deckystream_game.monitor 440
 # Failed start must stop its pending output and must not auto-start later when
 # a server appears. No external provider or actual stream key is involved.
-if /src/dist/obsgod deck start >/work/output/start-failure.json 2>/work/output/start-failure.stderr; then
+if /src/dist/deckystream deck start >/work/output/start-failure.json 2>/work/output/start-failure.stderr; then
   echo 'Expected a failed start with no RTMP receiver' >&2; exit 1
 fi
-/src/dist/obsgod deck status >/work/output/status-after-failure.json
+/src/dist/deckystream deck status >/work/output/status-after-failure.json
 python3 - <<'PY'
 import json,socket
 s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);s.bind(('127.0.0.1',1935));s.listen(1);s.settimeout(6)
@@ -208,7 +208,7 @@ finally:s.close()
 json.dump({'unexpected_connection':connected},open('/work/output/no-late-start.json','w'))
 assert not connected,'OBS attempted an unexpected late stream connection'
 PY
-/src/dist/obsgod deck restart > /work/output/restart.json
+/src/dist/deckystream deck restart > /work/output/restart.json
 # Qualify the new local credential controls only after the preceding real OBS
 # lifecycle has positively closed the managed instance. This helper uses the
 # newly packaged candidate binary and never exports passwords or starts output.

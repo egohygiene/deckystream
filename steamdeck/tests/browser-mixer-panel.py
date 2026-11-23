@@ -19,10 +19,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("plugin_zip",type=Path)
     parser.add_argument("--browser",default="/usr/bin/chromium")
-    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/obsgod-mixer-panel"))
+    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/deckystream-mixer-panel"))
     args=parser.parse_args();args.screenshots.mkdir(parents=True,exist_ok=True)
     decky=Path(__file__).resolve().parents[1]/"decky"
-    with tempfile.TemporaryDirectory(prefix="obsgod-mixer-panel-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-mixer-panel-") as directory:
         root=Path(directory)
         with zipfile.ZipFile(args.plugin_zip) as archive:archive.extractall(root)
         subprocess.run(["node","tests/build-fixture.mjs",str(root/"runtime.js")],cwd=decky,check=True)

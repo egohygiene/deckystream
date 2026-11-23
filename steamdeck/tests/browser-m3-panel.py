@@ -18,10 +18,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("plugin_zip",type=Path)
     parser.add_argument("--browser",default="/usr/bin/chromium")
-    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/obsgod-m3-panel"))
+    parser.add_argument("--screenshots",type=Path,default=Path("/tmp/deckystream-m3-panel"))
     args=parser.parse_args();args.screenshots.mkdir(parents=True,exist_ok=True)
     decky=Path(__file__).resolve().parents[1]/"decky"
-    with tempfile.TemporaryDirectory(prefix="obsgod-m3-panel-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-m3-panel-") as directory:
         root=Path(directory)
         with zipfile.ZipFile(args.plugin_zip) as archive: archive.extractall(root)
         subprocess.run(["node","tests/build-fixture.mjs",str(root/"runtime.js")],cwd=decky,check=True)
@@ -72,7 +72,7 @@ def main():
                 assert not page.evaluate("fixture.recording") and page.evaluate("fixture.replay")
                 expect(page.get_by_role("button",name="Apply selected preset",exact=True)).to_be_disabled()
                 page.get_by_role("button",name="Save replay clip",exact=True).click()
-                page.get_by_text("Saved: /fixture/Videos/OBSGod/clip.mkv",exact=False).wait_for()
+                page.get_by_text("Saved: /fixture/Videos/deckystream/clip.mkv",exact=False).wait_for()
                 page.get_by_role("button",name="Stop replay buffer",exact=True).click()
                 expect(page.get_by_role("button",name="Start replay buffer",exact=True)).to_be_enabled()
                 expect(page.get_by_role("button",name="Apply selected preset",exact=True)).to_be_enabled()

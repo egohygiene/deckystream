@@ -77,7 +77,8 @@ func configurationClosed(state Result) bool {
 
 func configurationCanClose(state Result) bool {
 	return configurationIdle(state) && state.Connected && state.Process == "running" && state.Runtime != nil &&
-		state.Runtime.Profile == "OBSGod" && state.Runtime.Collection == "OBSGod"
+		(state.Runtime.Profile == primaryNamespace && state.Runtime.Collection == primaryNamespace ||
+			state.LegacyRuntime && state.Runtime.Profile == legacyOBSIdentity && state.Runtime.Collection == legacyOBSIdentity)
 }
 
 // ReadConfiguration never launches/closes OBS, writes settings or starts output.
@@ -99,6 +100,8 @@ func readConfiguration(ctx context.Context, p Paths, observe func(context.Contex
 		CanConfigure: err == nil && configurationClosed(state) && local.OutputKnown && local.Process == "absent" && !local.Connected,
 		CanClose:     err == nil && configurationCanClose(state) && local.Process == "running",
 		Message:      "Enter a stream key privately on this device. Saving does not start broadcasting"}
+	backendErr := RequirePrimaryBackend()
+	view.CanConfigure = view.CanConfigure && backendErr == nil
 	if err == nil {
 		_, _, loadErr := Load(p)
 		view.Configured, view.KeyConfigured = loadErr == nil, loadErr == nil
@@ -112,6 +115,9 @@ func readConfiguration(ctx context.Context, p Paths, observe func(context.Contex
 		}
 	} else {
 		view.Message = errNativeConfiguration.Error()
+	}
+	if backendErr != nil {
+		view.Message = backendErr.Error()
 	}
 	return view
 }

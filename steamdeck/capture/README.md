@@ -1,14 +1,14 @@
 # App-scoped Gamescope capture element
 
-`libgstobsgodcapture.so` provides `obsgodgamescopesrc` for OBSGod's separately
+`libgstdeckystreamcapture.so` provides `deckystreamgamescopesrc` for deckystream's separately
 installed obs-gstreamer input. It uses the existing PipeWire client API and
 Gamescope's actual private SPA Format extension, not a guessed node property.
 
 ```sh
-make OUTPUT=/absolute/output/libgstobsgodcapture.so
-GST_PLUGIN_PATH=/absolute/output gst-inspect-1.0 obsgodgamescopesrc
+make OUTPUT=/absolute/output/libgstdeckystreamcapture.so
+GST_PLUGIN_PATH=/absolute/output gst-inspect-1.0 deckystreamgamescopesrc
 GST_PLUGIN_PATH=/absolute/output gst-launch-1.0 \
-  obsgodgamescopesrc app-id=4242 target-object=gamescope ! videoconvert ! fakesink
+  deckystreamgamescopesrc app-id=4242 target-object=gamescope ! videoconvert ! fakesink
 ```
 
 Build dependencies: GStreamer 1.0 base/video and PipeWire 0.3 development headers.
@@ -87,7 +87,7 @@ must stay on the background and report unsupported game-only capture.
 The official OBS33.0.1 manifest at revision
 `65c320b46e1af5c7a555161aea6182cdf7a8c524` uses
 `org.freedesktop.Platform//26.08` and grants `--filesystem=host` plus access to
-the user's PipeWire socket. Stock permissions expose the installed OBSGod
+the user's PipeWire socket. Stock permissions expose the installed deckystream
 release directory and the unprivileged Decky plugin's bin directory. Flatpak's
 home export implementation resolves symlink components and exports the real
 target too, so a `/home/deck` alias for `/var/home/deck` does not by itself hide

@@ -38,8 +38,8 @@ class DeckyPackageTests(unittest.TestCase):
             notices=b"fixture notices", revision="a" * 40, dirty=True)
 
     def test_complete_payload_and_license_module_boundary(self):
-        self.assertIn("bin/obsgod", self.files)
-        self.assertIn("bin/libgstobsgodcapture.so", self.files)
+        self.assertIn("bin/deckystream", self.files)
+        self.assertIn("bin/libgstdeckystreamcapture.so", self.files)
         self.assertIn("source/decky-api/SOURCE.tar.gz", self.files)
         self.assertNotIn("decky.py", self.files, "Do not shadow the loader's supplied module")
         self.assertNotIn("install.py", self.files, "The browser must not require a paired installer")
@@ -59,10 +59,10 @@ class DeckyPackageTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(first)) as archive:
             self.assertEqual(archive.namelist(), sorted(archive.namelist()))
             for info in archive.infolist():
-                self.assertTrue(info.filename.startswith("obsgod/"))
+                self.assertTrue(info.filename.startswith("deckystream/"))
                 self.assertEqual(info.external_attr >> 16 & 0o777, 0o755 if "/bin/" in info.filename else 0o644)
             archive.extractall(self.work / "unpacked")
-        installed = self.work / "unpacked/obsgod"
+        installed = self.work / "unpacked/deckystream"
         # No source checkout imports, loader module, installer, OBS process or
         # network is needed just to import the optional bundled setup server.
         probe = r'''
@@ -72,7 +72,7 @@ sys.path.insert(0,sys.argv[1])
 import setup,bridge,main
 assert setup.PLUGIN_BUNDLE
 assert "install" not in sys.modules and "decky" not in sys.modules
-assert bridge.cli_path()==Path(sys.argv[1])/"bin/obsgod"
+assert bridge.cli_path()==Path(sys.argv[1])/"bin/deckystream"
 server=setup.SetupServer()
 try:
     assert server.dependencies()["running"] is False
@@ -101,17 +101,17 @@ print(json.dumps({"plugin_bundle":True,"backend_imported":True,"legacy_installer
         self.assertTrue(json.loads(result.stdout)["backend_imported"])
 
     def test_stage_matches_official_cli_defaults_contract_without_checkout_mutation(self):
-        stage = self.work / "obsgod"
+        stage = self.work / "deckystream"
         package.stage_cli(self.files, stage)
         for name, data in self.files.items():
             direct = name in {"LICENSE", "main.py", "package.json", "plugin.json", "README.md"} or name.endswith(".py") and "/" not in name or name.startswith(("dist/", "bin/"))
             self.assertEqual((stage / (name if direct else "defaults/" + name)).read_bytes(), data)
         self.assertFalse((stage / "backend").exists(), "Do not rebuild Flatpak capture with a host builder")
         subprocess.run(["node", "build/verify.mjs"], cwd=stage, check=True, capture_output=True)
-        (stage / "bin/obsgod").write_bytes(b"tampered")
+        (stage / "bin/deckystream").write_bytes(b"tampered")
         result = subprocess.run(["node", "build/verify.mjs"], cwd=stage, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn(b"Prepared payload changed: bin/obsgod", result.stderr)
+        self.assertIn(b"Prepared payload changed: bin/deckystream", result.stderr)
         with self.assertRaises(FileExistsError):
             package.stage_cli(self.files, stage)
 
@@ -180,10 +180,10 @@ print(json.dumps({"plugin_bundle":True,"backend_imported":True,"legacy_installer
         spec = importlib.util.spec_from_file_location("packaged_bridge", root / "bridge.py")
         bridge = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bridge)
-        self.assertEqual(bridge.cli_path(), root / "obsgod")
+        self.assertEqual(bridge.cli_path(), root / "deckystream")
         (root / "bin").mkdir()
-        (root / "bin/obsgod").write_bytes(b"plugin")
-        self.assertEqual(bridge.cli_path(), root / "bin/obsgod")
+        (root / "bin/deckystream").write_bytes(b"plugin")
+        self.assertEqual(bridge.cli_path(), root / "bin/deckystream")
 
     def test_wrong_cli_binary_is_rejected_before_any_container_execution(self):
         fake = self.work / "fake-cli"

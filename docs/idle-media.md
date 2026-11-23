@@ -45,11 +45,11 @@ restarts a stopped broadcast or substitutes whole-screen video.
 For CLI automation, send one JSON object on standard input:
 
 ```sh
-obsgod deck set-idle-media <<'JSON'
+deckystream deck set-idle-media <<'JSON'
 {"idle_style":"image","source":"/home/deck/Pictures/my-banner.png","rights_acknowledged":true,"attribution":"My original artwork"}
 JSON
 
-obsgod deck set-idle-media <<'JSON'
+deckystream deck set-idle-media <<'JSON'
 {"idle_style":"placeholder","idle_text":"Be right back"}
 JSON
 ```

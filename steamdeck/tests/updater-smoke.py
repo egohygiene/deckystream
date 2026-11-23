@@ -79,7 +79,7 @@ def upstream_modules(directory):
 
 class Settings:
     def __init__(self):
-        self.values = {"pluginOrder": ["Alpha", "OBSGod", "Beta"], "frozenPlugins": ["Alpha"], "hiddenPlugins": ["Beta"], "disabled_plugins": []}
+        self.values = {"pluginOrder": ["Alpha", "deckystream", "Beta"], "frozenPlugins": ["Alpha"], "hiddenPlugins": ["Beta"], "disabled_plugins": []}
 
     def getSetting(self, key, default=None):
         return self.values.get(key, default)
@@ -105,7 +105,7 @@ class Loader:
 
     def __init__(self, ws, path):
         self.ws, self.path = ws, path
-        self.plugins = {name: Plugin(name, "0.1.0-old", name.lower()) for name in ["Alpha", "OBSGod", "Beta"]}
+        self.plugins = {name: Plugin(name, "0.1.0-old", name.lower()) for name in ["Alpha", "deckystream", "Beta"]}
 
     async def import_plugin(self, file, folder):
         root = Path(file).parent
@@ -135,7 +135,7 @@ async def execute(command, env, timeout=90, input_data=None, **kwargs):
 
 async def run(args):
     helpers, router, browser = upstream_modules(args.upstream)
-    with tempfile.TemporaryDirectory(prefix="obsgod-updater-smoke-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-updater-smoke-") as temporary:
         base = Path(temporary)
         home = base / "home with spaces %20"
         home.mkdir()
@@ -144,19 +144,19 @@ async def run(args):
         older.mkdir()
         with tarfile.open(args.previous_archive) as archive:
             archive.extractall(older, filter="data")
-        old_package = next(older.glob("OBSGod-*"))
+        old_package = next(older.glob("deckystream-*"))
         await execute([sys.executable, str(old_package / "install.py"), "--no-launch"], env)
-        current = home / ".local/share/obsgod/current"
-        configured = subprocess.run([str(current / "obsgod"), "deck", "configure"], input=json.dumps({"server":"rtmps://example.invalid/app", "stream_key":"fixture-stream-key-never-real"}), env=env, capture_output=True, text=True, check=True)
+        current = home / ".local/share/deckystream/current"
+        configured = subprocess.run([str(current / "deckystream"), "deck", "configure"], input=json.dumps({"server":"rtmps://example.invalid/app", "stream_key":"fixture-stream-key-never-real"}), env=env, capture_output=True, text=True, check=True)
         assert "fixture-stream-key-never-real" not in configured.stdout + configured.stderr
-        for path in [home / "Videos/OBSGod/keep.mkv", home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini"]:
+        for path in [home / "Videos/deckystream/keep.mkv", home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini"]:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"unchanged fixture data")
-        protected = [home / ".config/obsgod/deck.json", home / ".config/obsgod/secrets.json", home / "Videos/OBSGod/keep.mkv", home / ".var/app/com.obsproject.Studio/config/obsgod/obs-studio/global.ini"]
+        protected = [home / ".config/deckystream/deck.json", home / ".config/deckystream/secrets.json", home / "Videos/deckystream/keep.mkv", home / ".var/app/com.obsproject.Studio/config/deckystream/obs-studio/global.ini"]
         snapshots = {path:path.read_bytes() for path in protected}
         plugins = home / "homebrew/plugins"
         plugins.mkdir(parents=True)
-        with zipfile.ZipFile(old_package / "obsgod-decky.zip") as archive:
+        with zipfile.ZipFile(old_package / "deckystream-decky.zip") as archive:
             archive.extractall(plugins)
         for name in ["Alpha", "Beta"]:
             folder = plugins / name.lower()
@@ -167,15 +167,15 @@ async def run(args):
         updater.mkdir()
         with zipfile.ZipFile(args.updater_zip) as archive:
             archive.extractall(updater)
-        package = updater / "OBSGod-Updater"
+        package = updater / "deckystream-Updater"
         commands = base / "fixture-bin"
         commands.mkdir()
         (commands / "flatpak").write_text("#!/bin/sh\ntest \"$1\" = info\n")
         dialog = base / "dialog-message"
-        (commands / "kdialog").write_text("#!" + sys.executable + "\nimport os,sys\nfrom pathlib import Path\nPath(os.environ['OBSGOD_FIXTURE_DIALOG']).write_text(sys.argv[-1])\n")
+        (commands / "kdialog").write_text("#!" + sys.executable + "\nimport os,sys\nfrom pathlib import Path\nPath(os.environ['DECKYSTREAM_FIXTURE_DIALOG']).write_text(sys.argv[-1])\n")
         for path in commands.iterdir():
             path.chmod(0o700)
-        env.update(PATH=str(commands) + os.pathsep + os.environ["PATH"], OBSGOD_FIXTURE_DIALOG=str(dialog))
+        env.update(PATH=str(commands) + os.pathsep + os.environ["PATH"], DECKYSTREAM_FIXTURE_DIALOG=str(dialog))
 
         app = web.Application(middlewares=[helpers.csrf_middleware])
         ws = router.WSRouter(asyncio.get_running_loop(), app)
@@ -211,25 +211,25 @@ async def run(args):
         try:
             # The actual desktop entry finds its script through a file URI,
             # including spaces and literal percent sequences. No bypass of main.
-            command = desktop_command(package / "Update OBSGod.desktop", as_uri=True)
+            command = desktop_command(package / "Update deckystream.desktop", as_uri=True)
             output = await execute(command, env, cwd=home)
             assert b"DONE:" in output
             assert "0.1.0-deck.4" in dialog.read_text()
             assert all(path.read_bytes() == data for path,data in snapshots.items())
-            assert json.loads((plugins / "obsgod/package.json").read_text())["version"] == "0.1.0-deck.4"
-            assert settings.getSetting("pluginOrder") == ["Alpha", "OBSGod", "Beta"]
+            assert json.loads((plugins / "deckystream/package.json").read_text())["version"] == "0.1.0-deck.4"
+            assert settings.getSetting("pluginOrder") == ["Alpha", "deckystream", "Beta"]
             assert settings.getSetting("frozenPlugins") == ["Alpha"]
             assert settings.getSetting("hiddenPlugins") == ["Beta"]
             for name in ["alpha", "beta"]:
                 assert (plugins / name / "keep").read_bytes() == b"unrelated plugin bytes"
-            backup = list((home / ".local/share/obsgod/backups").glob("updater-*/secrets.json"))
+            backup = list((home / ".local/share/deckystream/backups").glob("updater-*/secrets.json"))
             assert len(backup) == 1 and backup[0].stat().st_mode & 0o777 == 0o600
             # Rerun the same script: no manual removal, extra input or key reset.
             await execute(command, env, cwd=home)
             assert all(path.read_bytes() == data for path,data in snapshots.items())
-            assert settings.getSetting("pluginOrder") == ["Alpha", "OBSGod", "Beta"]
-            assert not list((home / ".local/share/obsgod").glob(".update-*"))
-            assert (home / ".local/share/obsgod/releases/0.1.0-deck.1").is_dir()
+            assert settings.getSetting("pluginOrder") == ["Alpha", "deckystream", "Beta"]
+            assert not list((home / ".local/share/deckystream").glob(".update-*"))
+            assert (home / ".local/share/deckystream/releases/0.1.0-deck.1").is_dir()
             print("PASS: actual updater ZIP + desktop/file-URI launcher + compiled authenticated client + pinned Decky 3.3.1 CSRF/router/installer; original-preview app/plugin replacement, repeat run, private backup, settings/key/media/OBS preservation and other plugin/order preservation. Ownership, loader lifecycle, dialogs, Flatpak info and Steam are fixtures; real Deck untested.")
         finally:
             await server.cleanup()

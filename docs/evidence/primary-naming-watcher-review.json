@@ -1,0 +1,157 @@
+{
+  "schema": "deckystream.naming-native-watcher-review/v1",
+  "base_revision": "90fcae1e81f7e9311896dd9f64d6f2917b03b0f9",
+  "scope": "Native fixture readiness synchronization and a recording-specific Go regression; no production runtime changes.",
+  "finding": "The fixture observed recording and GAME pixels, then asserted watcher readiness immediately. Current production starts observers in a separate ordered phase. The failed log omitted the actual watcher/recording values, so it does not establish the precise failing observation.",
+  "hosted_failure": {
+    "run": 45051404769,
+    "job": 137297106322,
+    "passed_before_failure": [
+      "Go/race/security checks",
+      "Python/tooling/frontend",
+      "Repeated complete primary builds",
+      "Compatibility/updater reproducibility",
+      "Source/license artifact audits",
+      "Browser flows",
+      "Real OBS audio/local RTMP/authentication recovery",
+      "App-filtered capture harness"
+    ],
+    "failed": "Native game OBS fixture local-clip one-shot watcher assertion",
+    "candidate_artifact": "Unpublished; normal artifact upload was skipped after failure."
+  },
+  "go_recording_regression": {
+    "schema": "deckystream.capture-watcher-readiness-go-regression/v1",
+    "base_revision": "90fcae1e81f7e9311896dd9f64d6f2917b03b0f9",
+    "production_go_changes": false,
+    "changes": "New protocol regression proves active local recording publishes Watching=true and unknown frame health while initiating output control lease remains held; observer is cancelled/reaped before lease release and sends only reads",
+    "checks": [
+      {
+        "command": "go test -race -count=1 ./internal/deck -run '^TestCaptureWatch(ConfirmsActiveRecordingBeforeTakingOutputControl|ObservesIdleWithoutTakingOutputControlOrMutating)$'",
+        "outcome": "passed",
+        "evidence": "/workspace/.obsgod-tools/naming-20261122/watcher-repro/go-active-held-lock-readiness.log"
+      },
+      {
+        "command": "go test -race -json -count=1 ./internal/deck",
+        "outcome": "passed",
+        "test_or_subtest_pass_events": 331,
+        "skips": [
+          "TestDeckyStorageMapDoesNotPermitRootBackend"
+        ],
+        "evidence": "/workspace/.obsgod-tools/naming-20261122/watcher-repro/go-deck-race.jsonl"
+      },
+      {
+        "command": "go vet ./internal/deck",
+        "outcome": "passed",
+        "evidence": "/workspace/.obsgod-tools/naming-20261122/watcher-repro/go-deck-vet.log"
+      }
+    ],
+    "source_sha256": {
+      "internal/deck/capture_watch_linux_test.go": "b4ea7373399607753c2b7f238deb9488ce15022a5908dce23cec2e9a68f64010",
+      "steamdeck/tests/native-game-obs.py": "2889e9d439729b64c0b242b3856f9a8a8de2dfbd0777b477cc011d9101abf7f9",
+      "steamdeck/tests/test_native_game_readiness.py": "f4d248fed91adb7cfb563b4f1a38acff771f1eca4f4815fb932c116d3ffbddb8"
+    },
+    "python_receipt": "/workspace/.obsgod-tools/naming-20261122/native-watcher-readiness-repair.json",
+    "local_native_attempt": "unavailable before application launch due Docker VFS image copy exhausting available disk; not a runtime pass or failure",
+    "native_attempt_receipt": "/workspace/.obsgod-tools/naming-20261122/watcher-repro/local-reproduction-limit.json",
+    "limits": [
+      "Protocol fixture runs watcher function, not an actual detached native observer process",
+      "Actual repaired native OBS pipeline remains pending hosted rerun",
+      "No production runtime changes, commit, push or publication performed by this agent"
+    ]
+  },
+  "fixture_repair": {
+    "timestamp_utc": "2026-11-22T18:07:50.954467+00:00",
+    "head": "90fcae1e81f7e9311896dd9f64d6f2917b03b0f9",
+    "source_state": "dirty working tree; no commit/push by this agent",
+    "scope": "test-fixture synchronization only; no production runtime changes",
+    "source_sha256": {
+      "steamdeck/tests/native-game-obs.py": "2889e9d439729b64c0b242b3856f9a8a8de2dfbd0777b477cc011d9101abf7f9",
+      "steamdeck/tests/test_native_game_readiness.py": "f4d248fed91adb7cfb563b4f1a38acff771f1eca4f4815fb932c116d3ffbddb8"
+    },
+    "change": "Replace single premature watcher assertion with independently observed recording+output-known+watcher readiness, before proceeding to unchanged strict pixel/output/transition assertions.",
+    "bounds": {
+      "total_seconds": 12,
+      "reason": "Existing ordered resilience and capture observer startup each have a5-second bound; clip servicing lasts10seconds after startup.",
+      "probe_timeout": "Each read-only status probe receives only remaining total budget. Overdue/cancelled read-only status probes are killed without extending deadline using mutation cleanup grace.",
+      "hard_failures": [
+        "local clip completed, failed or cancelled",
+        "recording stopped or output state unknown",
+        "status probe error",
+        "total deadline reached"
+      ],
+      "diagnostics": "Only safe first/final observations, probe count, elapsed time and fixed allowed diagnostic stage IDs; settings, URLs, arbitrary errors and diagnostic messages excluded."
+    },
+    "checks": [
+      {
+        "command": "python3 -m unittest discover -s steamdeck/tests -p 'test_native_game_readiness.py'",
+        "status": "passed",
+        "tests": 7
+      },
+      {
+        "command": "python3 -S -m unittest discover -s steamdeck/tests -p 'test_native_game_readiness.py'",
+        "status": "passed",
+        "tests": 7,
+        "purpose": "No new websocket/third-party dependency required to run unit suite; native transport import deferred until real connect."
+      },
+      {
+        "command": "python3 -m unittest discover -s steamdeck/tests -p 'test_native_audio.py'",
+        "status": "passed",
+        "tests": 4
+      },
+      {
+        "command": "python3 -m py_compile steamdeck/tests/native-game-obs.py steamdeck/tests/test_native_game_readiness.py",
+        "status": "passed"
+      },
+      {
+        "command": "git diff --check",
+        "status": "passed"
+      }
+    ],
+    "regressions": [
+      "delayed false\u2192true readiness retains first/final evidence and shrinking budget",
+      "permanently unready observer fails at total simulated deadline",
+      "stopped or unknown output fails immediately even when watchertrue",
+      "clip completion cannot qualify readiness",
+      "CLI error is not retried or retained as private text",
+      "simultaneous clip completion/probe error consumed without unhandled-task warning",
+      "hung probe cancelled at real remaining budget"
+    ],
+    "runtime_limitations": [
+      "Local Docker reproduction was unavailable before OBS because VFS image copy exhausted free disk; Go agent recorded this separately, no destructive cleanup.",
+      "No native pipeline re-executed by this agent. Hosted real native rerun remains required; passing helper tests do not qualify actual OBS/SteamOS/Deck behavior."
+    ]
+  },
+  "local_native_reproduction": {
+    "source_revision": "90fcae1e81f7e9311896dd9f64d6f2917b03b0f9",
+    "source_hashes": {
+      "/workspace/deckystream/internal/deck/control.go": "fbd2a6a4f180a14cc6ad1801b573b5de86c79d440f4218dc907c21b6c0692df7",
+      "/workspace/deckystream/internal/deck/capture_watch_linux.go": "ed656be83190bc51bfc4b5e7569e22362ba855587100e83227dfcb5deb3034ed",
+      "/workspace/deckystream/internal/deck/capture_video.go": "38214cb71a26681bb9bba4cdf207688534740958127c65fbb1f7524c6a227d2f",
+      "/workspace/deckystream/internal/deck/runtime_linux.go": "023c01a193e0644e9775e39acd395d717dc4430afee8f6fb20f54c310b7d6173",
+      "/workspace/deckystream/steamdeck/tests/native-game-obs.py": "dbadebb5416c590afdd23e53c06992d600aec8949b7d66a35c71ecbc31c4f26f",
+      "/workspace/deckystream/dist/deckystream": "931d631bd98585d9e35e4f62cd19783fd53f35167650420b53322b9b7cf4f1a7",
+      "/workspace/deckystream/dist/libgstdeckystreamcapture.so": "a4c856524407d4052d39d9acd892fdd96f1e5823993acab3d01165b6c1dd4a5f",
+      "/workspace/.obsgod-tools/naming-20261122/watcher-repro/native-game-obs-diagnostic.py": "63c63af05c871de4ef7d60c359f9295b995f0eb7c272975c53d5cbffa85e3b56"
+    },
+    "docker_driver": "vfs",
+    "image_id": "sha256:74e5068d35ebfb2344b1be935fd7e48ed09b1383cc702fe88c1854a50823c9b5",
+    "image_label": "obsgod-obs-smoke:qualification (historical cached image)",
+    "outcome": "unavailable",
+    "reason": "VFS container image copy consumed remaining filesystem capacity; fixture mkdir failed ENOSPC before application or OBS launch",
+    "failure_log": "/workspace/.obsgod-tools/naming-20261122/watcher-repro/native-game-before.log",
+    "resource_policy": "No pull, image build, prune or cache cleanup; auto-remove container restored consumed copy space",
+    "actual_obs_outcome": "unrun locally; no actual failed status payload was obtained",
+    "source_review": "One-shot fixture reads watcher before ordered StartResilienceWatch/StartCaptureWatch readiness necessarily completes. Source writes watching=false before StartRecording; observing recording and GAME pixels alone does not prove independent watcher readiness."
+  },
+  "qualification_binding": "The complete latest-head hosted candidate and security checks must be evaluated separately. Local observer protocol fixtures and helper-unit tests do not qualify actual OBS, Steam Deck, loader or provider behavior.",
+  "codeql_disposition": "Three protocol-prescribed SHA256 findings remain in the separate hosted PR security check; source annotations did not clear this hosted setup. Owner dismissal as false positives was requested because the connected identity cannot manage code-scanning alerts (HTTP403).",
+  "failure_evidence_delivery": {
+    "path": "steamdeck/tests/native-game-obs-smoke.sh",
+    "sha256": "4f1b8a8d3685cb8915cbd92f2e593990b849cfcf89210927241652578d313254",
+    "behavior": "If the native Python fixture fails, preserve its nonzero exit code and print only the fixed-schema readiness evidence produced by the privacy-tested gate. The normal candidate artifact upload does not run after a failed stage.",
+    "checks": [
+      "bash -n steamdeck/tests/native-game-obs-smoke.sh passed",
+      "All seven readiness/privacy/cleanup cases reran and passed"
+    ]
+  }
+}

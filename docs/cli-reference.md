@@ -1,347 +1,347 @@
-# obsgod command reference
+# deckystream command reference
 
 Generated from the current command tree. Built-in defaults are shown; use `config show` for effective settings. Commands marked JSON keep that format. Other commands retain their existing human output.
 
-## obsgod
+## deckystream
 
-obsgod is a command-line remote control for OBS
+deckystream is a command-line remote control for OBS
 
 ```text
-obsgod [flags]
+deckystream [flags]
 ```
 
 ```sh
-  obsgod version
-  obsgod config show --json
-  obsgod stream status --json
+  deckystream version
+  deckystream config show --json
+  deckystream stream status --json
 ```
 
 ```text
-      --config string               OBS connection config file (env: OBSGOD_CONFIG; default: XDG obsgod/config.json)
-      --connection-profile string   Named connection profile (env: OBSGOD_CONNECTION_PROFILE)
-  -h, --help                        help for obsgod
-      --host string                 OBS host (env: OBSGOD_HOST or legacy OBS_HOST) (default "localhost")
+      --config string               OBS connection config file (env: DECKYSTREAM_CONFIG; default: XDG deckystream/config.json)
+      --connection-profile string   Named connection profile (env: DECKYSTREAM_CONNECTION_PROFILE)
+  -h, --help                        help for deckystream
+      --host string                 OBS host (env: DECKYSTREAM_HOST or legacy OBS_HOST) (default "localhost")
       --no-color                    Disable optional terminal color in verbose diagnostics (also respects NO_COLOR/TERM)
       --password string             OBS password; prefer --password-file or OBS_PASSWORD to avoid shell history
       --password-file string        Private single-line OBS password file; avoids secret command arguments
-  -p, --port uint32                 OBS port (env: OBSGOD_PORT or legacy OBS_PORT) (default 4455)
+  -p, --port uint32                 OBS port (env: DECKYSTREAM_PORT or legacy OBS_PORT) (default 4455)
       --verbose                     Write credential-free command/stage diagnostics to stderr
 ```
 
-## obsgod api
+## deckystream api
 
 Versioned public OBS API adapter; emits one JSON result, preserves legacy commands
 
 ```text
-obsgod api
+deckystream api
 ```
 
 ```sh
-  obsgod api capabilities
-  obsgod api snapshot
-  obsgod api stream start --approve
+  deckystream api capabilities
+  deckystream api snapshot
+  deckystream api stream start --approve
 ```
 
 ```text
       --json   Emit versioned JSON (always enabled for this command family) (default true)
 ```
 
-## obsgod api capabilities
+## deckystream api capabilities
 
 Discover the public contract offline
 
 ```text
-obsgod api capabilities
+deckystream api capabilities
 ```
 
-## obsgod api collection
+## deckystream api collection
 
 List or select existing OBS collection settings
 
 ```text
-obsgod api collection
+deckystream api collection
 ```
 
-## obsgod api collection list
+## deckystream api collection list
 
 List existing collection names
 
 ```text
-obsgod api collection list
+deckystream api collection list
 ```
 
-## obsgod api collection select
+## deckystream api collection select
 
 Select an existing collection (structural changes require idle outputs)
 
 ```text
-obsgod api collection select NAME [flags]
+deckystream api collection select NAME [flags]
 ```
 
 ```text
       --approve   Approve this settings change for this invocation
 ```
 
-## obsgod api profile
+## deckystream api profile
 
 List or select existing OBS profile settings
 
 ```text
-obsgod api profile
+deckystream api profile
 ```
 
-## obsgod api profile list
+## deckystream api profile list
 
 List existing profile names
 
 ```text
-obsgod api profile list
+deckystream api profile list
 ```
 
-## obsgod api profile select
+## deckystream api profile select
 
 Select an existing profile (structural changes require idle outputs)
 
 ```text
-obsgod api profile select NAME [flags]
+deckystream api profile select NAME [flags]
 ```
 
 ```text
       --approve   Approve this settings change for this invocation
 ```
 
-## obsgod api recording
+## deckystream api recording
 
 Explicitly control local recording output
 
 ```text
-obsgod api recording
+deckystream api recording
 ```
 
-## obsgod api recording start
+## deckystream api recording start
 
 start recording with confirmation
 
 ```text
-obsgod api recording start [flags]
+deckystream api recording start [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api recording stop
+## deckystream api recording stop
 
 stop recording with confirmation
 
 ```text
-obsgod api recording stop [flags]
+deckystream api recording stop [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api replay
+## deckystream api replay
 
 Explicitly control local replay output
 
 ```text
-obsgod api replay
+deckystream api replay
 ```
 
-## obsgod api replay save
+## deckystream api replay save
 
 save replay with confirmation
 
 ```text
-obsgod api replay save [flags]
+deckystream api replay save [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api replay start
+## deckystream api replay start
 
 start replay with confirmation
 
 ```text
-obsgod api replay start [flags]
+deckystream api replay start [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api replay stop
+## deckystream api replay stop
 
 stop replay with confirmation
 
 ```text
-obsgod api replay stop [flags]
+deckystream api replay stop [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api scene
+## deckystream api scene
 
 List or select existing OBS scene settings
 
 ```text
-obsgod api scene
+deckystream api scene
 ```
 
-## obsgod api scene list
+## deckystream api scene list
 
 List existing scene names
 
 ```text
-obsgod api scene list
+deckystream api scene list
 ```
 
-## obsgod api scene select
+## deckystream api scene select
 
 Select an existing scene (structural changes require idle outputs)
 
 ```text
-obsgod api scene select NAME [flags]
+deckystream api scene select NAME [flags]
 ```
 
 ```text
       --approve   Approve this settings change for this invocation
 ```
 
-## obsgod api scene-items
+## deckystream api scene-items
 
 Read or explicitly change a scene item's visibility
 
 ```text
-obsgod api scene-items
+deckystream api scene-items
 ```
 
-## obsgod api scene-items hide
+## deckystream api scene-items hide
 
 hide a scene item by numeric ID
 
 ```text
-obsgod api scene-items hide SCENE ID [flags]
+deckystream api scene-items hide SCENE ID [flags]
 ```
 
 ```text
       --approve   Approve this visibility change for this invocation
 ```
 
-## obsgod api scene-items list
+## deckystream api scene-items list
 
 List scene items with stable IDs
 
 ```text
-obsgod api scene-items list SCENE
+deckystream api scene-items list SCENE
 ```
 
-## obsgod api scene-items show
+## deckystream api scene-items show
 
 show a scene item by numeric ID
 
 ```text
-obsgod api scene-items show SCENE ID [flags]
+deckystream api scene-items show SCENE ID [flags]
 ```
 
 ```text
       --approve   Approve this visibility change for this invocation
 ```
 
-## obsgod api snapshot
+## deckystream api snapshot
 
 Observe outputs, profiles, collections and scenes
 
 ```text
-obsgod api snapshot
+deckystream api snapshot
 ```
 
 Aliases: status.
 
-## obsgod api stream
+## deckystream api stream
 
 Query or explicitly change OBS streaming
 
 ```text
-obsgod api stream
+deckystream api stream
 ```
 
-## obsgod api stream start
+## deckystream api stream start
 
 Explicitly start streaming and confirm observed state
 
 ```text
-obsgod api stream start [flags]
+deckystream api stream start [flags]
 ```
 
 ```text
       --approve   Approve this output action for this invocation
 ```
 
-## obsgod api stream status
+## deckystream api stream status
 
 Observe OBS stream output; provider reception stays unknown
 
 ```text
-obsgod api stream status
+deckystream api stream status
 ```
 
-## obsgod api stream stop
+## deckystream api stream stop
 
 Explicitly stop streaming and confirm observed state
 
 ```text
-obsgod api stream stop [flags]
+deckystream api stream stop [flags]
 ```
 
 ```text
       --approve   Approve this output action for this invocation
 ```
 
-## obsgod api virtual-camera
+## deckystream api virtual-camera
 
 Explicitly control local virtual-camera output
 
 ```text
-obsgod api virtual-camera
+deckystream api virtual-camera
 ```
 
-## obsgod api virtual-camera start
+## deckystream api virtual-camera start
 
 start virtual-camera with confirmation
 
 ```text
-obsgod api virtual-camera start [flags]
+deckystream api virtual-camera start [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api virtual-camera stop
+## deckystream api virtual-camera stop
 
 stop virtual-camera with confirmation
 
 ```text
-obsgod api virtual-camera stop [flags]
+deckystream api virtual-camera stop [flags]
 ```
 
 ```text
       --approve   Approve this local output action for this invocation
 ```
 
-## obsgod api workflow
+## deckystream api workflow
 
 Apply an existing declarative workflow; never starts streaming
 
 ```text
-obsgod api workflow NAME [flags]
+deckystream api workflow NAME [flags]
 ```
 
 ```text
@@ -350,60 +350,60 @@ obsgod api workflow NAME [flags]
       --approve               Approve settings for this invocation
 ```
 
-## obsgod completion
+## deckystream completion
 
 Generate offline shell completions to stdout
 
 ```text
-obsgod completion [bash|zsh|fish]
+deckystream completion [bash|zsh|fish]
 ```
 
-## obsgod config
+## deckystream config
 
 Inspect and validate connection configuration without starting OBS
 
 ```text
-obsgod config
+deckystream config
 ```
 
-## obsgod config path
+## deckystream config path
 
 Print the configured file location, even if its contents are invalid
 
 ```text
-obsgod config path
+deckystream config path
 ```
 
-## obsgod config profiles
+## deckystream config profiles
 
 List available connection profiles; this does not change OBS profiles
 
 ```text
-obsgod config profiles [flags]
+deckystream config profiles [flags]
 ```
 
 ```text
       --json   Print versioned profile names
 ```
 
-## obsgod config show
+## deckystream config show
 
 Show resolved configuration with credentials redacted (no OBS connection)
 
 ```text
-obsgod config show [flags]
+deckystream config show [flags]
 ```
 
 ```text
       --json   Print versioned redacted JSON
 ```
 
-## obsgod config validate
+## deckystream config validate
 
 Check the selected configuration and credential reference without connecting
 
 ```text
-obsgod config validate [flags]
+deckystream config validate [flags]
 ```
 
 Aliases: check.
@@ -412,47 +412,47 @@ Aliases: check.
       --json   Print versioned redacted JSON
 ```
 
-## obsgod creator
+## deckystream creator
 
 Optional local creator orchestration through the public OBS API
 
 ```text
-obsgod creator
+deckystream creator
 ```
 
 ```sh
-  obsgod creator plan --profile creator.json
-  obsgod creator start --profile creator.json --approve --allow-streaming
-  obsgod creator status
+  deckystream creator plan --profile creator.json
+  deckystream creator start --profile creator.json --approve --allow-streaming
+  deckystream creator status
 ```
 
 ```text
       --json             Emit versioned JSON (always enabled for this command family) (default true)
-      --profile string   Creator profile file (env: OBSGOD_CREATOR_PROFILE; default: XDG obsgod/creator.json)
+      --profile string   Creator profile file (env: DECKYSTREAM_CREATOR_PROFILE; default: XDG deckystream/creator.json)
 ```
 
-## obsgod creator extensions
+## deckystream creator extensions
 
 Discover local provider/event/content extension boundaries offline
 
 ```text
-obsgod creator extensions
+deckystream creator extensions
 ```
 
-## obsgod creator plan
+## deckystream creator plan
 
 Review resolved creator intent offline; no secrets are read
 
 ```text
-obsgod creator plan
+deckystream creator plan
 ```
 
-## obsgod creator start
+## deckystream creator start
 
 start the reviewed creator workflow; leaves OBS running
 
 ```text
-obsgod creator start [flags]
+deckystream creator start [flags]
 ```
 
 ```text
@@ -462,20 +462,20 @@ obsgod creator start [flags]
       --approve               Approve reviewed OBS settings for this invocation
 ```
 
-## obsgod creator status
+## deckystream creator status
 
 Observe current OBS state without provider account access
 
 ```text
-obsgod creator status
+deckystream creator status
 ```
 
-## obsgod creator stop
+## deckystream creator stop
 
 stop the reviewed creator workflow; leaves OBS running
 
 ```text
-obsgod creator stop [flags]
+deckystream creator stop [flags]
 ```
 
 ```text
@@ -485,164 +485,164 @@ obsgod creator stop [flags]
       --approve               Approve reviewed OBS settings for this invocation
 ```
 
-## obsgod deck
+## deckystream deck
 
 Manage the optional Steam Deck streaming preview (JSON output)
 
 ```text
-obsgod deck
+deckystream deck
 ```
 
-## obsgod deck change-obs-password
+## deckystream deck change-obs-password
 
 Change or generate the local control password from JSON stdin while OBS is closed
 
 ```text
-obsgod deck change-obs-password
+deckystream deck change-obs-password
 ```
 
-## obsgod deck clear-logs
+## deckystream deck clear-logs
 
 Clear local filtered diagnostic history
 
 ```text
-obsgod deck clear-logs
+deckystream deck clear-logs
 ```
 
-## obsgod deck configuration
+## deckystream deck configuration
 
 Read non-secret stream settings, defaults and safe edit/close availability
 
 ```text
-obsgod deck configuration
+deckystream deck configuration
 ```
 
-## obsgod deck configure
+## deckystream deck configure
 
 Save settings and key from JSON stdin, never argv
 
 ```text
-obsgod deck configure
+deckystream deck configure
 ```
 
-## obsgod deck configure-fields
+## deckystream deck configure-fields
 
 Merge private stream settings from bounded JSON stdin while managed OBS is closed
 
 ```text
-obsgod deck configure-fields
+deckystream deck configure-fields
 ```
 
-## obsgod deck connection-info
+## deckystream deck connection-info
 
 Read credential-free local OBS connection details
 
 ```text
-obsgod deck connection-info
+deckystream deck connection-info
 ```
 
-## obsgod deck doctor
+## deckystream deck doctor
 
 Diagnose installation, capture and OBS
 
 ```text
-obsgod deck doctor
+deckystream deck doctor
 ```
 
-## obsgod deck media
+## deckystream deck media
 
 Manage local recording, replay, clips and storage using JSON stdin; never broadcasts
 
 ```text
-obsgod deck media
+deckystream deck media
 ```
 
-## obsgod deck mixer
+## deckystream deck mixer
 
 Control managed OBS audio, devices and optional hold-to-talk using JSON stdin
 
 ```text
-obsgod deck mixer
+deckystream deck mixer
 ```
 
-## obsgod deck open-obs
+## deckystream deck open-obs
 
 Open the isolated OBS window visibly for Desktop recovery without starting output
 
 ```text
-obsgod deck open-obs
+deckystream deck open-obs
 ```
 
-## obsgod deck restart
+## deckystream deck restart
 
 Close idle managed OBS to apply saved settings
 
 ```text
-obsgod deck restart
+deckystream deck restart
 ```
 
-## obsgod deck retry-recovery
+## deckystream deck retry-recovery
 
 Retry bounded audio recovery for already-active managed output; never starts output
 
 ```text
-obsgod deck retry-recovery
+deckystream deck retry-recovery
 ```
 
-## obsgod deck set-capture-mode
+## deckystream deck set-capture-mode
 
 Choose screen or game video for the next explicit output (JSON stdin)
 
 ```text
-obsgod deck set-capture-mode
+deckystream deck set-capture-mode
 ```
 
-## obsgod deck set-idle-media
+## deckystream deck set-idle-media
 
 Import local between-game media with rights acknowledgement using JSON stdin
 
 ```text
-obsgod deck set-idle-media
+deckystream deck set-idle-media
 ```
 
-## obsgod deck start
+## deckystream deck start
 
 Capture Gaming Mode and wait for real stream output
 
 ```text
-obsgod deck start
+deckystream deck start
 ```
 
-## obsgod deck status
+## deckystream deck status
 
 Read live output state without starting OBS
 
 ```text
-obsgod deck status
+deckystream deck status
 ```
 
-## obsgod deck stop
+## deckystream deck stop
 
 Stop streaming and confirm it stopped
 
 ```text
-obsgod deck stop
+deckystream deck stop
 ```
 
-## obsgod deck stream-health
+## deckystream deck stream-health
 
 Read a bounded local OBS health sample; provider reception remains unknown
 
 ```text
-obsgod deck stream-health
+deckystream deck stream-health
 ```
 
-## obsgod deck stream-profiles
+## deckystream deck stream-profiles
 
 Preview, validate, save, apply or export stream profiles using JSON stdin
 
 ```text
-obsgod deck stream-profiles [flags]
+deckystream deck stream-profiles [flags]
 ```
 
 ```text
@@ -655,160 +655,160 @@ obsgod deck stream-profiles [flags]
       --width int             Override JSON/environment profile width for this action
 ```
 
-## obsgod deck support-bundle
+## deckystream deck support-bundle
 
 Export filtered diagnostic facts without credentials, URLs or private paths
 
 ```text
-obsgod deck support-bundle
+deckystream deck support-bundle
 ```
 
-## obsgod deck test-connection
+## deckystream deck test-connection
 
 Authenticate and read managed OBS without launching or broadcasting
 
 ```text
-obsgod deck test-connection
+deckystream deck test-connection
 ```
 
-## obsgod deck test-recording
+## deckystream deck test-recording
 
 Save a ten-second local clip without broadcasting
 
 ```text
-obsgod deck test-recording
+deckystream deck test-recording
 ```
 
-## obsgod doctor
+## deckystream doctor
 
 Diagnose managed Steam Deck installation, OBS and capture (JSON)
 
 ```text
-obsgod doctor
+deckystream doctor
 ```
 
-## obsgod help
+## deckystream help
 
 Help about any command
 
 ```text
-obsgod help [command]
+deckystream help [command]
 ```
 
-## obsgod label
+## deckystream label
 
 manage text labels
 
 ```text
-obsgod label
+deckystream label
 ```
 
-## obsgod label countdown
+## deckystream label countdown
 
 Update a text label with a cancellable duration countdown (for example 30s)
 
 ```text
-obsgod label countdown SOURCE DURATION
+deckystream label countdown SOURCE DURATION
 ```
 
 ```sh
-  obsgod label countdown Countdown 30s
+  deckystream label countdown Countdown 30s
 ```
 
-## obsgod label text
+## deckystream label text
 
 Changes a text label
 
 ```text
-obsgod label text SOURCE TEXT...
+deckystream label text SOURCE TEXT...
 ```
 
-## obsgod profile
+## deckystream profile
 
 manage profiles
 
 ```text
-obsgod profile
+deckystream profile
 ```
 
-## obsgod profile get
+## deckystream profile get
 
 Get the current profile
 
 ```text
-obsgod profile get
+deckystream profile get
 ```
 
-## obsgod profile list
+## deckystream profile list
 
 List all profiles
 
 ```text
-obsgod profile list
+deckystream profile list
 ```
 
-## obsgod profile set
+## deckystream profile set
 
 Set the current profile
 
 ```text
-obsgod profile set NAME...
+deckystream profile set NAME...
 ```
 
-## obsgod recording
+## deckystream recording
 
 manage recordings
 
 ```text
-obsgod recording
+deckystream recording
 ```
 
-## obsgod recording pause
+## deckystream recording pause
 
 manage paused state
 
 ```text
-obsgod recording pause
+deckystream recording pause
 ```
 
-## obsgod recording pause enable
+## deckystream recording pause enable
 
 Pause recording
 
 ```text
-obsgod recording pause enable
+deckystream recording pause enable
 ```
 
-## obsgod recording pause resume
+## deckystream recording pause resume
 
 Resume recording
 
 ```text
-obsgod recording pause resume
+deckystream recording pause resume
 ```
 
-## obsgod recording pause toggle
+## deckystream recording pause toggle
 
 Pause/resume recording
 
 ```text
-obsgod recording pause toggle
+deckystream recording pause toggle
 ```
 
-## obsgod recording start
+## deckystream recording start
 
 Starts recording
 
 ```text
-obsgod recording start
+deckystream recording start
 ```
 
-## obsgod recording status
+## deckystream recording status
 
 Reports recording status
 
 ```text
-obsgod recording status [flags]
+deckystream recording status [flags]
 ```
 
 ```text
@@ -816,269 +816,269 @@ obsgod recording status [flags]
       --quiet   Suppress successful status output; errors still fail
 ```
 
-## obsgod recording stop
+## deckystream recording stop
 
 Stops recording
 
 ```text
-obsgod recording stop
+deckystream recording stop
 ```
 
-## obsgod recording toggle
+## deckystream recording toggle
 
 Toggle recording
 
 ```text
-obsgod recording toggle
+deckystream recording toggle
 ```
 
-## obsgod reference
+## deckystream reference
 
 Generate a deterministic offline Markdown command reference
 
 ```text
-obsgod reference [flags]
+deckystream reference [flags]
 ```
 
 ```text
   -h, --help   help for reference
 ```
 
-## obsgod replaybuffer
+## deckystream replaybuffer
 
 manage replay buffer
 
 ```text
-obsgod replaybuffer
+deckystream replaybuffer
 ```
 
 Aliases: replay-buffer.
 
-## obsgod replaybuffer save
+## deckystream replaybuffer save
 
 Saves replay buffer
 
 ```text
-obsgod replaybuffer save
+deckystream replaybuffer save
 ```
 
-## obsgod replaybuffer start
+## deckystream replaybuffer start
 
 Starts replay buffer
 
 ```text
-obsgod replaybuffer start
+deckystream replaybuffer start
 ```
 
-## obsgod replaybuffer status
+## deckystream replaybuffer status
 
 Reports replay buffer status
 
 ```text
-obsgod replaybuffer status
+deckystream replaybuffer status
 ```
 
-## obsgod replaybuffer stop
+## deckystream replaybuffer stop
 
 Stops replay buffer
 
 ```text
-obsgod replaybuffer stop
+deckystream replaybuffer stop
 ```
 
-## obsgod scene
+## deckystream scene
 
 manage scenes
 
 ```text
-obsgod scene
+deckystream scene
 ```
 
 ```sh
-  obsgod scene list
-  obsgod scene set Game
+  deckystream scene list
+  deckystream scene set Game
 ```
 
-## obsgod scene current
+## deckystream scene current
 
 Switch program to a different scene
 
 ```text
-obsgod scene current NAME...
+deckystream scene current NAME...
 ```
 
 Aliases: set.
 
-## obsgod scene get
+## deckystream scene get
 
 Get the current scene
 
 ```text
-obsgod scene get
+deckystream scene get
 ```
 
-## obsgod scene list
+## deckystream scene list
 
 List all scene names
 
 ```text
-obsgod scene list
+deckystream scene list
 ```
 
-## obsgod scene preview
+## deckystream scene preview
 
 Switch preview to a different scene (studio mode must be enabled)
 
 ```text
-obsgod scene preview NAME...
+deckystream scene preview NAME...
 ```
 
-## obsgod scene switch
+## deckystream scene switch
 
 Switch program or preview in studio mode to a different scene
 
 ```text
-obsgod scene switch NAME...
+deckystream scene switch NAME...
 ```
 
-## obsgod scenecollection
+## deckystream scenecollection
 
 manage scene collections
 
 ```text
-obsgod scenecollection
+deckystream scenecollection
 ```
 
 Aliases: scene-collection.
 
-## obsgod scenecollection get
+## deckystream scenecollection get
 
 Get the current scene collection
 
 ```text
-obsgod scenecollection get
+deckystream scenecollection get
 ```
 
-## obsgod scenecollection list
+## deckystream scenecollection list
 
 List all scene collections
 
 ```text
-obsgod scenecollection list
+deckystream scenecollection list
 ```
 
-## obsgod scenecollection set
+## deckystream scenecollection set
 
 Set the current scene collection
 
 ```text
-obsgod scenecollection set NAME...
+deckystream scenecollection set NAME...
 ```
 
-## obsgod sceneitem
+## deckystream sceneitem
 
 manage scene items
 
 ```text
-obsgod sceneitem
+deckystream sceneitem
 ```
 
 Aliases: scene-item.
 
-## obsgod sceneitem center
+## deckystream sceneitem center
 
 Horizontally centers a scene-item
 
 ```text
-obsgod sceneitem center SCENE ITEM...
+deckystream sceneitem center SCENE ITEM...
 ```
 
-## obsgod sceneitem hide
+## deckystream sceneitem hide
 
 Hides a scene-item
 
 ```text
-obsgod sceneitem hide SCENE ITEM...
+deckystream sceneitem hide SCENE ITEM...
 ```
 
-## obsgod sceneitem list
+## deckystream sceneitem list
 
 Lists all items of a scene
 
 ```text
-obsgod sceneitem list SCENE
+deckystream sceneitem list SCENE
 ```
 
-## obsgod sceneitem show
+## deckystream sceneitem show
 
 Makes a scene-item visible
 
 ```text
-obsgod sceneitem show SCENE ITEM...
+deckystream sceneitem show SCENE ITEM...
 ```
 
-## obsgod sceneitem toggle
+## deckystream sceneitem toggle
 
 Toggles visibility of a scene-item
 
 ```text
-obsgod sceneitem toggle SCENE ITEM...
+deckystream sceneitem toggle SCENE ITEM...
 ```
 
-## obsgod sceneitem visible
+## deckystream sceneitem visible
 
 Show visibility status of a scene-item
 
 ```text
-obsgod sceneitem visible SCENE ITEM...
+deckystream sceneitem visible SCENE ITEM...
 ```
 
-## obsgod source
+## deckystream source
 
 manage sources
 
 ```text
-obsgod source
+deckystream source
 ```
 
-## obsgod source list
+## deckystream source list
 
 Lists all sources
 
 ```text
-obsgod source list
+deckystream source list
 ```
 
-## obsgod source toggle-mute
+## deckystream source toggle-mute
 
 Toggles mute
 
 ```text
-obsgod source toggle-mute NAME...
+deckystream source toggle-mute NAME...
 ```
 
-## obsgod stream
+## deckystream stream
 
 manage streams
 
 ```text
-obsgod stream
+deckystream stream
 ```
 
-## obsgod stream start
+## deckystream stream start
 
 Starts streaming
 
 ```text
-obsgod stream start
+deckystream stream start
 ```
 
-## obsgod stream status
+## deckystream stream status
 
 Reports streaming status
 
 ```text
-obsgod stream status [flags]
+deckystream stream status [flags]
 ```
 
 ```text
@@ -1086,140 +1086,140 @@ obsgod stream status [flags]
       --quiet   Suppress successful status output; errors still fail
 ```
 
-## obsgod stream stop
+## deckystream stream stop
 
 Stops streaming
 
 ```text
-obsgod stream stop
+deckystream stream stop
 ```
 
-## obsgod stream toggle
+## deckystream stream toggle
 
 Toggle streaming
 
 ```text
-obsgod stream toggle
+deckystream stream toggle
 ```
 
-## obsgod studiomode
+## deckystream studiomode
 
 manage studio mode
 
 ```text
-obsgod studiomode
+deckystream studiomode
 ```
 
 Aliases: studio-mode.
 
-## obsgod studiomode disable
+## deckystream studiomode disable
 
 Disables the studio mode
 
 ```text
-obsgod studiomode disable
+deckystream studiomode disable
 ```
 
-## obsgod studiomode enable
+## deckystream studiomode enable
 
 Enables the studio mode
 
 ```text
-obsgod studiomode enable
+deckystream studiomode enable
 ```
 
-## obsgod studiomode status
+## deckystream studiomode status
 
 Reports studio mode status
 
 ```text
-obsgod studiomode status
+deckystream studiomode status
 ```
 
-## obsgod studiomode toggle
+## deckystream studiomode toggle
 
 Toggles the studio mode (enable/disable)
 
 ```text
-obsgod studiomode toggle
+deckystream studiomode toggle
 ```
 
-## obsgod studiomode transition
+## deckystream studiomode transition
 
 Transition to program
 
 ```text
-obsgod studiomode transition
+deckystream studiomode transition
 ```
 
-## obsgod version
+## deckystream version
 
 Print build version without connecting to OBS
 
 ```text
-obsgod version [flags]
+deckystream version [flags]
 ```
 
 ```text
       --json   Print versioned build JSON
 ```
 
-## obsgod virtualcam
+## deckystream virtualcam
 
 manage virtual camera
 
 ```text
-obsgod virtualcam
+deckystream virtualcam
 ```
 
 Aliases: virtual-camera.
 
-## obsgod virtualcam start
+## deckystream virtualcam start
 
 Starts virtual camera
 
 ```text
-obsgod virtualcam start
+deckystream virtualcam start
 ```
 
-## obsgod virtualcam status
+## deckystream virtualcam status
 
 Reports virtual camera status
 
 ```text
-obsgod virtualcam status
+deckystream virtualcam status
 ```
 
-## obsgod virtualcam stop
+## deckystream virtualcam stop
 
 Stops virtual camera
 
 ```text
-obsgod virtualcam stop
+deckystream virtualcam stop
 ```
 
-## obsgod virtualcam toggle
+## deckystream virtualcam toggle
 
 Toggle virtual camera status
 
 ```text
-obsgod virtualcam toggle
+deckystream virtualcam toggle
 ```
 
-## obsgod workflow
+## deckystream workflow
 
 Plan or explicitly apply provider-neutral OBS settings; never starts streaming
 
 ```text
-obsgod workflow
+deckystream workflow
 ```
 
-## obsgod workflow apply
+## deckystream workflow apply
 
 Apply reviewed settings to confirmed idle OBS; explicit approvals required
 
 ```text
-obsgod workflow apply [NAME] [flags]
+deckystream workflow apply [NAME] [flags]
 ```
 
 ```text
@@ -1229,18 +1229,18 @@ obsgod workflow apply [NAME] [flags]
       --dry-run               Show the plan offline without connecting or applying
 ```
 
-## obsgod workflow list
+## deckystream workflow list
 
 List declarative workflow profiles without connecting to OBS
 
 ```text
-obsgod workflow list
+deckystream workflow list
 ```
 
-## obsgod workflow plan
+## deckystream workflow plan
 
 Show resolved workflow intent offline; applies no changes
 
 ```text
-obsgod workflow plan [NAME]
+deckystream workflow plan [NAME]
 ```

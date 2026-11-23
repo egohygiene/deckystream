@@ -126,9 +126,9 @@ func TestStreamProfileChangesAreBlockedByUnknownListener(t *testing.T) {
 
 func TestStreamProfilePrecedenceExplicitOverridesEnvironmentAndSaved(t *testing.T) {
 	p := testPaths(t)
-	t.Setenv("OBSGOD_DECK_FPS", "bad-private-environment")
-	t.Setenv("OBSGOD_DECK_BITRATE", "6500")
-	t.Setenv("OBSGOD_DECK_MICROPHONE", "true")
+	t.Setenv("DECKYSTREAM_DECK_FPS", "bad-private-environment")
+	t.Setenv("DECKYSTREAM_DECK_BITRATE", "6500")
+	t.Setenv("DECKYSTREAM_DECK_MICROPHONE", "true")
 	fps := 60
 	result, err := profileRequest(t, p, StreamProfileRequest{Action: "preview", Preset: "small-540p30", Overrides: &StreamProfileOverrides{FPS: &fps}})
 	if err != nil || !result.OK || result.Profile.FPS != 60 || result.Profile.Bitrate != 6500 || !result.Profile.Microphone || result.Profile.Width != 960 {
@@ -270,7 +270,7 @@ func TestOutputResolutionMigrationAndPrepareKeeps720pCanvas(t *testing.T) {
 	if err = Prepare(p, settings, secret); err != nil {
 		t.Fatal(err)
 	}
-	ini, err := os.ReadFile(filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/OBSGod/basic.ini"))
+	ini, err := os.ReadFile(filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/deckystream/basic.ini"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestOutputResolutionMigrationAndPrepareKeeps720pCanvas(t *testing.T) {
 			t.Fatal("prepare did not preserve canvas/scaled output", expected)
 		}
 	}
-	enc, err := os.ReadFile(filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/OBSGod/streamEncoder.json"))
+	enc, err := os.ReadFile(filepath.Join(p.OBSConfig, "obs-studio/basic/profiles/deckystream/streamEncoder.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,7 +306,7 @@ func TestStreamProfileEnvironmentAppliesOnlyBeforeExplicitNewOutput(t *testing.T
 	if _, err := Configure(p, strings.NewReader(fixtureSettings)); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("OBSGOD_DECK_FPS", "60")
+	t.Setenv("DECKYSTREAM_DECK_FPS", "60")
 	before, _ := os.ReadFile(p.Config)
 	// List/preview/validation never apply the environment to persistent settings.
 	if _, err := profileRequest(t, p, map[string]any{"action": "list"}); err != nil {

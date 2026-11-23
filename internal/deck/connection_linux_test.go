@@ -64,13 +64,13 @@ func startControlFixture(t *testing.T, password string, authentication, wrongPro
 			case "GetVersion":
 				response = map[string]any{"obsVersion": "33.0.1", "obsWebSocketVersion": "5.6.3"}
 			case "GetProfileList":
-				profile := "OBSGod"
+				profile := "deckystream"
 				if wrongProfile {
 					profile = "ordinary OBS"
 				}
 				response = map[string]any{"currentProfileName": profile}
 			case "GetSceneCollectionList":
-				response = map[string]any{"currentSceneCollectionName": "OBSGod"}
+				response = map[string]any{"currentSceneCollectionName": "deckystream"}
 			case "GetCurrentProgramScene":
 				response = map[string]any{"sceneName": LiveScene}
 			case "GetRecordStatus":

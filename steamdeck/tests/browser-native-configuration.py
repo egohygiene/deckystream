@@ -29,7 +29,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     decky = Path(__file__).resolve().parents[1] / "decky"
     cases = []
-    with tempfile.TemporaryDirectory(prefix="obsgod-native-configuration-") as directory:
+    with tempfile.TemporaryDirectory(prefix="deckystream-native-configuration-") as directory:
         root = Path(directory)
         with zipfile.ZipFile(args.plugin_zip) as archive:
             archive.extractall(root)

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func healthN(value float64) *float64 { return &value }

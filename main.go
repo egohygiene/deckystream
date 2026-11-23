@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/szmyty/obsgod/internal/commands"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/internal/obs"
+	"github.com/egohygiene/deckystream/internal/commands"
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/internal/obs"
 )
 
 var version string

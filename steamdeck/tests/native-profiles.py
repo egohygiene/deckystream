@@ -15,7 +15,7 @@ import subprocess
 import time
 
 
-BINARY = Path("/src/dist/obsgod")
+BINARY = Path("/src/dist/deckystream")
 OUTPUT = Path("/work/output")
 SENSITIVE = set()
 
@@ -81,7 +81,7 @@ async def video_settings(password):
 
 def run():
     assert Path("/.dockerenv").exists() and Path.home() == Path("/work/home"), "Run only inside the disposable native fixture"
-    root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "obsgod"
+    root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "deckystream"
     original = json.loads((root / "deck.json").read_text())
     initial_secrets = json.loads((root / "secrets.json").read_text())
     SENSITIVE.update(initial_secrets.get(key, "") for key in ["stream_key", "obs_password"])

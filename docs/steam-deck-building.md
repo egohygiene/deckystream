@@ -56,9 +56,9 @@ Browser tests use Playwright **1.62.0** and Chromium. They install into temporar
 homes, use fixture credentials and extract the actual archive/ZIP:
 
 ```sh
-python3 steamdeck/tests/browser-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz
-python3 steamdeck/tests/browser-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz --upgrade-from /path/to/obsgod-deck_0.1.0-deck.1_linux_amd64.tar.gz
-python3 steamdeck/tests/browser-panel.py dist/obsgod-decky.zip
+python3 steamdeck/tests/browser-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz
+python3 steamdeck/tests/browser-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz --upgrade-from /path/to/deckystream-deck_0.1.0-deck.1_linux_amd64.tar.gz
+python3 steamdeck/tests/browser-panel.py dist/deckystream-decky.zip
 ```
 
 The panel test simulates the Decky API and Steam UI globals. It verifies actual
@@ -73,7 +73,7 @@ disables TLS verification. A normal local machine can mount its system CA bundle
 
 ```sh
 docker build --secret id=proxy_ca,src=/etc/ssl/certs/ca-certificates.crt \
-  -f steamdeck/tests/obs-smoke.Dockerfile -t obsgod-obs-smoke .
+  -f steamdeck/tests/obs-smoke.Dockerfile -t deckystream-obs-smoke .
 ```
 
 Create a disposable, user-writable work directory outside your source tree. Put
@@ -88,9 +88,9 @@ Build the candidate first, then mount its source and the disposable work directo
 
 ```sh
 docker run --rm --user 1000:1000 \
-  --mount type=bind,src=/absolute/path/to/obsgod,dst=/src,readonly \
+  --mount type=bind,src=/absolute/path/to/deckystream,dst=/src,readonly \
   --mount type=bind,src=/absolute/path/to/disposable-work,dst=/work \
-  obsgod-obs-smoke dbus-run-session -- bash /src/steamdeck/tests/native-obs-smoke.sh
+  deckystream-obs-smoke dbus-run-session -- bash /src/steamdeck/tests/native-obs-smoke.sh
 ```
 
 **The script deletes `/work/home`, `/work/runtime`, `/work/output`, and
@@ -114,7 +114,7 @@ receiver and checks that a later listener receives no unexpected connection.
 No real credentials or external stream are used.
 
 For optional read-only diagnostics against an already running OBS, set
-`OBSGOD_TEST_OBS_ADDRESS` and `OBSGOD_TEST_OBS_PASSWORD` as environment variables
+`DECKYSTREAM_TEST_OBS_ADDRESS` and `DECKYSTREAM_TEST_OBS_PASSWORD` as environment variables
 and run `go test ./pkg/automation -run TestRealOBSReadOnly -v`. Otherwise that test
 is explicitly skipped. Never put a password or stream key into command arguments.
 
@@ -125,13 +125,13 @@ Decky helper, setup and updater Desktop launchers. Build the optional standalone
 updater from that exact clean runtime archive, without rebuilding the runtime:
 
 ```sh
-python3 scripts/package-updater.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz
+python3 scripts/package-updater.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz
 ```
 
 Check discovery without changing the installation:
 
 ```sh
-python3 /path/to/extracted/OBSGod-Updater/update.py --check --json --channel preview
+python3 /path/to/extracted/deckystream-Updater/update.py --check --json --channel preview
 ```
 
 The bottom panel button checks the loaded plugin against published standard
@@ -154,11 +154,11 @@ frontend connection open while the compiled helper probes, installs/reinstalls,
 and verifies the plugin and unrelated order/prompts:
 
 ```sh
-python3 steamdeck/tests/decky-transport-smoke.py dist/decky-install dist/obsgod-decky.zip \
+python3 steamdeck/tests/decky-transport-smoke.py dist/decky-install dist/deckystream-decky.zip \
   --upstream /path/to/pinned-decky-sources \
-  --runtime-archive dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz \
-  --previous-archive /path/to/obsgod-deck_0.1.0-deck.1_linux_amd64.tar.gz \
-  --updater-zip dist/obsgod-one-click-update_0.1.0-deck.9_linux_amd64.zip
+  --runtime-archive dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz \
+  --previous-archive /path/to/deckystream-deck_0.1.0-deck.1_linux_amd64.tar.gz \
+  --updater-zip dist/deckystream-one-click-update_0.1.0-deck.9_linux_amd64.zip
 ```
 
 The full-archive options execute the real unified installer twice and check
@@ -207,8 +207,8 @@ Candidate 9 adds stream-only microphone controls and a versioned public API.
 Run both new browser harnesses against the packaged assets:
 
 ```sh
-python3 steamdeck/tests/browser-mixer-panel.py dist/obsgod-decky.zip
-python3 steamdeck/tests/browser-mixer-setup.py dist/obsgod-deck_0.1.0-deck.9_linux_amd64.tar.gz
+python3 steamdeck/tests/browser-mixer-panel.py dist/deckystream-decky.zip
+python3 steamdeck/tests/browser-mixer-setup.py dist/deckystream-deck_0.1.0-deck.9_linux_amd64.tar.gz
 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 python3 scripts/release-audit.py --revision "$(git rev-parse HEAD)" --output dist/supply-chain
 ```

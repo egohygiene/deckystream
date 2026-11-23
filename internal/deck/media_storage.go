@@ -183,6 +183,9 @@ func inspectMediaStorage(p Paths, pref RecordingPreferences, probe bool) (MediaS
 // An idle OBS process is closed by the user explicitly if applying new encoder
 // or profile settings requires a restart. No configuration operation broadcasts.
 func ConfigureRecording(ctx context.Context, p Paths, reader io.Reader) (RecordingPreferences, error) {
+	if err := RequirePrimaryBackend(); err != nil {
+		return RecordingPreferences{}, err
+	}
 	pref := DefaultRecordingPreferences()
 	d := json.NewDecoder(io.LimitReader(reader, 8193))
 	d.DisallowUnknownFields()
@@ -216,7 +219,7 @@ func ConfigureRecording(ctx context.Context, p Paths, reader io.Reader) (Recordi
 // DefaultVideosDirectory reads the XDG user-dirs preference without executing a
 // shell. Only a quoted absolute path or a leading $HOME is expanded.
 func DefaultVideosDirectory(home, configRoot string) (string, error) {
-	fallback := filepath.Join(home, "Videos", "OBSGod")
+	fallback := filepath.Join(home, "Videos", "deckystream")
 	if value := os.Getenv("XDG_VIDEOS_DIR"); value != "" {
 		return parseVideosDirectory(value, home)
 	}
@@ -264,7 +267,7 @@ func parseVideosDirectory(value, home string) (string, error) {
 	if e := validateMediaDirectory(value); e != nil {
 		return "", e
 	}
-	return filepath.Join(value, "OBSGod"), nil
+	return filepath.Join(value, "deckystream"), nil
 }
 
 func mediaShortfallMessage(bytes uint64) string {

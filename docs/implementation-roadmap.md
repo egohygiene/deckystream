@@ -101,7 +101,7 @@ Owner-directed plan, recorded 2026-11-14. Parent:
 as the future repository name. The exact destination owner is still unresolved.
 
 Build a working standard Decky plugin under **szmyty/obsgod** first, using the
-owner's existing compatible OBSGod installation. Deliver a verified candidate
+owner's existing compatible deckystream installation. Deliver a verified candidate
 and short manual test cases. Fix the reported problems before migrating; then
 repeat the actual new download and clean installation. Planning issues are not
 implementation, qualification or permission to publish a product release.

@@ -20,7 +20,7 @@ import (
 
 func fixtureZIP(t *testing.T, change func(map[string]string)) Input {
 	t.Helper()
-	files := map[string]string{"obsgod/plugin.json": `{"name":"OBSGod","flags":[],"api_version":1}`, "obsgod/package.json": `{"name":"obsgod","version":"0.1.0-test","type":"module"}`, "obsgod/bin/obsgod": "fixture executable", "obsgod/main.py": "fixture backend", "obsgod/dist/index.js": "fixture frontend"}
+	files := map[string]string{"deckystream/plugin.json": `{"name":"deckystream","flags":[],"api_version":1}`, "deckystream/package.json": `{"name":"deckystream","version":"0.1.0-test","type":"module"}`, "deckystream/bin/deckystream": "fixture executable", "deckystream/main.py": "fixture backend", "deckystream/dist/index.js": "fixture frontend"}
 	if change != nil {
 		change(files)
 	}
@@ -48,18 +48,18 @@ func fixtureZIP(t *testing.T, change func(map[string]string)) Input {
 
 func TestInvalidArchivesNeverReachDecky(t *testing.T) {
 	for name, change := range map[string]func(map[string]string){
-		"traversal": func(files map[string]string) { files["obsgod/../../other-plugin/main.py"] = "do not install" },
+		"traversal": func(files map[string]string) { files["deckystream/../../other-plugin/main.py"] = "do not install" },
 		"root flag": func(files map[string]string) {
-			files["obsgod/plugin.json"] = `{"name":"OBSGod","flags":["root"],"api_version":1}`
+			files["deckystream/plugin.json"] = `{"name":"deckystream","flags":["root"],"api_version":1}`
 		},
 		"other plugin": func(files map[string]string) {
-			files["obsgod/plugin.json"] = `{"name":"Other","flags":[],"api_version":1}`
+			files["deckystream/plugin.json"] = `{"name":"Other","flags":[],"api_version":1}`
 		},
 		"remote binary": func(files map[string]string) {
-			files["obsgod/package.json"] = `{"name":"obsgod","version":"0.1.0-test","type":"module","remote_binary":[{"url":"https://example.invalid"}]}`
+			files["deckystream/package.json"] = `{"name":"deckystream","version":"0.1.0-test","type":"module","remote_binary":[{"url":"https://example.invalid"}]}`
 		},
 		"wrong version": func(files map[string]string) {
-			files["obsgod/package.json"] = `{"name":"obsgod","version":"0.0.0","type":"module"}`
+			files["deckystream/package.json"] = `{"name":"deckystream","version":"0.0.0","type":"module"}`
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -112,7 +112,7 @@ func TestAuthenticatedFrontendTransportNeverOpensSecondWebSocket(t *testing.T) {
 					Async bool   `json:"run_async"`
 					Code  string `json:"code"`
 				}
-				if json.NewDecoder(r.Body).Decode(&request) != nil || !request.Async || strings.Contains(request.Code, "__OBSGOD_REQUEST__") || !strings.Contains(request.Code, `"version":"`+input.Version+`"`) {
+				if json.NewDecoder(r.Body).Decode(&request) != nil || !request.Async || strings.Contains(request.Code, "__DECKYSTREAM_REQUEST__") || !strings.Contains(request.Code, `"version":"`+input.Version+`"`) {
 					t.Error("invalid scoped frontend request")
 				}
 				calls++
@@ -166,7 +166,7 @@ func TestProbeAndInvalidOperation(t *testing.T) {
 	if err != nil || report.DeckyVersion != "v3.3.1" || !report.FrontendConnected || report.Version != "" {
 		t.Fatal(report, err)
 	}
-	for _, input := range []Input{{Operation: "other"}, {Operation: "probe", ZIPPath: "/must-not-read"}, {Operation: "probe", UninstallExisting: true}, {Operation: "uninstall", Version: "not-allowed"}} {
+	for _, input := range []Input{{Operation: "other"}, {Operation: "probe", ZIPPath: "/must-not-read"}, {Operation: "probe", UninstallExisting: true}, {Operation: "uninstall", Version: "not-allowed"}, {LegacyPlugin: true}, {Operation: "probe", LegacyPlugin: true}, {Operation: "uninstall", LegacyPlugin: true}} {
 		if _, err := runAt(ctx, input, server.URL); err == nil {
 			t.Fatal("accepted invalid operation")
 		}
@@ -227,14 +227,18 @@ func TestFrontendInstallerBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"install", "reject", "missing-prompt", "no-frontend", "probe", "confirm-timeout", "confirm-timeout-reject", "uninstall", "uninstall-empty", "uninstall-reject", "uninstall-retained", "uninstall-timeout", "uninstall-orphan", "uninstall-unknown-root"} {
+	for _, mode := range []string{"install", "reject", "missing-prompt", "no-frontend", "probe", "confirm-timeout", "confirm-timeout-reject", "uninstall", "uninstall-empty", "uninstall-reject", "uninstall-retained", "uninstall-timeout", "uninstall-orphan", "uninstall-unknown-root", "uninstall-legacy", "uninstall-legacy-version", "legacy-invalid-install", "legacy-present", "legacy-busy"} {
 		command := exec.Command(node, "--input-type=commonjs", "-e", string(script))
 		request, _ := json.Marshal(Input{Operation: map[bool]string{true: "probe", false: "install"}[mode == "probe"], ZIPPath: "/home/deck/space and %20/plugin.zip", SHA256: strings.Repeat("a", 64), Version: "0.1.0-test"})
 		if strings.HasPrefix(mode, "uninstall") {
-			request, _ = json.Marshal(Input{Operation: "uninstall", UninstallExisting: mode != "uninstall-empty" && mode != "uninstall-unknown-root"})
+			legacy := mode == "uninstall-legacy" || mode == "uninstall-legacy-version"
+			request, _ = json.Marshal(Input{Operation: "uninstall", UninstallExisting: mode != "uninstall-empty" && mode != "uninstall-unknown-root", LegacyPlugin: legacy, Version: map[bool]string{true: "0.1.0-test", false: ""}[legacy]})
 		}
-		command.Stdin = strings.NewReader(strings.Replace(frontendScript, "__OBSGOD_REQUEST__", string(request), 1))
-		command.Env = append(os.Environ(), "OBSGOD_TRANSPORT_TEST_MODE="+mode)
+		if mode == "legacy-invalid-install" {
+			request, _ = json.Marshal(Input{Operation: "install", LegacyPlugin: true})
+		}
+		command.Stdin = strings.NewReader(strings.Replace(frontendScript, "__DECKYSTREAM_REQUEST__", string(request), 1))
+		command.Env = append(os.Environ(), "DECKYSTREAM_TRANSPORT_TEST_MODE="+mode)
 		output, err := command.CombinedOutput()
 		if err != nil {
 			t.Fatalf("%s: %v %s", mode, err, output)

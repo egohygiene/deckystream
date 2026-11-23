@@ -16,7 +16,7 @@ func TestLegacyLockRefusesRecreatedNamespaceWhileOriginalInodeIsHeld(t *testing.
 		t.Run(mode.String(), func(t *testing.T) {
 			ancestor := filepath.Join(t.TempDir(), "shared")
 			private := filepath.Join(ancestor, "private-grandchild")
-			paths := Paths{State: filepath.Join(private, "obsgod")}
+			paths := Paths{State: filepath.Join(private, "deckystream")}
 			if err := os.MkdirAll(paths.State, 0700); err != nil {
 				t.Fatal(err)
 			}
@@ -32,7 +32,7 @@ func TestLegacyLockRefusesRecreatedNamespaceWhileOriginalInodeIsHeld(t *testing.
 			if err = os.Chmod(ancestor, mode); err != nil {
 				t.Fatal(err)
 			}
-			moved := filepath.Join(private, "previous-obsgod")
+			moved := filepath.Join(private, "previous-deckystream")
 			if err = os.Rename(paths.State, moved); err != nil {
 				t.Fatal(err)
 			}

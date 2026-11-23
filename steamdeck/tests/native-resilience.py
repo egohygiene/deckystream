@@ -25,7 +25,7 @@ def pulse(*args, structured=False):
 
 
 async def run(game_pid):
-    if not Path("/.dockerenv").exists() or os.environ.get("OBSGOD_DISPOSABLE_AUDIO_FIXTURE") != "1":
+    if not Path("/.dockerenv").exists() or os.environ.get("DECKYSTREAM_DISPOSABLE_AUDIO_FIXTURE") != "1":
         raise ValueError("Use only the disposable OBS Docker fixture with its explicit audio-test flag")
     import websockets
 
@@ -35,15 +35,17 @@ async def run(game_pid):
     game_input = game_inputs[0]
     sinks = pulse("list", "sinks", structured=True)
     original = next(item for item in sinks if item["index"] == game_input["sink"])
-    alternate = next(item for item in sinks if item["name"] == "obsgod_decoy")
-    assert original["name"] == "obsgod_game", "The fixture must begin on its known game sink"
+    alternate = next(item for item in sinks if item["name"] == "deckystream_decoy")
+    assert original["name"] == "deckystream_game", "The fixture must begin on its known game sink"
     root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    password = json.loads((root / "obsgod/secrets.json").read_text())["obs_password"]
+    password = json.loads((root / "deckystream/secrets.json").read_text())["obs_password"]
     async with websockets.connect("ws://127.0.0.1:4457", open_timeout=5, max_size=2 * 1024 * 1024) as socket:
         hello = json.loads(await asyncio.wait_for(socket.recv(), 5))
         identify = {"rpcVersion": 1, "eventSubscriptions": 0}
         auth = hello["d"].get("authentication")
         if auth:
+            # https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#creating-an-authentication-string
+            # codeql[py/weak-sensitive-data-hashing] -- OBS WebSocket mandates this challenge-response SHA256; this is not a stored password hash.
             secret = base64.b64encode(hashlib.sha256((password + auth["salt"]).encode()).digest()).decode()
             identify["authentication"] = base64.b64encode(hashlib.sha256((secret + auth["challenge"]).encode()).digest()).decode()
         await socket.send(json.dumps({"op": 1, "d": identify}))
@@ -55,7 +57,7 @@ async def run(game_pid):
             nonlocal counter
             counter += 1
             identifier = str(counter)
-            await socket.send(json.dumps({"op": 6, "d": {"requestType": kind, "requestId": identifier, "requestData": data if data is not None else {"inputName": "OBSGod Game Audio"}}}))
+            await socket.send(json.dumps({"op": 6, "d": {"requestType": kind, "requestId": identifier, "requestData": data if data is not None else {"inputName": "deckystream Game Audio"}}}))
             while True:
                 message = json.loads(await asyncio.wait_for(socket.recv(), 5))
                 if message.get("op") == 7 and message.get("d", {}).get("requestId") == identifier:
@@ -86,8 +88,8 @@ async def run(game_pid):
         assert initial_stream["outputActive"] or initial_record["outputActive"] or initial_replay["outputActive"], "An explicitly started fixture output is required"
         previous = await mixer()
         try:
-            await request("SetInputVolume", {"inputName": "OBSGod Game Audio", "inputVolumeMul": 0.65})
-            await request("SetInputMute", {"inputName": "OBSGod Game Audio", "inputMuted": True})
+            await request("SetInputVolume", {"inputName": "deckystream Game Audio", "inputVolumeMul": 0.65})
+            await request("SetInputMute", {"inputName": "deckystream Game Audio", "inputMuted": True})
             selected = await mixer()
             pulse("move-sink-input", str(game_input["index"]), alternate["name"])
             await wait_route(alternate)
@@ -98,8 +100,8 @@ async def run(game_pid):
             assert await mixer() == selected, "Returning the original device changed mixer policy"
         finally:
             pulse("move-sink-input", str(game_input["index"]), original["name"])
-            await request("SetInputVolume", {"inputName": "OBSGod Game Audio", "inputVolumeMul": previous["volume"]})
-            await request("SetInputMute", {"inputName": "OBSGod Game Audio", "inputMuted": previous["mute"]})
+            await request("SetInputVolume", {"inputName": "deckystream Game Audio", "inputVolumeMul": previous["volume"]})
+            await request("SetInputMute", {"inputName": "deckystream Game Audio", "inputMuted": previous["mute"]})
         final_stream = await request("GetStreamStatus", {})
         final_record = await request("GetRecordStatus", {})
         final_replay = await request("GetReplayBufferStatus", {})

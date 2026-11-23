@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 func run() error {
@@ -29,7 +29,7 @@ func run() error {
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
-	address := os.Getenv("OBSGOD_EXAMPLE_ADDRESS")
+	address := os.Getenv("DECKYSTREAM_EXAMPLE_ADDRESS")
 	if address == "" {
 		address = "localhost:4455"
 	}

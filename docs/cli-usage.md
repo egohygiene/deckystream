@@ -1,6 +1,6 @@
 # Original remote OBS CLI usage
 
-The stable executable remains `obsgod`. See [configuration](configuration.md)
+The stable executable remains `deckystream`. See [configuration](configuration.md)
 for the development candidate’s layered settings and machine output.
 
 New reusable automation should use the versioned [public API and JSON command
@@ -21,15 +21,15 @@ All commands support the following flags:
 Change the streaming state:
 
 ```
-obsgod stream start
-obsgod stream stop
-obsgod stream toggle
+deckystream stream start
+deckystream stream stop
+deckystream stream toggle
 ```
 
 Display streaming status:
 
 ```
-obsgod stream status
+deckystream stream status
 ```
 
 ### Recordings
@@ -37,23 +37,23 @@ obsgod stream status
 Change the recording state:
 
 ```
-obsgod recording start
-obsgod recording stop
-obsgod recording toggle
+deckystream recording start
+deckystream recording stop
+deckystream recording toggle
 ```
 
 Pause or resume a recording:
 
 ```
-obsgod recording pause enable
-obsgod recording pause resume
-obsgod recording pause toggle
+deckystream recording pause enable
+deckystream recording pause resume
+deckystream recording pause toggle
 ```
 
 Display recording status:
 
 ```
-obsgod recording status
+deckystream recording status
 ```
 
 ### Scenes
@@ -61,31 +61,31 @@ obsgod recording status
 List all scene names:
 
 ```
-obsgod scene list
+deckystream scene list
 ```
 
 Show the current scene name:
 
 ```
-obsgod scene get
+deckystream scene get
 ```
 
 Switch program to a scene:
 
 ```
-obsgod scene current <scene>
+deckystream scene current <scene>
 ```
 
 Switch preview to a scene (studio mode must be enabled):
 
 ```
-obsgod scene preview <scene>
+deckystream scene preview <scene>
 ```
 
 Switch program (studio mode disabled) or preview (studio mode enabled) to a scene:
 
 ```
-obsgod scene switch <scene>
+deckystream scene switch <scene>
 ```
 
 ### Scene Collections
@@ -93,19 +93,19 @@ obsgod scene switch <scene>
 List all scene collections:
 
 ```
-obsgod scenecollection list
+deckystream scenecollection list
 ```
 
 Show the current scene collection:
 
 ```
-obsgod scenecollection get
+deckystream scenecollection get
 ```
 
 Switch to a scene collection:
 
 ```
-obsgod scenecollection set <scenecollection>
+deckystream scenecollection set <scenecollection>
 ```
 
 ### Scene Items
@@ -113,27 +113,27 @@ obsgod scenecollection set <scenecollection>
 List all items of a scene:
 
 ```
-obsgod sceneitem list <scene>
+deckystream sceneitem list <scene>
 ```
 
 Change the visibility of a scene-item:
 
 ```
-obsgod sceneitem show <scene> <item>
-obsgod sceneitem hide <scene> <item>
-obsgod sceneitem toggle <scene> <item>
+deckystream sceneitem show <scene> <item>
+deckystream sceneitem hide <scene> <item>
+deckystream sceneitem toggle <scene> <item>
 ```
 
 Display the visibility of a scene-item:
 
 ```
-obsgod sceneitem visible <scene> <item>
+deckystream sceneitem visible <scene> <item>
 ```
 
 Center a scene-item horizontally:
 
 ```
-obsgod sceneitem center <scene> <item>
+deckystream sceneitem center <scene> <item>
 ```
 
 ### Labels
@@ -141,13 +141,13 @@ obsgod sceneitem center <scene> <item>
 Change a text label:
 
 ```
-obsgod label text <label> <text>
+deckystream label text <label> <text>
 ```
 
 Trigger a countdown and continuously update a label with the remaining time:
 
 ```
-obsgod label countdown <label> <duration>
+deckystream label countdown <label> <duration>
 ```
 
 ### Sources
@@ -155,13 +155,13 @@ obsgod label countdown <label> <duration>
 List special sources:
 
 ```
-obsgod source list
+deckystream source list
 ```
 
 Toggle mute status of a source:
 
 ```
-obsgod source toggle-mute <source>
+deckystream source toggle-mute <source>
 ```
 
 ### Studio Mode
@@ -169,21 +169,21 @@ obsgod source toggle-mute <source>
 Enable or disable Studio Mode:
 
 ```
-obsgod studiomode enable
-obsgod studiomode disable
-obsgod studiomode toggle
+deckystream studiomode enable
+deckystream studiomode disable
+deckystream studiomode toggle
 ```
 
 Display studio mode status:
 
 ```
-obsgod studiomode status
+deckystream studiomode status
 ```
 
 Transition to program (when the studio mode is enabled):
 
 ```
-obsgod studiomode transition
+deckystream studiomode transition
 ```
 
 ### Profiles
@@ -191,19 +191,19 @@ obsgod studiomode transition
 List all profiles:
 
 ```
-obsgod profile list
+deckystream profile list
 ```
 
 Show the current profile:
 
 ```
-obsgod profile get
+deckystream profile get
 ```
 
 Switch to a profile:
 
 ```
-obsgod profile set <profile>
+deckystream profile set <profile>
 ```
 
 ### Replay Buffer
@@ -211,20 +211,20 @@ obsgod profile set <profile>
 Change the replay buffer state:
 
 ```
-obsgod replaybuffer start
-obsgod replaybuffer stop
+deckystream replaybuffer start
+deckystream replaybuffer stop
 ```
 
 Save the replay buffer:
 
 ```
-obsgod replaybuffer save
+deckystream replaybuffer save
 ```
 
 Display replay buffer status:
 
 ```
-obsgod replaybuffer status
+deckystream replaybuffer status
 ```
 
 ### Virtual Camera
@@ -232,13 +232,13 @@ obsgod replaybuffer status
 Change the virtual camera state:
 
 ```
-obsgod virtualcam start
-obsgod virtualcam stop
-obsgod virtualcam toggle
+deckystream virtualcam start
+deckystream virtualcam stop
+deckystream virtualcam toggle
 ```
 
 Display virtual camera status:
 
 ```
-obsgod virtualcam status
+deckystream virtualcam status
 ```

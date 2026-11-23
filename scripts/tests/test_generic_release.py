@@ -51,7 +51,7 @@ def payload(target):
         settings["GOARM"] = arm
     binary = G.canonical({"dependencies": [DEP], "settings": settings})
     return {**PREPARED, "LICENSE": b"LICENSE", "README.md": b"README.md", "CHANGELOG.md": b"CHANGELOG.md",
-            "obsgod.exe" if system == "windows" else "obsgod": binary}
+            "deckystream.exe" if system == "windows" else "deckystream": binary}
 
 
 def binary_metadata(data):
@@ -115,35 +115,35 @@ class GenericReleaseTests(unittest.TestCase):
                 G.audit_archive("archive", archived(payload(("linux", "arm64", ""))), target, VERSION, IDENTITY, PREPARED)
             with self.assertRaisesRegex(ValueError, "version/source"):
                 G.audit_archive("archive", archived(valid), target, VERSION + "wrong", IDENTITY, PREPARED)
-            changed = json.loads(valid["obsgod"])
+            changed = json.loads(valid["deckystream"])
             changed["dependencies"][0]["go_sum"] = "h1:wrong"
             with self.assertRaisesRegex(ValueError, "matching notices"):
-                G.audit_archive("archive", archived({**valid, "obsgod": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
+                G.audit_archive("archive", archived({**valid, "deckystream": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
 
     def test_trimmed_build_has_explicit_narrower_version_evidence_and_cgo_guard(self):
         target = ("linux", "amd64", "")
         files = payload(target)
-        changed = json.loads(files["obsgod"])
+        changed = json.loads(files["deckystream"])
         changed["settings"].pop("-ldflags")
         changed["embedded_strings"] = VERSION + " " + REV
         with patch.object(G, "git_file", side_effect=source_file), patch.object(G, "binary_metadata", side_effect=binary_metadata):
-            result = G.audit_archive("archive", archived({**files, "obsgod": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
+            result = G.audit_archive("archive", archived({**files, "deckystream": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
             self.assertIn("native CLI values unrun", result["version_source_evidence"])
             changed["embedded_strings"] = "wrong version/source"
             with self.assertRaisesRegex(ValueError, "bytes absent"):
-                G.audit_archive("archive", archived({**files, "obsgod": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
+                G.audit_archive("archive", archived({**files, "deckystream": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
             changed["settings"]["CGO_ENABLED"] = "1"
             with self.assertRaisesRegex(ValueError, "CGO"):
-                G.audit_archive("archive", archived({**files, "obsgod": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
+                G.audit_archive("archive", archived({**files, "deckystream": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
 
     def test_vcs_requires_exact_unmodified_selected_source(self):
         target = ("linux", "amd64", "")
         files = payload(target)
         for key, value in [("vcs.revision", "b" * 40), ("vcs.modified", "true"), ("vcs", "hg")]:
-            changed = json.loads(files["obsgod"])
+            changed = json.loads(files["deckystream"])
             changed["settings"][key] = value
             with self.subTest(key=key), patch.object(G, "git_file", side_effect=source_file), patch.object(G, "binary_metadata", side_effect=binary_metadata), self.assertRaisesRegex(ValueError, "VCS source"):
-                G.audit_archive("archive", archived({**files, "obsgod": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
+                G.audit_archive("archive", archived({**files, "deckystream": G.canonical(changed)}), target, VERSION, IDENTITY, PREPARED)
 
     def test_all_twenty_archives_have_reproducible_artifact_specific_documents(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -155,26 +155,26 @@ class GenericReleaseTests(unittest.TestCase):
                 (root / name).write_bytes(data)
                 sums.append(G.sha(data) + "  " + name + "\n")
             (root / "checksums.txt").write_text("".join(sums))
-            (root / "metadata.json").write_bytes(G.canonical({"commit": REV, "project_name": "obsgod", "version": VERSION}))
+            (root / "metadata.json").write_bytes(G.canonical({"commit": REV, "project_name": "deckystream", "version": VERSION}))
             with patch.object(G, "source", return_value=IDENTITY), patch.object(G, "prepare_documents", return_value=PREPARED), patch.object(G, "git_file", side_effect=source_file), patch.object(G, "binary_metadata", side_effect=binary_metadata):
                 documents, summary = G.audit(root, REV)
                 self.assertEqual(documents, G.audit(root, REV)[0])
                 self.assertEqual(summary["archive_count"], 20)
                 self.assertEqual(len(documents), 42)
                 sbom = json.loads(next(data for name, data in documents.items() if name.endswith(".spdx.json")))
-                self.assertEqual({p["name"] for p in sbom["packages"]}, {"obsgod", "Go standard library", DEP["name"]})
+                self.assertEqual({p["name"] for p in sbom["packages"]}, {"deckystream", "Go standard library", DEP["name"]})
                 self.assertIn("UNSIGNED", sbom["comment"])
                 canonical = "https://github.com/egohygiene/deckystream"
                 self.assertTrue(sbom["documentNamespace"].startswith(canonical + "/sbom/" + REV + "/"))
                 self.assertEqual(sbom["packages"][0]["downloadLocation"], canonical + "/tree/" + REV)
                 provenance = json.loads(next(data for name, data in documents.items() if name.endswith(".provenance.unsigned.json")))
                 build = provenance["predicate"]["buildDefinition"]
-                self.assertEqual(build["buildType"], "urn:obsgod:generic-cli-snapshot")
+                self.assertEqual(build["buildType"], "urn:deckystream:generic-cli-snapshot")
                 self.assertEqual(build["resolvedDependencies"][0], {"uri": "git+" + canonical + "@" + REV,
                                                                    "digest": {"sha1": REV}})
                 self.assertIn({"uri": "product.json", "digest": {"sha256": G.sha(source_file(REV, "product.json"))}},
                               build["resolvedDependencies"])
-                self.assertEqual(G.MODULE, "github.com/szmyty/obsgod")
+                self.assertEqual(G.MODULE, "github.com/egohygiene/deckystream")
                 archive = root / summary["archives"][0]["name"]
                 archive.write_bytes(b"tampered")
                 with self.assertRaisesRegex(ValueError, "checksum"):
@@ -243,7 +243,7 @@ class GenericReleaseTests(unittest.TestCase):
                 self.assertEqual(json.loads(G.prepare_documents(IDENTITY)["GO-NOTICES.json"])["modules"][0]["name"], DEP["name"])
 
     def test_binary_parser_retains_platform_and_refuses_replacements(self):
-        text = "binary: go1.27.4\n\tmod\tgithub.com/szmyty/obsgod\t(devel)\n\tdep\texample.test/library\tv1.2.3\th1:pinned\n\tbuild\tGOOS=windows\n\tbuild\tGOARCH=arm64\n"
+        text = "binary: go1.27.4\n\tmod\tgithub.com/egohygiene/deckystream\t(devel)\n\tdep\texample.test/library\tv1.2.3\th1:pinned\n\tbuild\tGOOS=windows\n\tbuild\tGOARCH=arm64\n"
         with patch.object(G, "command", return_value=text):
             deps, settings = G.binary_metadata(b"binary")
             self.assertEqual(deps, [DEP])
@@ -299,10 +299,10 @@ class GenericReleaseTests(unittest.TestCase):
                 G.smoke(root, summary)
             def run(args, **kwargs):
                 self.assertNotIn("OBS_PASSWORD", kwargs["env"])
-                self.assertIn("/.local/bin/obsgod", args[0])
+                self.assertIn("/.local/bin/deckystream", args[0])
                 home = Path(kwargs["env"]["HOME"])
-                output = {"version": G.canonical({"schema_version": 1, "name": "obsgod", "version": VERSION + " (" + REV + ")"}),
-                          "config": (str(home / ".config/obsgod/config.json") + "\n").encode(), "api": b'{}\n'}[args[1]]
+                output = {"version": G.canonical({"schema_version": 1, "name": "deckystream", "version": VERSION + " (" + REV + ")"}),
+                          "config": (str(home / ".config/deckystream/config.json") + "\n").encode(), "api": b'{}\n'}[args[1]]
                 return subprocess.CompletedProcess(args, 0, output, b"")
             with patch.object(G.os, "getuid", return_value=1000), patch.object(G.platform, "system", return_value="Linux"), patch.object(G.platform, "machine", return_value="x86_64"), patch.object(G.subprocess, "run", side_effect=run), patch.dict(G.os.environ, {"OBS_PASSWORD": "private-fixture"}):
                 self.assertEqual(G.smoke(root, summary)["outcome"], "passed")

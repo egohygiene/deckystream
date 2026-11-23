@@ -1,5 +1,82 @@
 # Current work
 
+## Primary naming and README follow-through
+
+The owner requested replacing active OBSGod naming with lowercase
+**deckystream**. [PR #16](https://github.com/egohygiene/deckystream/pull/16)
+contains the primary CLI/module/plugin/package/default-directory transition,
+explicit legacy readers and the shorter aurora README. The source Go module is
+now `github.com/egohygiene/deckystream`. Original source records, attribution,
+artwork provenance and old helper contracts keep their historical identities.
+
+Existing validated stores retain their paths and control-lock inode; no keys or
+recordings are silently copied. Fresh stores use the new namespace. Ambiguous
+or unsafe layouts refuse. The old OBS profile supports authenticated recovery
+Stop/idle Close; new output, capture, mixer and observer work require the new
+profile. The supported plugin replacement closes and retires the old backend
+before activating the new one. Unconfirmed manager outcomes retain repair state
+instead of racing rollback. See [the naming contract](docs/product-naming.md).
+
+[The focused review](docs/evidence/primary-naming-review.json) binds local Go,
+Python, frontend, native and packaging checks to exact source bytes. A real
+compiled Go/Python namespace probe passed 14 cases including two validated
+Decky maps. Real old/current helper processes passed the authenticated localhost
+rollback fixture; this is not Steam/Decky/device execution. Use the latest PR
+head and actual hosted workflows for final source qualification. The initial
+checkpoint commits used `[skip ci]` and are not CI passes.
+
+The first hosted attempt at `01b6f35bf09862ad5af81a6e39fbbb0366c68999`
+passed cross-platform tests, coverage, documentation, dependency review and the
+primary package/browser stages. Lint exposed import formatting; the native
+package lifecycle exposed its root-owned mode-0777 HOME fixture, correctly
+refused by the new safety checks. The bounded follow-up formats Go and creates
+the disposable private HOME as the tested UID, preserving network isolation,
+dropped capabilities and production ownership checks. [Its receipt](docs/evidence/primary-naming-ci-repair.json)
+records fresh race/static/security checks and 12 NFPM cases; actual package
+lifecycle and the complete final matrix must be read at the latest pushed head.
+
+At `456294712e3f8c887b9cb5569496898244a58a3a`, the real deb/rpm/apk lifecycle
+passed. The candidate then exposed wall-clock gzip metadata in its audit test
+fixture; the fixture now pins that metadata and its existing full-document
+equality assertion crosses a forced clock boundary. All 213 tooling cases passed
+locally. CodeQL's separate PR security check also flagged URL substring
+classification and three protocol-prescribed OBS authentication hashes. The URL
+header uses the exact validated hostname; the three unchanged challenge-response
+expressions have specific, documented query exceptions using the official
+parser's syntax. [The final repair review](docs/evidence/primary-naming-final-ci-repair.json)
+pins official sources and records an independent OpenSSL protocol-vector check.
+The final hosted CodeQL and candidate results must confirm the latest head.
+
+At `90fcae1e81f7e9311896dd9f64d6f2917b03b0f9`, the full source/build/browser
+stages and real OBS audio/RTMP/authentication/app-capture checks passed. The last
+game-OBS fixture asserted watcher readiness immediately after observing recording
+and game pixels; source inspection showed that these can precede the separate
+observer startup. It now awaits positively observed readiness within 12 seconds,
+fails on lost/unknown output, clip completion or probe errors, and retains only
+safe first/final state facts. A recording-specific Go regression passed under a
+held control lock without output mutations. No production runtime change was
+justified. The [watcher review](docs/evidence/primary-naming-watcher-review.json)
+records these exact checks and the local native reproduction's disk-capacity
+refusal before OBS launch; hosted native qualification must test the latest head.
+
+The separate CodeQL PR security check still reports three protocol-required
+SHA256 false positives; this hosted setup did not apply the source annotations.
+The connected identity cannot manage code-scanning alerts (HTTP 403). The owner
+was asked to dismiss only those findings with the verified protocol rationale.
+Analysis-job success alone is not a pass for that separate PR security check.
+
+The README is 76 lines with the selected light/dark banner, five badges, short
+features and linked setup/development guidance. The active testing booklet was
+regenerated as 13 pages; its original MD/PDF are preserved under `docs/history`.
+[The export receipt](docs/evidence/testing-booklet-naming-export.json) records
+its actual source hash, tools, render checks and limits. Artwork source geometry
+and rights/approval arrays remain unchanged.
+
+Finalization #1 still owns the actual Steam Deck/provider test/fix loop, remaining
+rights and release decisions, and legacy-repository retirement. Optional auth
+research remains separate in #8. No release, deployment or old-repo deletion is
+performed by the naming change.
+
 ## Dependency integration and maintainer protection command
 
 [PR #15](https://github.com/egohygiene/deckystream/pull/15) integrates the exact

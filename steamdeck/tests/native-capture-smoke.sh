@@ -6,7 +6,7 @@ set -euo pipefail
 test -f /.dockerenv || { echo 'Use the disposable capture test container.' >&2; exit 2; }
 test "$#" -eq 1 || { echo 'Pass the directory containing the packaged capture library.' >&2; exit 2; }
 plugin_dir=$(realpath "$1")
-test -f "$plugin_dir/libgstobsgodcapture.so"
+test -f "$plugin_dir/libgstdeckystreamcapture.so"
 test -d /work
 umask 077
 mkdir -p /work/capture-validation
@@ -30,8 +30,8 @@ trap cleanup EXIT
 
 gcc -O2 -Wall -Wextra -Werror -o "$out/capture-fixture" \
   /src/steamdeck/tests/capture-fixture.c $(pkg-config --cflags --libs libpipewire-0.3)
-gst-inspect-1.0 obsgodgamescopesrc > "$out/plugin-inspect.txt"
-python3 - "$out/plugin-inspect.txt" "$plugin_dir/libgstobsgodcapture.so" <<'PY'
+gst-inspect-1.0 deckystreamgamescopesrc > "$out/plugin-inspect.txt"
+python3 - "$out/plugin-inspect.txt" "$plugin_dir/libgstdeckystreamcapture.so" <<'PY'
 import pathlib,re,sys
 text=pathlib.Path(sys.argv[1]).read_text()
 match=re.search(r'^\s*Filename\s+(\S+)\s*$',text,re.M)
@@ -65,7 +65,7 @@ fi
 start_fixture() {
   local mode=$1 case_name=$2
   if test -n "$fixture_pid"; then kill "$fixture_pid" 2>/dev/null || true; wait "$fixture_pid" || true; fixture_pid=''; fi
-  target="obsgod-fixture-$case_name"
+  target="deckystream-fixture-$case_name"
   "$out/capture-fixture" "$target" "$mode" > "$out/$case_name-producer.stdout" 2> "$out/$case_name-producer.log" &
   fixture_pid=$!
   for n in {1..50}; do
@@ -85,7 +85,7 @@ PY
 capture() {
   local case_name=$1 appid=$2 count=$3
   timeout --signal=TERM --kill-after=2 12 gst-launch-1.0 --no-fault -q \
-    obsgodgamescopesrc target-object="$target" app-id="$appid" stale-ms=300 num-buffers="$count" \
+    deckystreamgamescopesrc target-object="$target" app-id="$appid" stale-ms=300 num-buffers="$count" \
     ! filesink location="$out/$case_name.bgrx" \
     > "$out/$case_name-client.stdout" 2> "$out/$case_name-client.log"
 }
@@ -156,7 +156,7 @@ kill "$duplicate_pid" 2>/dev/null || true
 wait "$duplicate_pid" || true
 duplicate_pid=''
 
-python3 - "$out" "$plugin_dir/libgstobsgodcapture.so" <<'PY'
+python3 - "$out" "$plugin_dir/libgstdeckystreamcapture.so" <<'PY'
 import hashlib,json,os,pathlib,subprocess,sys
 p=pathlib.Path(sys.argv[1]);size=320*180*4
 results={}
@@ -196,7 +196,7 @@ for name in ['missing','wrong','zero','mixed-dma','id-0','id-769']:
  assert code not in (0,124),(name,code)
  results[f'reject-{name}']={'exit_code':code,'media_bytes':0}
 proof={'state':'passed','scope':'Synthetic PipeWire custom-SPA negotiation and supplied GStreamer source CPU media; not real Gamescope, SteamOS, Flatpak or OBS scene transitions',
- 'source_revision':os.environ.get('OBSGOD_QUALIFIED_REVISION','unrecorded development run'),
+ 'source_revision':os.environ.get('DECKYSTREAM_QUALIFIED_REVISION','unrecorded development run'),
  'plugin_path':sys.argv[2],'plugin_sha256':hashlib.sha256(pathlib.Path(sys.argv[2]).read_bytes()).hexdigest(),
  'fixture_source_sha256':hashlib.sha256(pathlib.Path('/src/steamdeck/tests/capture-fixture.c').read_bytes()).hexdigest(),
  'test_source_sha256':hashlib.sha256(pathlib.Path('/src/steamdeck/tests/native-capture-smoke.sh').read_bytes()).hexdigest(),

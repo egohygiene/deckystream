@@ -222,19 +222,36 @@ def active_compilers():
     return active
 
 
+def profile_environment(name, default=None):
+    """Only these declared legacy resource-policy variables remain aliases."""
+    aliases = {"DECKYSTREAM_LOCAL_PROFILE": "OBSGOD_LOCAL_PROFILE",
+               "DECKYSTREAM_LOCAL_SCRATCH": "OBSGOD_LOCAL_SCRATCH",
+               "DECKYSTREAM_LOCAL_OWNER_UID": "OBSGOD_LOCAL_OWNER_UID",
+               "DECKYSTREAM_LOCAL_RESOURCE_RECEIPT": "OBSGOD_LOCAL_RESOURCE_RECEIPT"}
+    if name in os.environ:
+        return os.environ[name]
+    return os.environ.get(aliases[name], default)
+
+
 def trim_compiler_cache():
-    if os.environ.get("OBSGOD_LOCAL_PROFILE") != PROFILE:
+    if profile_environment("DECKYSTREAM_LOCAL_PROFILE") != PROFILE:
         print("Compiler-cache policy inactive outside the explicit local constrained profile")
         return 0
-    attempt = Path(os.environ["OBSGOD_LOCAL_SCRATCH"])
-    owner = os.environ["OBSGOD_LOCAL_OWNER_UID"]
+    attempt_value = profile_environment("DECKYSTREAM_LOCAL_SCRATCH")
+    owner = profile_environment("DECKYSTREAM_LOCAL_OWNER_UID")
+    if not attempt_value or not owner:
+        raise ValueError("Expected the complete explicit local resource-policy context")
+    attempt = Path(attempt_value)
     if not owner.isdecimal():
         raise ValueError("Expected the numeric local attempt owner")
     safe_ancestry(attempt, int(owner))
     if (not attempt.is_dir() or attempt.stat().st_uid != int(owner)
             or stat.S_IMODE(attempt.stat().st_mode) & 0o077):
         raise ValueError("Expected an owned private attempt directory")
-    record = Path(os.environ["OBSGOD_LOCAL_RESOURCE_RECEIPT"])
+    record_value = profile_environment("DECKYSTREAM_LOCAL_RESOURCE_RECEIPT")
+    if not record_value:
+        raise ValueError("Expected the local resource-policy receipt")
+    record = Path(record_value)
     if record != attempt / "resource-policy.json" or record.is_symlink() or record.exists():
         raise ValueError("Expected a new attempt-local resource-policy receipt")
     cache = Path(os.environ["GOCACHE"])

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	api "github.com/szmyty/obsgod/pkg/api/v1"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
 )
 
 type fakeOBS struct {

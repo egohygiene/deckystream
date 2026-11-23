@@ -1,6 +1,6 @@
 # Optional creator workflows
 
-`obsgod creator plan|start|status|stop` and `pkg/creator/v1` implement a bounded
+`deckystream creator plan|start|status|stop` and `pkg/creator/v1` implement a bounded
 local orchestration layer above [the public OBS API](api-v1.md). They use an
 existing OBS connection, leave OBS running, and never contact account APIs,
 install software, launch dashboards, upload media or execute profile commands.
@@ -20,25 +20,25 @@ provider account. Select existing OBS profiles, collections and scenes. The
 example host is intentionally unusable; it cannot accidentally broadcast.
 
 ```sh
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/obsgod"
-cp examples/creator/gaming.json "${XDG_CONFIG_HOME:-$HOME/.config}/obsgod/creator.json"
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/deckystream"
+cp examples/creator/gaming.json "${XDG_CONFIG_HOME:-$HOME/.config}/deckystream/creator.json"
 # Edit creator.json, then review without reading keys or connecting:
-obsgod creator plan
+deckystream creator plan
 
 # Enter a key privately; it is never a flag or committed configuration value.
 read -rsp 'Kick stream key: ' KICK_STREAM_KEY; echo
 export KICK_STREAM_KEY
-obsgod creator start --approve --allow-streaming --allow-recording --allow-replay-buffer
-obsgod creator status
-obsgod creator stop --approve --allow-streaming --allow-recording --allow-replay-buffer
+deckystream creator start --approve --allow-streaming --allow-recording --allow-replay-buffer
+deckystream creator status
+deckystream creator stop --approve --allow-streaming --allow-recording --allow-replay-buffer
 unset KICK_STREAM_KEY
 ```
 
 Generic OBS credentials continue to follow the existing flags > environment >
 selected connection profile > base config > defaults contract. Prefer a private
 password-file/reference; never put a destination key in `--password`. Creator
-profile location is explicit `--profile PATH`, then `OBSGOD_CREATOR_PROFILE`,
-then the user XDG config directory's `obsgod/creator.json` (platform config
+profile location is explicit `--profile PATH`, then `DECKYSTREAM_CREATOR_PROFILE`,
+then the user XDG config directory's `deckystream/creator.json` (platform config
 directory elsewhere). Relative `XDG_CONFIG_HOME` is rejected. A separate profile
 file per workflow is supported; profile selection does not persist hidden state.
 
@@ -54,7 +54,7 @@ never file/environment properties.
 | `kick` | `KICK_STREAM_KEY` |
 | `twitch` | `TWITCH_STREAM_KEY` |
 | `youtube` | `YOUTUBE_STREAM_KEY` |
-| `custom` | `OBSGOD_STREAM_KEY` |
+| `custom` | `DECKYSTREAM_STREAM_KEY` |
 
 These are RTMP transport adapters, not OAuth/account integrations or proof that
 each provider accepted a broadcast. A custom provider can implement the public

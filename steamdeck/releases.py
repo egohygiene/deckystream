@@ -1,4 +1,4 @@
-"""Read and verify OBSGod runtime releases. Checking never changes an install.
+"""Read and verify deckystream runtime releases. Checking never changes an install.
 
 Only the build-selected repository's GitHub releases and immutable same-repository
 artifact commits are accepted. The owner/repository is source metadata, never an
@@ -78,7 +78,8 @@ def _safe_url(url):
 def _read_url(url, limit=MAX_METADATA):
     if not _safe_url(url):
         raise ReleaseError("Release metadata contains an unsupported download address.")
-    request = urllib.request.Request(url, headers={"User-Agent": "OBSGod-updater", "Accept": "application/vnd.github+json" if "api.github.com/" in url else "application/octet-stream"})
+    host = urllib.parse.urlsplit(url).hostname
+    request = urllib.request.Request(url, headers={"User-Agent": "deckystream-updater", "Accept": "application/vnd.github+json" if host == "api.github.com" else "application/octet-stream"})
     try:
         with _open_url(request, timeout=12) as response:
             data = response.read(limit + 1)
@@ -148,7 +149,7 @@ def validate_manifest(manifest, version, revision):
     if not isinstance(manifest, dict) or manifest.get("version") != version or manifest.get("revision") != revision or manifest.get("platform") != "linux/amd64" or manifest.get("dirty") is not False:
         raise ReleaseError("The release manifest does not match its version, source revision or supported platform.")
     files = manifest.get("files")
-    required = {"obsgod", "obsgod-decky.zip", "setup.py", "bridge.py"}
+    required = {"deckystream", "deckystream-decky.zip", "setup.py", "bridge.py"}
     if not isinstance(files, dict) or not required.issubset(files) or len(files) > 64:
         raise ReleaseError("The release manifest is incomplete.")
     for name, digest in files.items():
@@ -161,7 +162,7 @@ def validate_manifest(manifest, version, revision):
 
 
 def _locations(release, version):
-    archive = "obsgod-deck_" + version + "_linux_amd64.tar.gz"
+    archive = "deckystream-deck_" + version + "_linux_amd64.tar.gz"
     names = {archive, "manifest.json", "SHA256SUMS"}
     assets = release.get("assets", [])
     if not isinstance(assets, list):
@@ -256,9 +257,9 @@ def inspect_updates(installed_version, channel="preview", *, target_version=None
             return result, None
         available = version_key(candidate["version"]) > current
         unified = UNIFIED_FILES.issubset(candidate["manifest"]["files"])
-        message = "No newer OBSGod runtime is available on this channel."
+        message = "No newer deckystream runtime is available on this channel."
         if available:
-            message = "OBSGod " + candidate["version"] + " is available. Stop output and use Update OBSGod in Desktop Mode to install it." if unified else "Historical OBSGod " + candidate["version"] + " is available. Open its official release page for installation instructions; it predates the unified updater."
+            message = "deckystream " + candidate["version"] + " is available. Stop output and use Update deckystream in Desktop Mode to install it." if unified else "Historical deckystream " + candidate["version"] + " is available. Open its official release page for installation instructions; it predates the unified updater."
         result.update(ok=True, state="update-available" if available else "up-to-date", available=available, latest_version=candidate["version"], revision=candidate["revision"], release_url=candidate["release_url"], latest_updater_version=candidate["manifest"].get("updater_version", "not-bundled"), automatic_update_supported=unified, message=message)
         return result, candidate
     except ReleaseError as error:
@@ -287,13 +288,13 @@ def check_plugin_updates(installed_version, channel="preview"):
             assets = item[2].get("assets", [])
             if not isinstance(assets, list):
                 raise ReleaseError("The release asset list is invalid.", "unsupported")
-            if any(isinstance(asset, dict) and asset.get("name") == "obsgod-decky.zip" for asset in assets):
+            if any(isinstance(asset, dict) and asset.get("name") == "deckystream-decky.zip" for asset in assets):
                 candidates.append(item)
         if not candidates:
             result.update(ok=True, state="unavailable", message="No standard Decky plugin release is published for this channel. Your installed plugin is unchanged; Desktop runtime releases are separate.")
             return result
         _, version, release = max(candidates, key=lambda item: item[0])
-        names = {"obsgod-decky.zip", "build-receipt.json", "SHA256SUMS"}
+        names = {"deckystream-decky.zip", "build-receipt.json", "SHA256SUMS"}
         locations = {}
         for asset in release["assets"]:
             if not isinstance(asset, dict) or asset.get("name") not in names:
@@ -309,11 +310,11 @@ def check_plugin_updates(installed_version, channel="preview"):
         revision = commit.get("sha") if isinstance(commit, dict) else None
         sums = _checksums(_read_url(locations["SHA256SUMS"]))
         receipt = _json(locations["build-receipt.json"])
-        checksum = sums.get("obsgod-decky.zip")
+        checksum = sums.get("deckystream-decky.zip")
         if (not isinstance(revision, str) or not _SHA.fullmatch(revision) or
                 not isinstance(receipt, dict) or receipt.get("revision") != revision or
                 receipt.get("version") != version or receipt.get("dirty") is not False or
-                receipt.get("platform") != "linux/amd64" or receipt.get("archive") != "obsgod-decky.zip" or
+                receipt.get("platform") != "linux/amd64" or receipt.get("archive") != "deckystream-decky.zip" or
                 not isinstance(checksum, str) or receipt.get("sha256") != checksum):
             raise ReleaseError("The plugin release version, source or checksum could not be verified. Your plugin is unchanged.", "unsupported")
         available = version_key(version) > current
@@ -327,13 +328,15 @@ def check_plugin_updates(installed_version, channel="preview"):
     return result
 
 
-def installed_plugin_version(home, *, environ=None):
+def installed_plugin_version(home, *, environ=None, legacy=False):
     """Read the stable installed plugin identity; an unreadable install is unknown."""
-    spec = importlib.util.spec_from_file_location("_obsgod_plugin_paths", Path(__file__).with_name("paths.py"))
+    spec = importlib.util.spec_from_file_location("_deckystream_plugin_paths", Path(__file__).with_name("paths.py"))
     paths = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(paths)
     try:
         root = paths.decky_locations(home, environ)["plugin"]
+        if legacy:
+            root = root.parent / "obsgod"
         # Decky may own the installed plugin directory as root. This is an
         # identity observation, not permission to write that directory.
         paths.validate_directory_ancestry(root, home)
@@ -345,8 +348,10 @@ def installed_plugin_version(home, *, environ=None):
                     saved.stat().st_uid not in (0, os.getuid()) or saved.stat().st_mode & 0o022):
                 raise ValueError()
         manifest, plugin = json.loads(package.read_text()), json.loads(identity.read_text())
-        if (not isinstance(manifest, dict) or manifest.get("name") not in {"obsgod", "obsgod-decky"} or
-                not isinstance(plugin, dict) or plugin.get("name") != "OBSGod"):
+        names = {"obsgod", "obsgod-decky"} if legacy else {"deckystream", "deckystream-decky"}
+        plugin_name = "OBSGod" if legacy else "deckystream"
+        if (not isinstance(manifest, dict) or manifest.get("name") not in names or
+                not isinstance(plugin, dict) or plugin.get("name") != plugin_name):
             raise ValueError()
         version_key(manifest.get("version"))
         return manifest["version"]
@@ -354,7 +359,7 @@ def installed_plugin_version(home, *, environ=None):
         raise ReleaseError("The installed Decky plugin version could not be verified. No plugin replacement is allowed; inspect or repair it through Decky first.") from None
 
 
-def require_plugin_replacement(target_version, home, recovery_plugin_version=None, expected_plugin_version=None):
+def require_plugin_replacement(target_version, home, recovery_plugin_version=None, expected_plugin_version=None, *, legacy=False):
     """A legacy recovery cannot silently replace a newer standard plugin."""
     target = version_key(target_version)
     if recovery_plugin_version is not None:
@@ -364,7 +369,7 @@ def require_plugin_replacement(target_version, home, recovery_plugin_version=Non
         version_key(expected_plugin_version)
     elif expected_plugin_version is not None:
         raise ReleaseError("An expected plugin version requires an explicit recovery target. Nothing was replaced.")
-    installed = installed_plugin_version(home)
+    installed = installed_plugin_version(home, legacy=True) if legacy else installed_plugin_version(home)
     if recovery_plugin_version is not None and installed != expected_plugin_version:
         raise ReleaseError("The installed plugin no longer matches the explicitly expected recovery version. Nothing was replaced; inspect its current version through Decky before retrying.")
     if installed is not None and version_key(installed) > target and recovery_plugin_version is None:
@@ -391,7 +396,7 @@ def current_versions(plugin_version="unknown", *, environ=None):
         home = Path(raw_home).resolve()
         # Load the bundled helper by its exact sibling path. Other Decky
         # plugins may have a different module called `paths` on sys.path.
-        spec = importlib.util.spec_from_file_location("_obsgod_release_paths", Path(__file__).with_name("paths.py"))
+        spec = importlib.util.spec_from_file_location("_deckystream_release_paths", Path(__file__).with_name("paths.py"))
         paths = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(paths)
         base, _ = paths.app_directories(home, environment)
@@ -427,7 +432,7 @@ def download_archive(candidate, destination):
     deadline = time.monotonic() + 180
     digest = hashlib.sha256()
     total = 0
-    request = urllib.request.Request(candidate["archive_url"], headers={"User-Agent": "OBSGod-updater"})
+    request = urllib.request.Request(candidate["archive_url"], headers={"User-Agent": "deckystream-updater"})
     try:
         with _open_url(request, timeout=20) as source, destination.open("xb") as output:
             while True:

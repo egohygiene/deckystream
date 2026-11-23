@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func WatchCapture(context.Context, Paths) error {

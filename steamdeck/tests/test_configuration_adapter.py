@@ -56,7 +56,7 @@ class ConfigurationAdapter(unittest.IsolatedAsyncioTestCase):
             root = Path(directory)
             (root / "bin").mkdir()
             log = root / "commands.jsonl"
-            script = root / "bin/obsgod"
+            script = root / "bin/deckystream"
             script.write_text("#!" + sys.executable + "\n" +
                 "import json,pathlib,sys\n" +
                 "action=sys.argv[2];payload=sys.stdin.read()\n" +

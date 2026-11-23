@@ -444,7 +444,7 @@ class BackendContext(unittest.IsolatedAsyncioTestCase):
         self.root = Path(self.temp)
 
     async def test_loader_paths_and_player_context_are_applied_only_to_child(self):
-        plugin_dir = self.root / "custom-homebrew/plugins/OBSGod"
+        plugin_dir = self.root / "custom-homebrew/plugins/deckystream"
         plugin_dir.mkdir(parents=True)
         (plugin_dir / "package.json").write_text('{"version":"0.1.0-deck.6"}')
         home = self.root / "player"
@@ -468,7 +468,7 @@ class BackendContext(unittest.IsolatedAsyncioTestCase):
                     backend.asyncio, "create_subprocess_exec", return_value=process) as spawn:
                 result = await plugin._run("status")
             self.assertTrue(result["ok"])
-            self.assertEqual(spawn.call_args.args[-3:], (str(plugin_dir / "bin/obsgod"), "deck", "status"))
+            self.assertEqual(spawn.call_args.args[-3:], (str(plugin_dir / "bin/deckystream"), "deck", "status"))
             self.assertIn("--owned-command", spawn.call_args.args)
             child = spawn.call_args.kwargs["env"]
             self.assertEqual(child["HOME"], str(home))
@@ -532,12 +532,12 @@ class BackendContext(unittest.IsolatedAsyncioTestCase):
     def test_invalid_version_falls_back_and_metadata_is_bounded(self):
         (self.root / "package.json").write_text('{"version":"1.2.3"}')
         values = {"DECKY_PLUGIN_DIR": str(self.root), "DECKY_PLUGIN_VERSION": "bad\nversion",
-                  "DECKY_VERSION": "v3.3.1", "DECKY_PLUGIN_NAME": "OBSGod",
+                  "DECKY_VERSION": "v3.3.1", "DECKY_PLUGIN_NAME": "deckystream",
                   "DECKY_PLUGIN_AUTHOR": "unsafe\nauthor", "UNRELATED_SECRET": "not-for-diagnostics"}
         with patch.dict(backend.os.environ, values):
             plugin = backend.Plugin()
             self.assertEqual(plugin._version(), "1.2.3")
-            self.assertEqual(plugin._loader_metadata(), {"version": "v3.3.1", "plugin_name": "OBSGod"})
+            self.assertEqual(plugin._loader_metadata(), {"version": "v3.3.1", "plugin_name": "deckystream"})
             decorated = plugin._decorate(IDLE)
             self.assertNotIn("not-for-diagnostics", json.dumps(decorated))
         with patch.dict(backend.os.environ, {"DECKY_PLUGIN_AUTHOR": "x" * 81}):

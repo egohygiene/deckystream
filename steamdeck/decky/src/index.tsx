@@ -16,7 +16,7 @@ import {boundedRequest as bounded,settingsTimeouts} from "./action-timeouts.mjs"
 
 type Diagnostic = {time:string; level:string; message:string};
 type Outcome = {id?:number; action?:string; ok:boolean; message:string; recording_path?:string};
-type Result = {ok:boolean; state:string; message:string; configured?:boolean; output_known?:boolean; process?:string; connection?:string; recording?:boolean; capture?:string; frames?:string; game?:string; backend_id?:string; snapshot_id?:number; operation?:{id:number; action:string; state:string;media_action?:string}|null; action_result?:Outcome; last_action?:Outcome; stream?:{active:boolean; reconnecting:boolean; bytes:number; duration_ms:number}; recording_path?:string; diagnostics?:Diagnostic[]; plugin_version?:string; media?:any;stream_health?:any;resilience?:any;settings?:{capture_mode?:"screen"|"game";idle_style?:"black"|"placeholder"|"image"|"video";idle_text?:string;idle_media?:string;microphone?:boolean};audio?:AudioStatus;video?:{state:string;message?:string;watching?:boolean}};
+type Result = {ok:boolean; state:string; message:string; configured?:boolean; legacy_runtime?:boolean; output_known?:boolean; process?:string; connection?:string; recording?:boolean; capture?:string; frames?:string; game?:string; backend_id?:string; snapshot_id?:number; operation?:{id:number; action:string; state:string;media_action?:string}|null; action_result?:Outcome; last_action?:Outcome; stream?:{active:boolean; reconnecting:boolean; bytes:number; duration_ms:number}; recording_path?:string; diagnostics?:Diagnostic[]; plugin_version?:string; media?:any;stream_health?:any;resilience?:any;settings?:{capture_mode?:"screen"|"game";idle_style?:"black"|"placeholder"|"image"|"video";idle_text?:string;idle_media?:string;microphone?:boolean};audio?:AudioStatus;video?:{state:string;message?:string;watching?:boolean}};
 type AudioStatus = {state:string;message?:string;output_available?:boolean;output_muted?:boolean;microphone_requested?:boolean;microphone_available?:boolean;microphone_muted?:boolean;signal?:string};
 type UpdateResult = {ok:boolean; state:string; message:string; current_version?:string; latest_version?:string; available?:boolean; current_plugin_version?:string; legacy_app?:{state:string;version:string}; channel?:string};
 const readStatus=callable<[],Result>("status");
@@ -270,6 +270,7 @@ function Content(){
           {current?.configured&&<div style={{marginTop:8,fontSize:12,opacity:.8}}>Destination saved privately on this Deck</div>}
         </div>
       </PanelSectionRow>
+      {current?.legacy_runtime&&<PanelSectionRow><Hint>Close the previous managed OBS instance while its outputs are stopped to finish the naming migration. Your saved destination and recordings are retained.</Hint></PanelSectionRow>}
       <PanelSectionRow><ButtonItem layout="below" disabled={available.startDisabled||!dependencyReadiness.ready} onClick={()=>act("start")}>Start streaming</ButtonItem></PanelSectionRow>
       <PanelSectionRow><ButtonItem layout="below" disabled={available.stopDisabled} onClick={()=>act("stop")}>{available.stopLabel}</ButtonItem></PanelSectionRow>
       <PanelSectionRow><div aria-live="polite" style={{fontSize:14,lineHeight:1.5,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{statusMessage}</div></PanelSectionRow>
@@ -297,10 +298,10 @@ function Content(){
       {desktopHelp&&<PanelSectionRow><Hint>Advanced profiles, custom between-game media and storage controls are also available in the bundled Desktop Setup. Switch to Desktop Mode and open the installed plugin folder in Dolphin, usually ~/homebrew/plugins/{product.compatibility.plugin_directory}; use your actual Decky location if different. Choose Open Terminal Here and run: python3 setup.py. It opens a local browser page on this Deck with a private session token. Keep that address private; do not remove its token or expose the server to your network. This is optional and uses the same settings, not a second required application. Stop all outputs before changing protected settings.</Hint></PanelSectionRow>}
       {setupHelp&&<PanelSectionRow><Hint>Use Stream destination above for your server and key, and Live audio &amp; microphone for sound. Optional Desktop Setup remains available for other advanced options. Test clips save to Videos/{product.compatibility.plugin}. Game only can record the between-game screen without a game; entire screen needs usable frames. Play the saved clip to check picture and sound, then verify your first live stream on another device.</Hint></PanelSectionRow>}
     </PanelSection>
-    <MixerTools mixer={(current as any)?.mixer} busy={!!busy||!!current?.operation} run={toolAction}/>
-    <StreamTools current={current} busy={!!busy||!!current?.operation} run={toolAction} copy={copyText}/>
+    <MixerTools mixer={(current as any)?.mixer} busy={!!busy||!!current?.operation||current?.legacy_runtime===true} run={toolAction}/>
+    <StreamTools current={current} busy={!!busy||!!current?.operation||current?.legacy_runtime===true} run={toolAction} copy={copyText}/>
     <MediaTools current={current} busy={!!busy||!!current?.operation} mediaPending={mediaAction||current?.operation?.media_action||""} run={toolAction}/>
-    <HealthTools current={current} busy={!!busy||!!current?.operation} run={toolAction}/>
+    <HealthTools current={current} busy={!!busy||!!current?.operation||current?.legacy_runtime===true} run={toolAction}/>
     <PanelSection title="STATUS & DIAGNOSTICS">
       <PanelSectionRow><ButtonItem layout="below" onClick={()=>refresh()}>Refresh status</ButtonItem></PanelSectionRow>
       <Console/>

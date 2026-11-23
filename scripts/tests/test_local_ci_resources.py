@@ -187,9 +187,9 @@ class ResourceTests(unittest.TestCase):
         self.assertEqual(actual, {"HTTP_PROXY": "preserved"})
 
     def environment(self, attempt):
-        return {"OBSGOD_LOCAL_PROFILE": "constrained", "OBSGOD_LOCAL_SCRATCH": str(attempt),
-                "OBSGOD_LOCAL_RESOURCE_RECEIPT": str(attempt / "resource-policy.json"),
-                "OBSGOD_LOCAL_OWNER_UID": str(os.getuid()), "GOCACHE": str(attempt / "go-build-root")}
+        return {"DECKYSTREAM_LOCAL_PROFILE": "constrained", "DECKYSTREAM_LOCAL_SCRATCH": str(attempt),
+                "DECKYSTREAM_LOCAL_RESOURCE_RECEIPT": str(attempt / "resource-policy.json"),
+                "DECKYSTREAM_LOCAL_OWNER_UID": str(os.getuid()), "GOCACHE": str(attempt / "go-build-root")}
 
     def test_trim_refuses_host_cache_before_executing_go(self):
         attempt = self.attempt()
@@ -198,6 +198,20 @@ class ResourceTests(unittest.TestCase):
         with patch.dict(os.environ, env, clear=True), patch.object(R.subprocess, "run") as run:
             with self.assertRaisesRegex(ValueError, "exact private"):
                 R.trim_compiler_cache()
+        run.assert_not_called()
+
+    def test_legacy_profile_keeps_cache_guard_and_primary_override(self):
+        attempt = self.attempt()
+        primary = self.environment(attempt)
+        legacy = {name.replace("DECKYSTREAM_", "OBSGOD_"): value for name, value in primary.items()}
+        legacy["GOCACHE"] = str(self.base / "host-cache")
+        with patch.dict(os.environ, legacy, clear=True), patch.object(R.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "exact private"):
+                R.trim_compiler_cache()
+        run.assert_not_called()
+        legacy["DECKYSTREAM_LOCAL_PROFILE"] = "inactive"
+        with patch.dict(os.environ, legacy, clear=True), patch.object(R.subprocess, "run") as run:
+            self.assertEqual(R.trim_compiler_cache(), 0)
         run.assert_not_called()
 
     def test_trim_is_opt_in_and_preserves_modules_artifacts_evidence(self):

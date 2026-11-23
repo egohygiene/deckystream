@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 func TestDiagnosticsAreBoundedPrivateAndExcludeUntrustedErrors(t *testing.T) {

@@ -1,5 +1,24 @@
 # Decision records
 
+## Primary product naming — owner instruction, 2026-11-22
+
+The owner requested replacing active `obsgod` naming with lowercase
+`deckystream`, including the actual CLI/plugin/package surfaces, and simplifying
+the README around the selected aurora kit. This accepts the primary naming
+transition and supersedes the earlier decision to freeze those installed names.
+The repository is already `egohygiene/deckystream`; the Go module follows it.
+
+[The implementation contract](docs/product-naming.md) preserves old owned
+stores and their lock inode, explicit environment aliases and historical source
+facts. It does not silently copy keys, move recordings, start a broadcast or
+permit two controllers. An old active managed OBS profile can be observed,
+explicitly stopped and closed before the new profile is prepared. Ambiguous or
+unsafe old/new layouts require repair instead of guessed ownership.
+
+This naming instruction does not accept every part of the proposed identity ADR,
+choose artwork licenses, qualify a Steam Deck or authorize release/deployment.
+Keep the selected visual source and original provenance/rights records intact.
+
 ## Destination and owner entrypoint follow-through
 
 On 2026-11-22, after the assistant recommended `egohygiene/deckystream` over

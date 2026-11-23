@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-spec = importlib.util.spec_from_file_location("obsgod_updater", Path(__file__).resolve().parents[1] / "update.py")
+spec = importlib.util.spec_from_file_location("deckystream_updater", Path(__file__).resolve().parents[1] / "update.py")
 updater = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(updater)
 real_releases = updater.release_module()
@@ -23,7 +23,7 @@ class UpdateSafety(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.home = Path(self.temp.name) / "home with spaces"
         self.home.mkdir()
-        self.base = self.home / ".local/share/obsgod"
+        self.base = self.home / ".local/share/deckystream"
         self.env = patch.dict(os.environ, {"HOME": str(self.home), "XDG_CONFIG_HOME": str(self.home / ".config"), "XDG_CURRENT_DESKTOP": "KDE", "DESKTOP_SESSION": "plasma"})
         self.env.start()
 
@@ -33,7 +33,7 @@ class UpdateSafety(unittest.TestCase):
 
     def fixture(self, installer_source=b"RECOVERY_POLICY_VERSION = 1\n"):
         version = "0.1.0-deck.5"
-        files = {name: b"verified fixture" for name in ["obsgod", "install.py", "bridge.py", "decky.py", "decky-install", "update.py", "releases.py", "obsgod-decky.zip"]}
+        files = {name: b"verified fixture" for name in ["deckystream", "install.py", "bridge.py", "decky.py", "decky-install", "update.py", "releases.py", "deckystream-decky.zip"]}
         files["install.py"] = installer_source
         manifest = {"version": version, "revision": "1" * 40, "platform": "linux/amd64", "dirty": False, "updater_version": version, "files": {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}}
         files["manifest.json"] = json.dumps(manifest).encode()
@@ -45,17 +45,17 @@ class UpdateSafety(unittest.TestCase):
         def download(_candidate, destination):
             with tarfile.open(destination, "w:gz") as archive:
                 for name, data in files.items():
-                    member = tarfile.TarInfo("OBSGod-" + version + "/" + name)
+                    member = tarfile.TarInfo("deckystream-" + version + "/" + name)
                     member.size = len(data)
                     archive.addfile(member, io.BytesIO(data))
         release.download_archive.side_effect = download
         return release, candidate, files
 
     def plugin(self, version):
-        root = self.home / "homebrew/plugins/obsgod"
+        root = self.home / "homebrew/plugins/deckystream"
         root.mkdir(parents=True, exist_ok=True)
-        (root / "package.json").write_text(json.dumps({"name": "obsgod", "version": version}))
-        (root / "plugin.json").write_text(json.dumps({"name": "OBSGod"}))
+        (root / "package.json").write_text(json.dumps({"name": "deckystream", "version": version}))
+        (root / "plugin.json").write_text(json.dumps({"name": "deckystream"}))
 
     def test_newer_standard_plugin_blocks_ordinary_desktop_update_before_download(self):
         release, _, _ = self.fixture()
@@ -95,7 +95,7 @@ class UpdateSafety(unittest.TestCase):
             return self.base / "current"
         installer.install.side_effect = install
         with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(
-                updater, "load_module", side_effect=lambda name, path: installer if name == "obsgod_payload_installer" else bridge):
+                updater, "load_module", side_effect=lambda name, path: installer if name == "deckystream_payload_installer" else bridge):
             with contextlib.redirect_stdout(io.StringIO()):
                 updater.run_update(recovery_plugin_version="0.1.0-deck.5", expected_plugin_version="0.1.0-deck.9")
         release.inspect_updates.assert_called_once_with("0.0.0", "preview", target_version="0.1.0-deck.5")
@@ -114,7 +114,7 @@ class UpdateSafety(unittest.TestCase):
         bridge.run_cli.return_value = {"ok": True, "state": "stopped", "output_known": True,
                                        "recording": False, "stream": {"active": False}, "process": "absent"}
         with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(
-                updater, "load_module", side_effect=lambda name, path: installer if name == "obsgod_payload_installer" else bridge), patch.object(
+                updater, "load_module", side_effect=lambda name, path: installer if name == "deckystream_payload_installer" else bridge), patch.object(
                 updater, "backup_settings") as backup:
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(RuntimeError, "no longer matches"):
                 updater.run_update(recovery_plugin_version="0.1.0-deck.5", expected_plugin_version="0.1.0-deck.9")
@@ -158,7 +158,7 @@ class UpdateSafety(unittest.TestCase):
     def test_bundle_checksum_and_symlink_validation_before_download(self):
         package = self.home / "updater"
         package.mkdir()
-        files = {name: b"fixture" for name in ["update.py", "releases.py", "Update OBSGod.desktop", "Update OBSGod.sh", "decky-install"]}
+        files = {name: b"fixture" for name in ["update.py", "releases.py", "Update deckystream.desktop", "Update deckystream.sh", "decky-install"]}
         for name, content in files.items():
             (package / name).write_bytes(content)
         (package / "manifest.json").write_text(json.dumps({"platform": "linux/amd64", "files": {name: hashlib.sha256(content).hexdigest() for name, content in files.items()}}))
@@ -187,7 +187,7 @@ class UpdateSafety(unittest.TestCase):
         self.assertEqual(json.loads((self.base / "update-status.json").read_text())["state"], "interrupted-or-failed")
 
     def test_unsafe_archive_paths_and_links_refused_before_extraction(self):
-        for name, kind in [("../outside", tarfile.REGTYPE), ("OBSGod-0.1.0-deck.5/../../outside", tarfile.REGTYPE), ("OBSGod-0.1.0-deck.5/link", tarfile.SYMTYPE)]:
+        for name, kind in [("../outside", tarfile.REGTYPE), ("deckystream-0.1.0-deck.5/../../outside", tarfile.REGTYPE), ("deckystream-0.1.0-deck.5/link", tarfile.SYMTYPE)]:
             archive = self.home / "payload.tar"
             with tarfile.open(archive, "w") as output:
                 member = tarfile.TarInfo(name)
@@ -270,11 +270,11 @@ class UpdateSafety(unittest.TestCase):
 
     def test_unified_install_invoked_once_with_key_preservation_and_final_revision_check(self):
         release, candidate, files = self.fixture()
-        config = self.home / ".config/obsgod"
+        config = self.home / ".config/deckystream"
         config.mkdir(parents=True)
         for name in ["deck.json", "secrets.json"]:
             (config / name).write_bytes(b"fixture-never-real")
-        media = self.home / "Videos/OBSGod/keep.mkv"
+        media = self.home / "Videos/deckystream/keep.mkv"
         media.parent.mkdir(parents=True)
         media.write_bytes(b"existing recording")
         installer = Mock(RECOVERY_POLICY_VERSION=1)
@@ -290,7 +290,7 @@ class UpdateSafety(unittest.TestCase):
             (self.base / "current").symlink_to(target)
             return self.base / "current"
         installer.install.side_effect = install
-        with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(updater, "load_module", side_effect=lambda name, path: installer if name == "obsgod_payload_installer" else bridge):
+        with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(updater, "load_module", side_effect=lambda name, path: installer if name == "deckystream_payload_installer" else bridge):
             with contextlib.redirect_stdout(io.StringIO()):
                 message = updater.run_update()
         installer.verify_payload.assert_called_once()
@@ -313,7 +313,7 @@ class UpdateSafety(unittest.TestCase):
         installer.install.side_effect = KeyboardInterrupt()
         bridge = Mock()
         bridge.run_cli.return_value = {"ok": True, "state": "stopped", "output_known": True, "recording": False, "stream": {"active": False}, "process": "absent"}
-        with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(updater, "load_module", side_effect=lambda name, path: installer if name == "obsgod_payload_installer" else bridge):
+        with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(updater, "load_module", side_effect=lambda name, path: installer if name == "deckystream_payload_installer" else bridge):
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(KeyboardInterrupt):
                 updater.run_update()
         self.assertEqual((self.base / "current").resolve(), old)
@@ -326,7 +326,7 @@ class UpdateSafety(unittest.TestCase):
             (self.base / "update.lock").chmod(0o600)
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module") as release:
-                with self.assertRaisesRegex(updater.UpdateError, "Another OBSGod updater"):
+                with self.assertRaisesRegex(updater.UpdateError, "Another deckystream updater"):
                     updater.run_update()
                 release.return_value.inspect_updates.assert_not_called()
 
@@ -437,7 +437,7 @@ class UpdateSafety(unittest.TestCase):
         self.assertFalse((self.base / "update-status.json").exists())
 
     def test_settings_backup_private_and_symlinked_recovery_record_refused(self):
-        config = self.home / ".config/obsgod"
+        config = self.home / ".config/deckystream"
         config.mkdir(parents=True)
         (config / "secrets.json").write_bytes(b"fixture-never-real")
         updater.backup_settings(self.base, self.home)
@@ -471,7 +471,7 @@ class UpdateSafety(unittest.TestCase):
         malformed_new_bridge.run_cli.return_value = legacy_bridge.run_cli.return_value
         installer = Mock(RECOVERY_POLICY_VERSION=1)
         def module(name, path):
-            return installer if name == "obsgod_payload_installer" else legacy_bridge if name == "obsgod_installed_bridge" else malformed_new_bridge
+            return installer if name == "deckystream_payload_installer" else legacy_bridge if name == "deckystream_installed_bridge" else malformed_new_bridge
         with patch.object(updater, "verify_bundle"), patch.object(updater, "release_module", return_value=release), patch.object(updater, "load_module", side_effect=module), patch.object(updater, "backup_settings") as backup:
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(updater.UpdateError, "Update blocked"):
                 updater.run_update()

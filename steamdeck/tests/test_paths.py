@@ -27,7 +27,7 @@ class OwnedAncestors(unittest.TestCase):
                 parent = self.home / ("shared-" + oct(mode))
                 parent.mkdir(mode=mode)
                 parent.chmod(mode)
-                target = parent / "obsgod"
+                target = parent / "deckystream"
                 for create in (install.owned_directory, update.private_directory):
                     with self.assertRaisesRegex(RuntimeError, "nonsticky"):
                         create(target, self.home)
@@ -52,12 +52,12 @@ class OwnedAncestors(unittest.TestCase):
         alias = Path(self.temp.name) / "home-alias"
         alias.symlink_to(self.home)
         with patch.dict(os.environ, {"HOME": str(alias)}):
-            install.owned_directory(alias / "data/obsgod", alias)
-            paths.validate_owned_root(alias / "data/obsgod", self.home)
-            self.assertTrue((self.home / "data/obsgod").is_dir())
+            install.owned_directory(alias / "data/deckystream", alias)
+            paths.validate_owned_root(alias / "data/deckystream", self.home)
+            self.assertTrue((self.home / "data/deckystream").is_dir())
             (self.home / "inside-link").symlink_to(self.home / "data")
             with self.assertRaisesRegex(ValueError, "symlinked"):
-                paths.validate_owned_root(alias / "inside-link/obsgod", alias)
+                paths.validate_owned_root(alias / "inside-link/deckystream", alias)
 
     def test_home_alias_under_replaceable_ancestor_fails_before_raw_alias_writes(self):
         for mode in (0o770, 0o777):
@@ -69,7 +69,7 @@ class OwnedAncestors(unittest.TestCase):
             with patch.dict(os.environ, {"HOME": str(alias)}):
                 for create in (install.owned_directory, update.private_directory):
                     with self.assertRaisesRegex(RuntimeError, "nonsticky"):
-                        create(alias / "data/obsgod", alias)
+                        create(alias / "data/deckystream", alias)
                     self.assertFalse((self.home / "data").exists())
 
 

@@ -3,9 +3,9 @@
   "number": 1,
   "pull_request": {
     "number": 1,
-    "base": {"ref": "master", "repo": {"full_name": "szmyty/obsgod"}},
-    "head": {"ref": "local-ci-fixture", "repo": {"full_name": "szmyty/obsgod"}},
+    "base": {"ref": "main", "repo": {"full_name": "egohygiene/deckystream"}},
+    "head": {"ref": "local-ci-fixture", "repo": {"full_name": "egohygiene/deckystream"}},
     "title": "Synthetic local validation; no provider review evidence"
   },
-  "repository": {"default_branch": "master", "full_name": "szmyty/obsgod", "name": "obsgod", "owner": {"login": "szmyty"}}
+  "repository": {"default_branch": "main", "full_name": "egohygiene/deckystream", "name": "deckystream", "owner": {"login": "egohygiene"}}
 }

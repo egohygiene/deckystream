@@ -7,10 +7,10 @@ export function mediaControls(result, busy = false) {
   const recording = media?.recording?.active === true || result?.recording === true;
   const replay = media?.replay_active === true;
   const operation = !!busy || !!result?.operation;
-  const ready = known && !!result?.configured && !operation;
+  const ready = known && !!result?.configured && !operation && result?.legacy_runtime !== true;
   return {
     known, recording, replay,
-    idle: known && !recording && !replay && !result?.stream?.active && !operation,
+    idle: known && !recording && !replay && !result?.stream?.active && !operation && result?.legacy_runtime !== true,
     recordStartDisabled: !ready || recording,
     recordStopDisabled: operation || (known && !recording),
     replayStartDisabled: !ready || replay,

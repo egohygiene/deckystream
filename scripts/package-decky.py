@@ -84,7 +84,7 @@ def verify_cli(cli, files, work):
         "else: raise SystemExit('Refusing unexpected CLI container-engine invocation')\n" +
         "os.execv(" + repr(docker) + ",[" + repr(docker) + ",'--host=unix:///var/run/docker.sock',*args])\n")
     wrapper.chmod(0o700)
-    stage = work / "obsgod"
+    stage = work / "deckystream"
     stage_cli(files, stage)
     raw = work / "official"
     raw.mkdir(mode=0o700)
@@ -140,7 +140,7 @@ def main():
     output_directory(args.output)
     subprocess.run([sys.executable, str(REPO / "scripts/generate-product.py"), "--check"], check=True)
     subprocess.run(["node", str(REPO / "scripts/generate-support.mjs"), "--check"], check=True)
-    with tempfile.TemporaryDirectory(prefix="obsgod-decky-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="deckystream-decky-") as temporary:
         work = Path(temporary)
         frontend = work / "frontend"
         for action in ("typecheck", "build"):
@@ -148,10 +148,10 @@ def main():
             if action == "build":
                 cmd += ["--output", str(frontend)]
             subprocess.run(cmd, check=True)
-        native, native_receipt = work / "libgstobsgodcapture.so", work / "capture-build.json"
+        native, native_receipt = work / "libgstdeckystreamcapture.so", work / "capture-build.json"
         subprocess.run([sys.executable, str(REPO / "scripts/build-deck-capture.py"), "--output", str(native),
                         "--receipt", str(native_receipt)], check=True)
-        binary = work / "obsgod-bin"
+        binary = work / "deckystream-bin"
         env = dict(os.environ, CGO_ENABLED="0", GOOS="linux", GOARCH="amd64")
         subprocess.run(["go", "build", "-trimpath", "-buildvcs=false", "-ldflags",
                         "-s -w -buildid= -X main.version=" + args.version + " -X main.commitSHA=" + revision,
@@ -164,7 +164,7 @@ def main():
         if (command("git", "rev-parse", "HEAD") != revision
                 or command("git", "status", "--porcelain") != source_status or source_snapshot() != source_files):
             raise ValueError("Source changed during build; rerun from a stable revision")
-        archive = args.output / "obsgod-decky.zip"
+        archive = args.output / "deckystream-decky.zip"
         archive.write_bytes(zip_payload(files, epoch))
         checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
         receipt = {"revision": revision, "dirty": dirty, "version": args.version, "platform": "linux/amd64",

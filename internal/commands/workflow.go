@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/egohygiene/deckystream/internal/config"
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/config"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 type workflowConnector func(context.Context, config.Config, automation.WorkflowPlan) (automation.WorkflowBackend, error)

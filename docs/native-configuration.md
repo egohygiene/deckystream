@@ -52,7 +52,7 @@ then explicitly select Start streaming and verify reception from another device.
 Actual controller/Steam keyboard and provider reception remain owner Deck tests.
 
 The included optional browser setup still supports advanced configuration in
-Desktop Mode. Run the bundled `bin/obsgod deck setup` from the installed plugin
+Desktop Mode. Run the bundled `bin/deckystream deck setup` from the installed plugin
 directory and use the private loopback URL it prints. Keep its authorization
 token private; do not expose it to a LAN or install a second copy of the app.
 See [package contents](decky-package.md) and [configuration](configuration.md).

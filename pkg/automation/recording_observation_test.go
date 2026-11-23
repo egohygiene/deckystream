@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
+	"github.com/egohygiene/deckystream/pkg/automation"
 	"github.com/gorilla/websocket"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
-	"github.com/szmyty/obsgod/pkg/automation"
 )
 
 // recordingProtocolFixture keeps StopRecord's ACK separate from actual muxer

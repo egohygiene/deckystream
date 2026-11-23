@@ -16,7 +16,7 @@ Desktop app/installer/updater and incomplete standalone plugin onboarding.
 | --- | --- | --- |
 | Frontend | `@decky/api`1.1.3, `@decky/ui`4.11.0, `callable`, `definePlugin` and native panel components | Matches the current template's SDK generation. No obsolete `decky-frontend-lib` dependency. |
 | Backend | Async Python `Plugin` with lifecycle hooks; `api_version:1`, empty flags | Standard supported shape with ordinary user privileges. A Go rewrite or root flag is unnecessary. |
-| Native payload | ZIP already contains `bin/obsgod` and `bin/libgstobsgodcapture.so` | Bundled native helpers are supported; the plugin does not need a separately installed CLI just to find its executable. |
+| Native payload | ZIP already contains `bin/deckystream` and `bin/libgstdeckystreamcapture.so` | Bundled native helpers are supported; the plugin does not need a separately installed CLI just to find its executable. |
 | Build/layout | Plugin source nested under `steamdeck/decky`, custom Rollup and packager | More custom than root manifests, official preset and Decky CLI backend packaging. Nesting works for direct packaging but is not the default Store build root. |
 | Rollup/runtime | Replaceable API module with Steam/Decky React/UI globals | The globals are also used by the official preset. The custom module boundary was intentional license/source handling, not obsolete SDK usage. Review obligations before replacing it with the stock preset. |
 | Onboarding | Desktop setup assets ship only in the paired runtime archive | Installing the Decky ZIP alone does not provide the current complete first-run setup journey. This is the clearest usability gap. |

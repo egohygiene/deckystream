@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type ErrorCode string

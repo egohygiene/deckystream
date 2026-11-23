@@ -76,9 +76,10 @@ def run_frontend(action, *, root=ROOT, npm="npm", output=None):
         raise FrontendError("Frontend output override is only supported for build")
     validate_output(root, uid, output)
     env = os.environ.copy()
-    env.pop("OBSGOD_FRONTEND_OUT", None)
+    env.pop("DECKYSTREAM_FRONTEND_OUT", None)
+    env.pop("OBSGOD_FRONTEND_OUT", None)  # Legacy override also needs explicit validation.
     if output is not None:
-        env["OBSGOD_FRONTEND_OUT"] = str(output)
+        env["DECKYSTREAM_FRONTEND_OUT"] = str(output)
     for key in ("SUDO_UID", "SUDO_GID", "SUDO_USER", "SUDO_COMMAND", "XDG_CONFIG_HOME",
                 "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR"):
         env.pop(key, None)

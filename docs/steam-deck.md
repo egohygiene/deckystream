@@ -1,6 +1,6 @@
 # deckystream Steam Deck guide
 
-OBSGod runs an isolated OBS Studio Flatpak and exposes streaming controls in
+deckystream runs an isolated OBS Studio Flatpak and exposes streaming controls in
 Decky's Quick Access panel. Stock OBS still needs a graphical session; this is
 managed background OBS, not a headless OBS server. SteamOS/Linux x86_64 is the
 supported target. Normal use does not disable SteamOS read-only protection.
@@ -12,20 +12,21 @@ controller, audio or Kick compatibility. Required device checks remain open.
 
 ## Current standard-plugin setup
 
-The current source produces one `obsgod-decky.zip`, installed through Decky's
+The current source produces one `deckystream-decky.zip`, installed through Decky's
 normal plugin controls. Do not substitute a GitHub source-code ZIP. A separate
 Desktop application/updater is optional and its version need not match the plugin.
-The [current review checkpoint](pre-migration-qualified-checkpoint.md) and
-[numbered tests](https://github.com/szmyty/obsgod/blob/430cc391cb63f080214aacc279e5c04b1092c7a5/OWNER-TESTS.md)
-identify exact source and checksums; remaining qualification is tracked in
-[#85](https://github.com/szmyty/obsgod/issues/85). The retained
-[4699235 review installer](current-review-install.md) is explicitly historical.
+Use [getting started](getting-started.md) and the
+[shared testing booklet](testing-booklet.md) with the exact candidate recorded in
+[finalization #1](https://github.com/egohygiene/deckystream/issues/1). Older
+previews and their pinned receipts remain historical. For an older installation,
+follow [naming and upgrades](product-naming.md), preserve settings/media and
+close managed OBS before replacement.
 
 1. Install Decky Loader from its official project if needed. Stop streaming,
    recording and replay before replacing a plugin; unknown output requires
    recovery/inspection first. Use the exact ZIP/checksum supplied by the review.
-2. Open **••• → Decky → deckystream** in Gaming Mode. Existing installation
-   identity may still be **OBSGod**. First-run setup lists missing user-scoped
+2. Open **••• → Decky → deckystream** in Gaming Mode. An older installation
+   may retain a legacy identity until the verified replacement completes. First-run setup lists missing user-scoped
    OBS/GStreamer dependencies; choose **Install** or **Later**. Declining leaves
    setup required. Downloads do not run merely because Decky loads the plugin.
 3. In **Stream destination**, enter the provider's server and separate stream key.
@@ -47,7 +48,7 @@ chosen optional Desktop installation. They are not prerequisites for the standar
 plugin flow above. Preserve the exact source/checksums of the archive being used.
 
 1. In **Desktop Mode**, download the reviewed candidate archive ending in
-   `_linux_amd64.tar.gz` and extract the entire archive. Leave an existing OBSGod
+   `_linux_amd64.tar.gz` and extract the entire archive. Leave an existing deckystream
    installation in place; settings and the stream key should be preserved.
    Stop streaming, local recording and replay first. If an older version cannot
    confirm replay/output state, follow its named inspection/recovery path before
@@ -58,19 +59,19 @@ plugin flow above. Preserve the exact source/checksums of the archive being used
    it is not a normal Desktop Applications entry. If Decky is missing or its
    frontend is unavailable, the installer stops with a concrete recovery step.
    Follow [Decky's official installation](https://decky.xyz/) if needed, then
-   rerun OBSGod. Do not manually delete plugin directories or run OBSGod as root.
-3. Open **Install OBSGod.desktop** in the extracted folder and choose **Execute**
+   rerun deckystream. Do not manually delete plugin directories or run deckystream as root.
+3. Open **Install deckystream.desktop** in the extracted folder and choose **Execute**
    if asked. Keep the terminal open. The installer checks dependencies, verifies
-   its files and installs both the app and the exact bundled OBSGod Decky plugin.
+   its files and installs both the app and the exact bundled deckystream Decky plugin.
    Its final result stays visible; errors must not disappear with the terminal.
 4. In **Decky Stream Setup**, choose Kick, Twitch, YouTube or custom RTMP(S),
    then enter the server URL and secret key from that destination’s dashboard. For the initial test use 4500 kbps, 30 fps and AMD H.264; switch to
    software H.264 if hardware encoding fails. Microphone is off unless selected.
    Save and choose **Finish and close setup**. Existing settings do not require
    key re-entry. Never share the private setup link or the key.
-5. Return to **Gaming Mode**, then open **••• → Decky → Decky Stream** (the installed compatibility ID remains OBSGod). Make a
+5. Return to **Gaming Mode**, then open **••• → Decky → Decky Stream** (the installed compatibility ID remains deckystream). Make a
    **10-second test clip** first. This never broadcasts, so a red streaming dot
-   during the clip is normal. The clip is saved in **Videos/OBSGod**; check its
+   during the clip is normal. The clip is saved in **Videos/deckystream**; check its
    video and sound in Desktop Mode before broadcasting.
 6. Choose **Start streaming**, then watch your destination channel on another device.
    Confirm both picture and sound. Use **Cancel operation** while starting or
@@ -113,7 +114,7 @@ latest 100 filtered events. **Copy console log** copies all retained pages,
 including UTC timestamps, severity and plugin version. Keys, URLs and raw OBS
 output are excluded. Copying does not change output state. If copying fails,
 the panel says so and leaves the console selectable. Logs live beneath
-`~/.local/state/obsgod/diagnostics/` (or `$XDG_STATE_HOME/obsgod`).
+`~/.local/state/deckystream/diagnostics/` (or `$XDG_STATE_HOME/deckystream`).
 
 For startup failure, copy the log while still in the same Gaming Mode session.
 Report the visible error and installed versions. Switching to Desktop may end
@@ -125,7 +126,7 @@ second unmanaged OBS instance to work around an occupied control port.
 
 ## OBS, capture and settings
 
-Compatible OBS 28+ includes **obs-websocket**. OBSGod verifies the installed OBS
+Compatible OBS 28+ includes **obs-websocket**. deckystream verifies the installed OBS
 and capture dependencies and maintains an enabled local WebSocket listener with
 a random password; a separate WebSocket plugin download is normally unnecessary.
 Desktop Setup now offers credential-free local connection information, an explicit
@@ -138,15 +139,15 @@ terminate OBS; Desktop-to-Gaming stream continuity is not promised without
 recorded platform evidence. The launcher follows the current Steam graphical,
 D-Bus and audio session without forcing an incompatible Qt backend.
 
-Settings live in `~/.config/obsgod/deck.json`; the stream key and generated OBS
+Settings live in `~/.config/deckystream/deck.json`; the stream key and generated OBS
 password are in `secrets.json` with private permissions. Managed OBS files live
-under `~/.var/app/com.obsproject.Studio/config/obsgod/obs-studio/`. Ordinary OBS
+under `~/.var/app/com.obsproject.Studio/config/deckystream/obs-studio/`. Ordinary OBS
 profiles are separate. Never edit secrets into command arguments or support logs.
 
 Gamescope feeds the separately installed obs-gstreamer plugin. Video, game audio
 and microphone are independent checks. Upstream black-frame limitations include
 [Gamescope #2508](https://github.com/ValveSoftware/gamescope/issues/2508) and
-[#1898](https://github.com/ValveSoftware/gamescope/issues/1898). OBSGod must refuse
+[#1898](https://github.com/ValveSoftware/gamescope/issues/1898). deckystream must refuse
 a new full-screen broadcast from blank capture; game-only mode uses its explicit
 between-game screen instead of substituting the compositor.
 
@@ -229,8 +230,8 @@ latest repository source was fetched. The real loader journey remains #86.
 ### Optional legacy Desktop app recovery
 
 Only installations that actually have the separate Desktop app/updater use
-**Update OBSGod** under Applications → Multimedia, `Update OBSGod.desktop` or
-`Update OBSGod.sh`. A normal Decky ZIP creates none of these. Its optional app
+**Update deckystream** under Applications → Multimedia, `Update deckystream.desktop` or
+`Update deckystream.sh`. A normal Decky ZIP creates none of these. Its optional app
 version need not equal the loaded plugin, and its absence does not require
 installing a second copy or repairing a pair.
 
@@ -264,8 +265,8 @@ Decky ZIP does not create the Applications launcher or the path below.
 For an existing default-location Desktop installation:
 
 ```sh
-python3 ~/.local/share/obsgod/current/uninstall.py --dry-run --json
-python3 ~/.local/share/obsgod/current/uninstall.py
+python3 ~/.local/share/deckystream/current/uninstall.py --dry-run --json
+python3 ~/.local/share/deckystream/current/uninstall.py
 ```
 
 If you selected `XDG_DATA_HOME`, use the `current/uninstall.py` path shown by your
@@ -280,7 +281,7 @@ deliberate migration; it refuses conflicting installations instead of guessing.
   app/data/rollback copies. The export survives wipe and may contain credentials;
   recordings remain a separate explicit choice.
 - `--delete-recordings` additionally selects standard OBS date-named MKVs in
-  `Videos/OBSGod`; use repeatable `--recording PATH` for an explicitly selected
+  `Videos/deckystream`; use repeatable `--recording PATH` for an explicitly selected
   other MKV there. Review the exact dry-run inventory first.
 - `--yes` is the noninteractive equivalent of confirming the displayed plan.
 
@@ -296,7 +297,7 @@ its installer. See the [current cleanup preparation](legacy-cleanup-kit.md).
 `--wipe` now requires a successful private recovery TAR before it can remove the
 plugin or selected data. Its fresh inventory names the export and explicitly
 states that it can contain stream keys, OBS passwords and private history.
-The default is `${XDG_DATA_HOME:-~/.local/share}/obsgod-wipe-exports/` with a
+The default is `${XDG_DATA_HOME:-~/.local/share}/deckystream-wipe-exports/` with a
 unique filename. The owned export directory is mode0700 and the archive0600;
 this is filesystem privacy, not encryption. It is outside the removal roots.
 
@@ -304,8 +305,8 @@ To select a new archive in a dedicated private folder, use the same exact path
 for preview and the later explicit operation:
 
 ```sh
-python3 uninstall.py --wipe --export "$HOME/.local/share/obsgod-wipe-exports/migration-1.tar" --dry-run
-python3 uninstall.py --wipe --export "$HOME/.local/share/obsgod-wipe-exports/migration-1.tar"
+python3 uninstall.py --wipe --export "$HOME/.local/share/deckystream-wipe-exports/migration-1.tar" --dry-run
+python3 uninstall.py --wipe --export "$HOME/.local/share/deckystream-wipe-exports/migration-1.tar"
 ```
 
 An existing archive is never overwritten. Unsafe paths/links/ownership, changed
@@ -344,7 +345,7 @@ receive controls remain hidden until public receiving addresses and explicit
 networks are configured. See [support configuration](support.md).
 
 The versioned [CLI configuration reference](configuration.md) documents flags,
-`OBSGOD_*`/legacy `OBS_*` variables, private secret references, XDG connection
+`DECKYSTREAM_*`/legacy `OBS_*` variables, private secret references, XDG connection
 profiles and offline shell help. Managed Deck settings stay separate from a
 remote-OBS connection profile. The adapter uses Decky's supplied plugin/user
 paths when present; Desktop and CLI share the same managed settings.

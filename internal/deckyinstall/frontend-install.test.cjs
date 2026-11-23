@@ -3,10 +3,11 @@ let source = "";
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", value => {source += value;});
 process.stdin.on("end", async () => {
-  const mode = process.env.OBSGOD_TRANSPORT_TEST_MODE;
+  const mode = process.env.DECKYSTREAM_TRANSPORT_TEST_MODE;
   const event = "loader/add_plugin_install_prompt";
   const digest = "a".repeat(64);
-  let order = ["Alpha", "OBSGod", "Beta"];
+  const target = ["uninstall-legacy","uninstall-legacy-version","legacy-present"].includes(mode) ? "OBSGod" : "deckystream";
+  let order = mode === "uninstall-legacy" ? ["Alpha","OBSGod","deckystream","Beta"] : ["Alpha", "deckystream", "Beta"];
   let confirms = 0;
   let uninstalls = 0;
   let removed = mode === "uninstall-empty" || mode === "uninstall-orphan";
@@ -31,22 +32,22 @@ process.stdin.on("end", async () => {
     removeEventListener(name, listener) {listeners.get(name)?.delete(listener); if (listeners.get(name)?.size===0) listeners.delete(name);},
     async call(route,...args) {
       if (route === "updater/get_version_info") return {current:"v3.3.1"};
-      if (route === "loader/get_plugins") return removed ? [{name:"Other",version:"9"}] : [{name:"OBSGod",version:"0.1.0-test",disabled:false,load_type:1},{name:"Other",version:"9"}];
+      if (route === "loader/get_plugins") return [...(removed?[]:[{name:target,version:mode==="uninstall-legacy-version"?"0.2.0-changed":"0.1.0-test",disabled:false,load_type:1}]),...(mode==="uninstall-legacy"?[{name:"deckystream",version:"0.1.0-test",disabled:false,load_type:1}]:[]),{name:"Other",version:"9"}];
       if (route === "utilities/settings/get") return [...order];
       if (route === "utilities/settings/set") {order=args[1];return;}
       if (route === "utilities/uninstall_plugin") {
-        assert.deepEqual(args,["OBSGod"]); uninstalls++;
+        assert.deepEqual(args,[target]); uninstalls++;
         if (mode === "uninstall-reject") throw Error("fixture-secret do not expose");
         if (pendingConfirmation) await pendingConfirmation;
         if (mode === "uninstall-orphan" && uninstalls === 1) return;
         orphanFolder = false;
-        if (mode !== "uninstall-retained") {removed=true;order=["Alpha","Beta"];}
+        if (mode !== "uninstall-retained") {removed=true;order=order.filter(name=>name!==target);}
         return;
       }
       if (route === "utilities/install_plugin") {
-        assert.deepEqual(args,["file:///home/deck/space and %20/plugin.zip","OBSGod","0.1.0-test",digest,4]);
+        assert.deepEqual(args,["file:///home/deck/space and %20/plugin.zip","deckystream","0.1.0-test",digest,4]);
         for (const listener of listeners.get(event)) listener("Other","9.9.9","unrelated-request",digest,4);
-        if (mode !== "missing-prompt") for (const listener of listeners.get(event)) listener("OBSGod","0.1.0-test","expected-request",digest,4);
+        if (mode !== "missing-prompt") for (const listener of listeners.get(event)) listener("deckystream","0.1.0-test","expected-request",digest,4);
         return;
       }
       if (route === "utilities/confirm_plugin_install") {
@@ -60,18 +61,43 @@ process.stdin.on("end", async () => {
     }
   };
   global.window={DeckyBackend:backend};
+  if(mode === "legacy-busy") window.__obsgodInstallerRunning = {};
   const result = JSON.parse(await eval(source));
   assert.equal(backend.ws,socket,"Steam frontend connection replaced");
   assert.deepEqual(Array.from(listeners.get(event)),[original],"event listeners not restored");
+  if(mode === "legacy-present" || mode === "legacy-busy") {
+    assert.deepEqual(result,{ok:false,code:mode==="legacy-present"?"legacy-present":"busy"});
+    assert.equal(confirms,0);assert.equal(uninstalls,0);
+    return;
+  }
+  if(mode === "legacy-invalid-install") {
+    assert.deepEqual(result,{ok:false,code:"unsupported"});
+    assert.equal(confirms,0);assert.equal(uninstalls,0);
+    return;
+  }
   if (mode.startsWith("uninstall")) {
     assert.equal(confirms,0,"removal attempted an installation");
     assert.deepEqual(prompts,[],"removal changed unrelated prompts");
     assert(!JSON.stringify(result).includes("fixture-secret"));
+    if(mode === "uninstall-legacy-version") {
+      assert.deepEqual(result,{ok:false,code:"legacy-version-mismatch"});
+      assert.equal(uninstalls,0,"changed legacy version was removed");
+      assert.equal(window.__deckystreamInstallerRunning,undefined);
+      assert.equal(window.__obsgodInstallerRunning,undefined);
+      return;
+    }
+    if (mode === "uninstall-legacy") {
+      assert.equal(result.ok,true);assert.equal(result.removed,true);assert.equal(uninstalls,1);
+      assert.deepEqual(order,["Alpha","deckystream","Beta"],"legacy removal altered new or unrelated plugin order");
+      assert.equal(window.__deckystreamInstallerRunning,undefined);
+      assert.equal(window.__obsgodInstallerRunning,undefined);
+      return;
+    }
     if (mode === "uninstall-unknown-root") {
       assert.deepEqual(result,{ok:false,code:"uninstall-location-unconfirmed"});
       assert.equal(uninstalls,0,"unknown installation root mutated the loaded plugin");
-      assert.deepEqual(order,["Alpha","OBSGod","Beta"]);
-      assert.equal(window.__obsgodInstallerRunning,undefined);
+      assert.deepEqual(order,["Alpha","deckystream","Beta"]);
+      assert.equal(window.__deckystreamInstallerRunning,undefined);
       return;
     }
     if (mode === "uninstall-orphan") {
@@ -84,19 +110,19 @@ process.stdin.on("end", async () => {
     }
     if (mode === "uninstall-timeout") {
       assert.deepEqual(result,{ok:false,code:"uninstall-unconfirmed"});
-      assert(window.__obsgodInstallerRunning,"pending removal lost its guard");
+      assert(window.__deckystreamInstallerRunning,"pending removal lost its guard");
       assert.deepEqual(JSON.parse(await eval(source)),{ok:false,code:"busy"});
       assert.equal(uninstalls,1);
       settleConfirmation();
       await new Promise(resolve=>setImmediate(resolve));
-      assert.equal(window.__obsgodInstallerRunning,undefined);
+      assert.equal(window.__deckystreamInstallerRunning,undefined);
       // A new operator retry re-inventories the now-absent directory.
       source=source.replace('"uninstall_existing":true','"uninstall_existing":false');
       assert.equal(JSON.parse(await eval(source)).ok,true);
       assert.equal(uninstalls,1,"already removed plugin was removed again");
       return;
     }
-    assert.equal(window.__obsgodInstallerRunning,undefined);
+    assert.equal(window.__deckystreamInstallerRunning,undefined);
     assert.equal(result.ok,["uninstall","uninstall-empty"].includes(mode));
     if(result.ok){assert.equal(result.removed,true);assert.deepEqual(order,["Alpha","Beta"]);}
     assert.equal(uninstalls,mode === "uninstall-empty"?0:1);
@@ -105,26 +131,26 @@ process.stdin.on("end", async () => {
   if (mode === "confirm-timeout" || mode === "confirm-timeout-reject") {
     assert.deepEqual(result,{ok:false,code:"install-unconfirmed"});
     assert.equal(confirms,1);
-    assert(window.__obsgodInstallerRunning,"timed-out backend mutation lost its guard");
+    assert(window.__deckystreamInstallerRunning,"timed-out backend mutation lost its guard");
     const again = JSON.parse(await eval(source));
     assert.deepEqual(again,{ok:false,code:"busy"});
     assert.equal(confirms,1,"retry started another mutation while the original was pending");
     settleConfirmation(mode === "confirm-timeout-reject" ? new Error("fixture-secret late rejection") : undefined);
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(window.__obsgodInstallerRunning,undefined,"settled mutation never released its guard");
+    assert.equal(window.__deckystreamInstallerRunning,undefined,"settled mutation never released its guard");
     const after = JSON.parse(await eval(source));
     assert.equal(after.ok,true,"settled mutation prevented a safe retry");
     assert.equal(confirms,2);
-    assert.equal(window.__obsgodInstallerRunning,undefined);
+    assert.equal(window.__deckystreamInstallerRunning,undefined);
     assert.deepEqual(Array.from(listeners.get(event)),[original]);
     assert(!JSON.stringify(result).includes("fixture-secret"));
     return;
   }
-  assert.equal(window.__obsgodInstallerRunning,undefined);
+  assert.equal(window.__deckystreamInstallerRunning,undefined);
   if (["install","probe"].includes(mode)) assert.equal(result.ok,true);
   else assert.equal(result.ok,false);
   assert.equal(confirms,["install","reject"].includes(mode)?1:0);
-  assert.deepEqual(order,["Alpha","OBSGod","Beta"]);
+  assert.deepEqual(order,["Alpha","deckystream","Beta"]);
   assert.deepEqual(prompts,["install","reject","missing-prompt"].includes(mode)?["Other"]:[]);
   assert(!JSON.stringify(result).includes("fixture-secret"));
 }).on("error", error => {throw error;});

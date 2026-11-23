@@ -61,9 +61,9 @@ publish a release/site or close missing target, CI or final-owner acceptance.
 
 | Artifact | SHA256 |
 | --- | --- |
-| Runtime `obsgod-deck_0.1.0-deck.7_linux_amd64.tar.gz` | `4205e4725fd432ea99a59fe8c1a78f0f7b29c7ddbd6c79e3cf4afd8c2c67c9c3` |
-| Plugin `obsgod-decky.zip` | `0a4d8afefa0f149cb053cddc988fa0cc46992602b73b73b581deab4414abf5c4` |
-| Updater `obsgod-one-click-update_0.1.0-deck.7_linux_amd64.zip` | `5227e541e3c07cc9214e67f4400dda14065520789ebdecfdeca15b6c4152c68d` |
+| Runtime `deckystream-deck_0.1.0-deck.7_linux_amd64.tar.gz` | `4205e4725fd432ea99a59fe8c1a78f0f7b29c7ddbd6c79e3cf4afd8c2c67c9c3` |
+| Plugin `deckystream-decky.zip` | `0a4d8afefa0f149cb053cddc988fa0cc46992602b73b73b581deab4414abf5c4` |
+| Updater `deckystream-one-click-update_0.1.0-deck.7_linux_amd64.zip` | `5227e541e3c07cc9214e67f4400dda14065520789ebdecfdeca15b6c4152c68d` |
 
 The complete commands/platforms/images/input and output hashes are in
 [qualification JSON](evidence/m2-qualification.json); individual criteria and

@@ -1,13 +1,13 @@
 # Standard Decky package
 
-The primary install unit is **`obsgod-decky.zip`**. It is one ordinary Decky
-plugin, with the current compatible `obsgod` folder/package identity and `OBSGod`
+The primary install unit is **`deckystream-decky.zip`**. It is one ordinary Decky
+plugin, with the current compatible `deckystream` folder/package identity and `deckystream`
 plugin name. No repository migration, Store submission or release publication
 is performed by the build. `deckystream` is the planned future repository name,
 not the current update destination.
 
 The ZIP contains the panel, Python backend and its sibling modules, the Go CLI
-in `bin/obsgod`, native capture library, optional local browser setup and its
+in `bin/deckystream`, native capture library, optional local browser setup and its
 assets, notices, and the LGPL SDK's separate runtime module and preferred source.
 OBS Studio and the matching GStreamer extension remain separately installed,
 user-scoped Flatpaks. They are not embedded in the ZIP. Running the plugin needs
@@ -73,14 +73,14 @@ guard. The short browser-fixture `run-user-tests.py` context remains separate.
 
 `qualification.json` records each complete primary command, private log hash,
 source/tool/manifest checks and literal canonical ZIP comparison. Only a passed
-receipt exposes `second/obsgod-decky.zip` as the accepted artifact; any primary
+receipt exposes `second/deckystream-decky.zip` as the accepted artifact; any primary
 entry failure fails the helper before a later candidate is accepted. Existing
 outputs remain intact. The optional `--verify-cli` argument forwards the pinned
 assembly check to each primary build, with the same limits described below.
 
 For the supported local scratch profile, compiler and module caches use separate
 owner-private `go-build-user-UID` and `go-mod-user-UID` directories under
-`OBSGOD_LOCAL_SCRATCH`; otherwise they stay under the private output context.
+`DECKYSTREAM_LOCAL_SCRATCH`; otherwise they stay under the private output context.
 Module caches, package/proxy/CA presets and prior artifacts are preserved. This
 helper deletes no cache. Any opted-in compiler-cache cleanup belongs to the
 documented local-CI policy after its consumers finish. Keep context/cache trees
@@ -127,7 +127,7 @@ The unmodified CLI is invoked as:
 ```text
 decky-0.0.7 plugin build --output-path <private>/official \
   --tmp-output-path <private>/cli-tmp \
-  --output-filename-source directory <private>/obsgod
+  --output-filename-source directory <private>/deckystream
 ```
 
 CLI 0.0.7 hardcodes `ghcr.io/steamdeckhomebrew/builder:latest`. The helper's

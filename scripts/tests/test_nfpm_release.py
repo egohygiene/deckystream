@@ -25,7 +25,7 @@ def tar(files, mutate=None):
     with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as archive:
         for name, data in files.items():
             item = tarfile.TarInfo(name)
-            item.size, item.mode = len(data), 0o755 if name.endswith("/obsgod") else 0o644
+            item.size, item.mode = len(data), 0o755 if name.endswith("/deckystream") else 0o644
             if mutate:
                 mutate(item)
             archive.addfile(item, io.BytesIO(data))
@@ -33,7 +33,7 @@ def tar(files, mutate=None):
 
 
 def payload():
-    return {"usr/bin/obsgod": b"a static executable", **{"usr/share/doc/obsgod/" + name: data for name, data in DOCS.items()}}
+    return {"usr/bin/deckystream": b"a static executable", **{"usr/share/doc/deckystream/" + name: data for name, data in DOCS.items()}}
 
 
 def ar(members):
@@ -47,7 +47,7 @@ def ar(members):
 
 def deb(files=None, scripts=None, architecture="amd64"):
     files = payload() if files is None else files
-    control = {"./control": f"Package: obsgod\nVersion: {VERSION.replace('-', '~', 1)}\nArchitecture: {architecture}\n".encode(),
+    control = {"./control": f"Package: deckystream\nVersion: {VERSION.replace('-', '~', 1)}\nArchitecture: {architecture}\n".encode(),
                "./md5sums": "".join(hashlib.md5(d).hexdigest() + "  " + n + "\n" for n, d in files.items()).encode()}
     control.update(scripts or {})
     return ar({"debian-binary": b"2.0\n", "control.tar.gz": gzip.compress(tar(control), mtime=0),
@@ -57,7 +57,7 @@ def deb(files=None, scripts=None, architecture="amd64"):
 def apk(files=None, scripts=None, mutate=None, architecture="x86_64"):
     files = payload() if files is None else files
     compressed = gzip.compress(tar(files, mutate), mtime=0)
-    control = {".PKGINFO": (f"pkgname = obsgod\npkgver = {VERSION.replace('-', '_', 1)}\narch = {architecture}\n"
+    control = {".PKGINFO": (f"pkgname = deckystream\npkgver = {VERSION.replace('-', '_', 1)}\narch = {architecture}\n"
                             f"datahash = {hashlib.sha256(compressed).hexdigest()}\n").encode()}
     control.update(scripts or {})
     return gzip.compress(tar(control), mtime=0) + compressed
@@ -79,7 +79,7 @@ def header(values):
 def cpio(files):
     result = bytearray()
     for index, (name, data) in enumerate([*files.items(), ("TRAILER!!!", b"")]):
-        fields = [index, stat.S_IFREG | (0o755 if name.endswith("/obsgod") else 0o644), 0, 0, 1, 0, len(data), 0, 0, 0, 0, len(name) + 1, 0]
+        fields = [index, stat.S_IFREG | (0o755 if name.endswith("/deckystream") else 0o644), 0, 0, 1, 0, len(data), 0, 0, 0, 0, len(name) + 1, 0]
         result += b"070701" + b"".join(f"{v:08x}".encode() for v in fields) + name.encode() + b"\x00"
         result += b"\x00" * (-len(result) % 4)
         result += data
@@ -90,10 +90,10 @@ def cpio(files):
 def rpm(files=None, updates=None, architecture="x86_64"):
     files = payload() if files is None else files
     names = list(files)
-    values = {1000: (6, "obsgod"), 1001: (6, VERSION.replace("-", "~", 1)), 1002: (6, "1"),
-              1007: (6, "reproducible.obsgod.invalid"), 1022: (6, architecture),
+    values = {1000: (6, "deckystream"), 1001: (6, VERSION.replace("-", "~", 1)), 1002: (6, "1"),
+              1007: (6, "reproducible.deckystream.invalid"), 1022: (6, architecture),
               1124: (6, "cpio"), 1125: (6, "gzip"), 1117: (8, names), 1118: (8, ["/"]), 1116: (4, [0] * len(names)),
-              1030: (4, [stat.S_IFREG | (0o755 if n.endswith("/obsgod") else 0o644) for n in names]),
+              1030: (4, [stat.S_IFREG | (0o755 if n.endswith("/deckystream") else 0o644) for n in names]),
               1035: (8, [hashlib.sha256(data).hexdigest() for data in files.values()]), 1036: (8, [""] * len(names)),
               1037: (4, [0] * len(names)), 1039: (8, ["root"] * len(names)), 1040: (8, ["root"] * len(names)), 5011: (4, [8])}
     values.update(updates or {})
@@ -118,13 +118,13 @@ class NFPMTests(unittest.TestCase):
             source = json.loads(N.prepared(IDENTITY)["SOURCE.json"])
         self.assertEqual(source["preferred_application_source"], canonical + "/tree/" + REV)
         self.assertEqual(source["source_sha256"]["product.json"], N.G.sha(source_file(REV, "product.json")))
-        self.assertEqual(N.G.MODULE, "github.com/szmyty/obsgod")
+        self.assertEqual(N.G.MODULE, "github.com/egohygiene/deckystream")
         with tempfile.TemporaryDirectory() as directory:
             root, target = Path(directory), ("linux", "amd64", "")
             names = [N.package_name(VERSION, target, kind) for kind in N.FORMATS]
             for name in names:
                 (root / name).write_bytes(b"fixture")
-            (root / "metadata.json").write_bytes(N.G.canonical({"commit": REV, "project_name": "obsgod", "version": VERSION}))
+            (root / "metadata.json").write_bytes(N.G.canonical({"commit": REV, "project_name": "deckystream", "version": VERSION}))
             (root / "checksums.txt").write_text("".join(N.G.sha(b"fixture") + "  " + name + "\n" for name in names))
 
             def record(name, data, *args):
@@ -138,7 +138,7 @@ class NFPMTests(unittest.TestCase):
             for name in names:
                 provenance = json.loads(documents[name + ".provenance.unsigned.json"])
                 build = provenance["predicate"]["buildDefinition"]
-                self.assertEqual(build["buildType"], "urn:obsgod:nfpm-cli-snapshot")
+                self.assertEqual(build["buildType"], "urn:deckystream:nfpm-cli-snapshot")
                 self.assertEqual(build["resolvedDependencies"][0]["uri"], "git+" + canonical + "@" + REV)
 
     def test_readers_accept_only_the_exact_root_owned_regular_payload(self):
@@ -146,7 +146,7 @@ class NFPMTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 files, metadata = N.package_files(BUILD[kind](), kind)
                 self.assertEqual(set(files), N.PAYLOAD)
-                self.assertEqual(metadata["Package"], "obsgod")
+                self.assertEqual(metadata["Package"], "deckystream")
                 for name, content in payload().items():
                     self.assertEqual(files[name]["data"], content)
 
@@ -156,13 +156,13 @@ class NFPMTests(unittest.TestCase):
                 result = N.audit_package("pkg." + kind, BUILD[kind](), ("linux", "amd64", ""), kind, VERSION, IDENTITY, DOCS)
                 self.assertEqual(result["format"], kind)
                 self.assertEqual(set(result["files"]), N.PAYLOAD)
-                self.assertEqual(set(audit.call_args.args[2]), N.G.BASE_FILES | {"obsgod"})
+                self.assertEqual(set(audit.call_args.args[2]), N.G.BASE_FILES | {"deckystream"})
                 changed = payload()
-                changed["usr/share/doc/obsgod/LICENSE"] = b"wrong source"
+                changed["usr/share/doc/deckystream/LICENSE"] = b"wrong source"
                 with self.assertRaisesRegex(ValueError, "notice/source"):
                     N.audit_package("pkg", BUILD[kind](changed), ("linux", "amd64", ""), kind, VERSION, IDENTITY, DOCS)
                 changed = payload()
-                changed["etc/obsgod.conf"] = b"unapproved"
+                changed["etc/deckystream.conf"] = b"unapproved"
                 with self.assertRaisesRegex(ValueError, "inventory"):
                     N.audit_package("pkg", BUILD[kind](changed), ("linux", "amd64", ""), kind, VERSION, IDENTITY, DOCS)
                 with self.assertRaisesRegex(ValueError, "name/version/architecture"):
@@ -223,11 +223,11 @@ class NFPMTests(unittest.TestCase):
                 N.tar_entries(tar({path: b"x"}))
         for mutate in (lambda m: setattr(m, "type", tarfile.SYMTYPE), lambda m: setattr(m, "mode", 0o4755), lambda m: setattr(m, "uid", 1000)):
             with self.assertRaises(ValueError):
-                N.tar_entries(tar({"usr/bin/obsgod": b""}, mutate))
+                N.tar_entries(tar({"usr/bin/deckystream": b""}, mutate))
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             files = {}
-            N.add_entry(files, "usr/bin/obsgod", stat.S_IFREG | 0o755, 0, 0, b"x")
-            N.add_entry(files, "./usr/bin/obsgod", stat.S_IFREG | 0o755, 0, 0, b"x")
+            N.add_entry(files, "usr/bin/deckystream", stat.S_IFREG | 0o755, 0, 0, b"x")
+            N.add_entry(files, "./usr/bin/deckystream", stat.S_IFREG | 0o755, 0, 0, b"x")
 
     def test_compression_truncation_expansion_and_apk_hash_are_checked(self):
         with self.assertRaisesRegex(ValueError, "Truncated"):

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/egohygiene/deckystream/internal/obs"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/obs"
 )
 
 func newProfileCommand(service obs.Service) *coral.Command {

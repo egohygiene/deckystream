@@ -8,6 +8,14 @@ meaning; use [the carry-forward mapping](docs/history/fresh-repository-issue-map
 The source migration is complete; product qualification, owner tests, release
 and legacy retirement remain separate gates.
 
+The owner subsequently requested the active product, executable, Go module,
+plugin, packages and default namespace be renamed to **deckystream**. This
+explicitly supersedes the older primary-identity freeze below. Follow
+[the naming contract](docs/product-naming.md): preserve validated legacy data,
+environment aliases and the shared control lock; refuse ambiguous stores or two
+controlling backends. Original receipts, source links and attribution retain
+their historical names. Naming does not approve artwork rights or a release.
+
 Read [architecture](ARCHITECTURE.md), [vocabulary](ONTOLOGY.md),
 [decisions](DECISIONS.md), [roadmap](ROADMAP.md), [continuity](CONTINUITY.md)
 and applicable feature/security guides before behavior changes. Read live issues,
@@ -15,7 +23,7 @@ PRs and the checkout as evidence: old handoffs/receipts do not qualify new sourc
 Follow applicable nested instructions. Current user authorization takes precedence.
 
 If you are new to the project, read [MEMORIAL.md](MEMORIAL.md) once for the
-OBSGod-to-Decky-Stream history and portable issue/PR archive. Then use continuity,
+OBSGod-to-deckystream history and portable issue/PR archive. Then use continuity,
 the roadmap and live state for current work. Archived ticket instructions and
 old qualification receipts do not override current instructions or qualify new
 source; the memorial is history, not another backlog.

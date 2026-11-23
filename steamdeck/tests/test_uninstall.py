@@ -24,12 +24,12 @@ class RemovalSafety(unittest.TestCase):
         self.home.mkdir()
         self.env = patch.dict(os.environ, {"HOME": str(self.home), **{k: "" for k in paths.DEFAULTS}})
         self.env.start()
-        self.base = self.home / ".local/share/obsgod"
-        self.config = self.home / ".config/obsgod"
-        self.state = self.home / ".local/state/obsgod"
-        self.cache = self.home / ".cache/obsgod"
-        self.obs = self.home / ".var/app/com.obsproject.Studio/config/obsgod"
-        self.videos = self.home / "Videos/OBSGod"
+        self.base = self.home / ".local/share/deckystream"
+        self.config = self.home / ".config/deckystream"
+        self.state = self.home / ".local/state/deckystream"
+        self.cache = self.home / ".cache/deckystream"
+        self.obs = self.home / ".var/app/com.obsproject.Studio/config/deckystream"
+        self.videos = self.home / "Videos/deckystream"
         self.idle = {"ok": True, "configured": True, "state": "stopped", "stream": {"active": False}, "recording": False, "output_known": True, "process": "absent"}
         self.cli = patch.object(uninstall, "run_cli", return_value=self.idle)
         self.run_cli = self.cli.start()
@@ -50,38 +50,38 @@ class RemovalSafety(unittest.TestCase):
         return path
 
     def fixture(self):
-        self.write(".local/share/obsgod/releases/v1/obsgod")
+        self.write(".local/share/deckystream/releases/v1/deckystream")
         (self.base / "current").symlink_to(self.base / "releases/v1")
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         alias.parent.mkdir(parents=True)
-        alias.symlink_to(self.base / "current/obsgod")
-        self.write(".local/share/applications/obsgod-setup.desktop", "X-OBSGod-Managed=true")
-        self.write(".local/share/applications/obsgod-uninstall.desktop", "X-OBSGod-Managed=true")
-        self.write(".config/obsgod/secrets.json", "private fixture")
-        self.write(".var/app/com.obsproject.Studio/config/obsgod/obs-studio/config.json")
+        alias.symlink_to(self.base / "current/deckystream")
+        self.write(".local/share/applications/deckystream-setup.desktop", "X-deckystream-Managed=true")
+        self.write(".local/share/applications/deckystream-uninstall.desktop", "X-deckystream-Managed=true")
+        self.write(".config/deckystream/secrets.json", "private fixture")
+        self.write(".var/app/com.obsproject.Studio/config/deckystream/obs-studio/config.json")
         self.write(".var/app/com.obsproject.Studio/config/obs-studio/ordinary.json", "ordinary OBS")
-        self.write(".local/state/obsgod/diagnostics/events.json")
-        self.write(".cache/obsgod/cache")
-        self.write(".local/share/obsgod/backups/old/secrets.json", "old private fixture")
-        self.write("Videos/OBSGod/2026-11-12 11-30-00.mkv", "recorded clip")
-        self.write("Videos/OBSGod/other.mkv", "owner-added media")
-        self.write("Videos/OBSGod/notes.txt", "unrelated text")
+        self.write(".local/state/deckystream/diagnostics/events.json")
+        self.write(".cache/deckystream/cache")
+        self.write(".local/share/deckystream/backups/old/secrets.json", "old private fixture")
+        self.write("Videos/deckystream/2026-11-12 11-30-00.mkv", "recorded clip")
+        self.write("Videos/deckystream/other.mkv", "owner-added media")
+        self.write("Videos/deckystream/notes.txt", "unrelated text")
         for kind in ["settings", "data", "logs"]:
-            self.write("homebrew/" + kind + "/obsgod/owned", "adapter data")
+            self.write("homebrew/" + kind + "/deckystream/owned", "adapter data")
             self.write("homebrew/" + kind + "/OtherPlugin/keep", "unrelated plugin")
 
     def test_default_removes_app_and_plugin_but_preserves_private_data_and_media(self):
         self.fixture()
         plan = uninstall.build_plan(self.home)
         uninstall.apply_plan(plan, self.home)
-        self.remove_plugin.assert_called_once_with(self.home, str(self.home / "homebrew/plugins/obsgod"))
+        self.remove_plugin.assert_called_once_with(self.home, str(self.home / "homebrew/plugins/deckystream"))
         self.assertFalse((self.base / "current").is_symlink())
         self.assertFalse((self.base / "releases").exists())
-        self.assertFalse((self.home / ".local/bin/obsgod").is_symlink())
+        self.assertFalse((self.home / ".local/bin/deckystream").is_symlink())
         for path in [self.config, self.obs, self.state, self.cache, self.base / "backups", self.videos]:
             self.assertTrue(path.exists(), path)
         for kind in ["settings", "data", "logs"]:
-            self.assertTrue((self.home / "homebrew" / kind / "obsgod/owned").exists())
+            self.assertTrue((self.home / "homebrew" / kind / "deckystream/owned").exists())
         self.assertTrue((self.obs.parent / "obs-studio/ordinary.json").exists())
         self.assertEqual([x.args[0] for x in self.run_cli.call_args_list], ["status", "status", "status"])
 
@@ -93,18 +93,18 @@ class RemovalSafety(unittest.TestCase):
         self.assertEqual({path.name for path in self.base.iterdir()}, {"update.lock", "install.lock"})
         self.assertEqual({path.name for path in self.state.iterdir()}, {"control.lock"})
         for kind in ["settings", "data", "logs"]:
-            self.assertFalse((self.home / "homebrew" / kind / "obsgod").exists())
+            self.assertFalse((self.home / "homebrew" / kind / "deckystream").exists())
             self.assertTrue((self.home / "homebrew" / kind / "OtherPlugin/keep").exists())
         self.assertTrue((self.videos / "other.mkv").exists())
         self.assertTrue((self.obs.parent / "obs-studio/ordinary.json").exists())
 
     def test_reset_retains_app_plugin_and_same_control_lock_inode(self):
         self.fixture()
-        lock = self.write(".local/state/obsgod/control.lock")
+        lock = self.write(".local/state/deckystream/control.lock")
         inode = lock.stat().st_ino
         uninstall.apply_plan(uninstall.build_plan(self.home, "reset"), self.home)
         self.remove_plugin.assert_not_called()
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
         self.assertTrue((self.base / "backups/old/secrets.json").exists())
         self.assertEqual(lock.stat().st_ino, inode)
         self.assertEqual(list(self.state.iterdir()), [lock])
@@ -193,7 +193,7 @@ class RemovalSafety(unittest.TestCase):
     def test_custom_xdg_roots_and_legacy_conflict(self):
         env = {"XDG_DATA_HOME": str(self.home / "data"), "XDG_CONFIG_HOME": str(self.home / "cfg"), "XDG_STATE_HOME": str(self.home / "state"), "XDG_CACHE_HOME": str(self.home / "cache")}
         base, apps = paths.app_directories(self.home, env)
-        self.assertEqual(base, self.home / "data/obsgod")
+        self.assertEqual(base, self.home / "data/deckystream")
         self.assertEqual(apps, self.home / "data/applications")
         for value in ["relative", "bad\npath"]:
             with self.assertRaises(ValueError):
@@ -201,13 +201,13 @@ class RemovalSafety(unittest.TestCase):
         self.fixture()
         self.assertEqual(paths.app_directories(self.home, env)[0], self.base)
         base.mkdir(parents=True)
-        with self.assertRaisesRegex(ValueError, "Two OBSGod"):
+        with self.assertRaisesRegex(ValueError, "Two deckystream"):
             paths.app_directories(self.home, env)
 
     def test_changed_alias_or_removal_failure_is_reported_as_partial(self):
         self.fixture()
         plan = uninstall.build_plan(self.home, "wipe")
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         alias.unlink()
         alias.symlink_to(self.home / "unrelated")
         with self.assertRaisesRegex(uninstall.RemovalError, "partial"):
@@ -216,7 +216,7 @@ class RemovalSafety(unittest.TestCase):
 
     def test_control_lock_blocks_reset_without_deleting_config(self):
         self.fixture()
-        lock = self.write(".local/state/obsgod/control.lock")
+        lock = self.write(".local/state/deckystream/control.lock")
         with lock.open("w") as held:
             fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
             with self.assertRaisesRegex(uninstall.RemovalError, "partial"):
@@ -225,14 +225,14 @@ class RemovalSafety(unittest.TestCase):
 
     def test_busy_control_lock_never_removes_plugin_or_selected_files(self):
         self.fixture()
-        lock = self.write(".local/state/obsgod/control.lock")
+        lock = self.write(".local/state/deckystream/control.lock")
         with lock.open("w") as held:
             fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
             with self.assertRaisesRegex(uninstall.RemovalError, "partial"):
                 uninstall.apply_plan(uninstall.build_plan(self.home, "wipe"), self.home)
         self.remove_plugin.assert_not_called()
         self.assertTrue((self.config / "secrets.json").exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
 
     def test_reappearing_idle_obs_is_not_removed_under_the_control_lock(self):
         self.fixture()
@@ -245,7 +245,7 @@ class RemovalSafety(unittest.TestCase):
 
     def test_mid_plan_interrupt_reports_failure_and_preserves_remaining_data(self):
         self.fixture()
-        alias = self.home / ".local/bin/obsgod"
+        alias = self.home / ".local/bin/deckystream"
         original = Path.unlink
         def interrupt_after_first_delete(path, *args, **kwargs):
             if path == alias:
@@ -261,14 +261,14 @@ class RemovalSafety(unittest.TestCase):
         self.assertIn("interrupted", answer["message"])
         self.assertFalse(alias.is_symlink())
         self.assertTrue((self.config / "secrets.json").exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
         retry = uninstall.build_plan(self.home, "wipe")
         self.assertFalse(any(entry["path"] == str(alias) for entry in retry["entries"]))
 
     def test_unloaded_orphan_directory_is_retried_and_absence_must_be_verified(self):
-        folder = self.home / "homebrew/plugins/obsgod"
+        folder = self.home / "homebrew/plugins/deckystream"
         folder.mkdir(parents=True)
-        (folder / "plugin.json").write_text('{"name":"OBSGod"}')
+        (folder / "plugin.json").write_text('{"name":"deckystream"}')
         helper = Mock(return_value={"ok": True, "removed": True})
         with patch.object(uninstall, "_sibling", return_value=SimpleNamespace(helper_request=helper)):
             with self.assertRaisesRegex(uninstall.RemovalError, "files remain"):
@@ -290,7 +290,7 @@ class RemovalSafety(unittest.TestCase):
         self.assertEqual({path.name for path in self.state.iterdir()}, {"control.lock"})
 
     def test_wipe_unknown_decky_root_has_visible_gate_and_never_mutates(self):
-        self.write(".config/obsgod/secrets.json", "preserved private fixture")
+        self.write(".config/deckystream/secrets.json", "preserved private fixture")
         plan = uninstall.build_plan(self.home, "wipe")
         self.assertEqual(plan["decky_root"], str(self.home / "homebrew"))
         self.assertTrue(plan["pending_gates"])
@@ -304,14 +304,14 @@ class RemovalSafety(unittest.TestCase):
     def test_custom_decky_roots_and_inconsistent_plugin_paths(self):
         root = self.home / "custom Decky"
         for kind in ["settings", "data", "logs"]:
-            path = root / kind / "obsgod"
+            path = root / kind / "deckystream"
             path.mkdir(parents=True)
             (path / "owned").write_text("adapter fixture")
         env = {"DECKY_HOME": str(root)}
         plan = uninstall.build_plan(self.home, "wipe", environ=env)
         chosen = {x["path"] for x in plan["entries"]}
-        self.assertTrue(all(str(root / kind / "obsgod") in chosen for kind in ["settings", "data", "logs"]))
-        self.assertEqual(plan["plugin_directory"], str(root / "plugins/obsgod"))
+        self.assertTrue(all(str(root / kind / "deckystream") in chosen for kind in ["settings", "data", "logs"]))
+        self.assertEqual(plan["plugin_directory"], str(root / "plugins/deckystream"))
         with self.assertRaises(ValueError):
             uninstall.build_plan(self.home, "wipe", environ={**env, "DECKY_PLUGIN_SETTINGS_DIR": str(root / "settings/OtherPlugin")})
 

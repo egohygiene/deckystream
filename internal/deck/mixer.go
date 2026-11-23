@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/szmyty/obsgod/pkg/automation"
+	"github.com/egohygiene/deckystream/pkg/automation"
 )
 
 type MixerPreferences struct {
@@ -269,7 +269,7 @@ func MixerStatus(ctx context.Context, p Paths) MixerSnapshot {
 	}
 	defer c.Close()
 	runtime, err := c.RuntimeStatus(ctx)
-	if err != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+	if err != nil || runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 		return r
 	}
 	game, gameErr := c.MixerInput(ctx, GameAudio)
@@ -502,7 +502,7 @@ func configureMixer(ctx context.Context, p Paths, raw json.RawMessage) (MixerRes
 		}
 		defer c.Close()
 		runtime, e := c.RuntimeStatus(ctx)
-		if e != nil || runtime.Profile != "OBSGod" || runtime.Collection != "OBSGod" {
+		if e != nil || runtime.Profile != "deckystream" || runtime.Collection != "deckystream" {
 			return MixerResult{}, errUnmanaged
 		}
 	}

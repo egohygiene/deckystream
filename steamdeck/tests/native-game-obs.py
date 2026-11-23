@@ -6,21 +6,19 @@ import base64
 import hashlib
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 import signal
 import subprocess
 import time
 
-import websockets
-
-
-LIVE = "OBSGod Live"
-GAME = "OBSGod Game"
-IDLE = "OBSGod Idle"
-DISPLAY = "OBSGod Gamescope"
-GAME_INPUT = "OBSGod Game Window"
-AUDIO = "OBSGod Game Audio"
-TEXT = "OBSGod Idle Message"
+LIVE = "deckystream Live"
+GAME = "deckystream Game"
+IDLE = "deckystream Idle"
+DISPLAY = "deckystream Gamescope"
+GAME_INPUT = "deckystream Game Window"
+AUDIO = "deckystream Game Audio"
+TEXT = "deckystream Idle Message"
 SENTINEL = "Legacy private display sentinel"
 OUT = Path("/work/output")
 
@@ -29,9 +27,9 @@ class OBSNotReady(AssertionError):
     """OBS explicitly rejected a request before its frontend was ready."""
 
 
-async def cli(action, settings=None, timeout=100):
+async def cli(action, settings=None, timeout=100, cleanup_timeout=8):
     process = await asyncio.create_subprocess_exec(
-        "/src/dist/obsgod", "deck", action,
+        "/src/dist/deckystream", "deck", action,
         stdin=asyncio.subprocess.PIPE if settings is not None else asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
     try:
@@ -39,16 +37,97 @@ async def cli(action, settings=None, timeout=100):
             json.dumps(settings).encode() if settings is not None else None), timeout)
     except BaseException:
         if process.returncode is None:
-            process.send_signal(signal.SIGINT)
-            try:
-                await asyncio.wait_for(process.communicate(), 8)
-            except asyncio.TimeoutError:
+            if cleanup_timeout <= 0:
                 process.kill()
                 await process.communicate()
+            else:
+                process.send_signal(signal.SIGINT)
+                try:
+                    await asyncio.wait_for(process.communicate(), cleanup_timeout)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.communicate()
         raise
     result = json.loads(raw)
     assert process.returncode == 0 and result.get("ok"), (action, result)
     return result
+
+
+def watcher_facts(status):
+    """Keep only fixed readiness facts; never retain settings or arbitrary text."""
+    video = status.get("video") if isinstance(status.get("video"), dict) else {}
+    stages = {
+        "Starting the local recording and waiting for encoded output.": "recording.starting",
+        "Recording ten seconds locally. Nothing is being broadcast.": "recording.running",
+        "Automatic game transitions could not be started. Output remains active; inspect capture or use Stop.": "game.watch-unavailable",
+    }
+    updated = None
+    if isinstance(video.get("updated"), str) and len(video["updated"]) <= 40:
+        try:
+            updated = datetime.fromisoformat(video["updated"]).isoformat()
+        except ValueError:
+            pass
+    return {
+        "recording": status.get("recording") is True,
+        "output_known": status.get("output_known") is True,
+        "state": status.get("state") if status.get("state") in {"setup", "unknown", "stopped", "starting", "streaming"} else "unknown",
+        "video": {"state": video.get("state") if video.get("state") in {"screen", "game", "idle", "stopped", "unknown"} else "unknown",
+                  "watching": video.get("watching") is True, "updated": updated},
+        "stages": [stages[row["message"]] for row in status.get("diagnostics", [])
+                   if isinstance(row, dict) and isinstance(row.get("message"), str) and row["message"] in stages][-10:],
+    }
+
+
+async def wait_local_test_watcher(clip_task, timeout=12, interval=.1, clock=time.monotonic, sleep=asyncio.sleep):
+    # Recording/GAME pixels precede the ordered audio/capture observer startup.
+    # Await its independent readiness without spending the local clip's lifetime.
+    started = clock()
+    deadline = started + timeout
+    proof = {"state": "failed", "timeout_seconds": timeout, "probes": 0, "first": None, "last": None}
+    probe = None
+
+    def clip_running():
+        if clip_task.done():
+            # Retrieve a failed task without retaining its possibly private error.
+            failed = clip_task.cancelled() or clip_task.exception() is not None
+            raise AssertionError("Local clip " + ("failed/cancelled" if failed else "completed") + " before watcher readiness") from None
+
+    try:
+        while True:
+            clip_running()
+            remaining = deadline - clock()
+            if remaining <= 0:
+                raise AssertionError(f"Local-test watcher readiness exceeded its {timeout:g}-second startup budget; inspect local-watcher-readiness.json")
+            # Status is read-only: kill an overdue probe immediately instead of
+            # extending the total deadline with the output-command cleanup grace.
+            probe = asyncio.create_task(cli("status", timeout=remaining, cleanup_timeout=0))
+            done, _ = await asyncio.wait({probe, clip_task}, timeout=remaining, return_when=asyncio.FIRST_COMPLETED)
+            clip_running()
+            if probe not in done:
+                raise AssertionError(f"Local-test watcher readiness exceeded its {timeout:g}-second startup budget; inspect local-watcher-readiness.json")
+            try:
+                status = await probe
+            except Exception:
+                raise AssertionError("Local-test watcher status probe failed; inspect local-watcher-readiness.json") from None
+            facts = watcher_facts(status)
+            facts["elapsed_seconds"] = round(clock() - started, 3)
+            proof["probes"] += 1
+            if proof["first"] is None:
+                proof["first"] = facts
+            proof["last"] = facts
+            if not facts["output_known"] or not facts["recording"]:
+                raise AssertionError("Local recording stopped or became unconfirmed before watcher readiness")
+            if facts["video"]["watching"]:
+                proof["state"] = "passed"
+                return proof
+            await sleep(min(interval, max(0, deadline - clock())))
+    finally:
+        if probe is not None:
+            if not probe.done():
+                probe.cancel()
+            await asyncio.gather(probe, return_exceptions=True)
+        proof["elapsed_seconds"] = round(clock() - started, 3)
+        (OUT / "local-watcher-readiness.json").write_text(json.dumps(proof, indent=2) + "\n")
 
 
 class OBS:
@@ -59,7 +138,8 @@ class OBS:
 
     @classmethod
     async def connect(cls):
-        password = json.loads((Path.home() / ".config/obsgod/secrets.json").read_text())["obs_password"]
+        import websockets
+        password = json.loads((Path.home() / ".config/deckystream/secrets.json").read_text())["obs_password"]
         last = None
         for _ in range(100):
             try:
@@ -68,6 +148,8 @@ class OBS:
                 identify = {"rpcVersion": 1, "eventSubscriptions": 64}
                 auth = hello["d"].get("authentication")
                 if auth:
+                    # https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#creating-an-authentication-string
+                    # codeql[py/weak-sensitive-data-hashing] -- OBS WebSocket mandates this challenge-response SHA256; this is not a stored password hash.
                     secret = base64.b64encode(hashlib.sha256((password + auth["salt"]).encode()).digest()).decode()
                     identify["authentication"] = base64.b64encode(hashlib.sha256((secret + auth["challenge"]).encode()).digest()).decode()
                 await socket.send(json.dumps({"op": 1, "d": identify}))
@@ -144,11 +226,11 @@ async def screenshot(obs, label, scene, expected):
 
 async def seed_old_items(obs):
     collections = await obs.wait_frontend()
-    if collections["currentSceneCollectionName"] != "OBSGod":
-        if "OBSGod" in collections["sceneCollections"]:
-            await obs.request("SetCurrentSceneCollection", {"sceneCollectionName": "OBSGod"})
+    if collections["currentSceneCollectionName"] != "deckystream":
+        if "deckystream" in collections["sceneCollections"]:
+            await obs.request("SetCurrentSceneCollection", {"sceneCollectionName": "deckystream"})
         else:
-            await obs.request("CreateSceneCollection", {"sceneCollectionName": "OBSGod"})
+            await obs.request("CreateSceneCollection", {"sceneCollectionName": "deckystream"})
         await obs.wait_frontend()
     names = {x["sceneName"] for x in (await obs.request("GetSceneList"))["scenes"]}
     for scene in (IDLE, GAME, LIVE):
@@ -255,8 +337,7 @@ async def main():
                 raise AssertionError("Local clip completed without an observed active recording")
             await asyncio.sleep(.1)
         proof["clip_game"] = await wait_scene(obs, GAME, "red", "clip-game", recording=True, timeout=5)
-        status = await cli("status")
-        assert status["recording"] and status["video"]["watching"], "Local-test watcher did not run while parent held control lock"
+        proof["local_watcher_readiness"] = await wait_local_test_watcher(clip_task)
         await stop_child(game)
         game = None
         proof["clip_idle"] = await wait_scene(obs, IDLE, "placeholder", "clip-idle", recording=True, timeout=6)

@@ -36,17 +36,17 @@ class WipeExport(unittest.TestCase):
                                                  **{name: "" for name in paths.DEFAULTS}}))
         self.cli = self.enterContext(patch.object(uninstall, "run_cli", return_value=IDLE))
         self.plugin = self.enterContext(patch.object(uninstall, "remove_plugin"))
-        self.base = self.home / ".local/share/obsgod"
-        self.settings = self.write(".config/obsgod/secrets.json", SECRET)
-        self.write(".local/share/obsgod/releases/v1/obsgod", "reviewed executable")
+        self.base = self.home / ".local/share/deckystream"
+        self.settings = self.write(".config/deckystream/secrets.json", SECRET)
+        self.write(".local/share/deckystream/releases/v1/deckystream", "reviewed executable")
         (self.base / "current").symlink_to(self.base / "releases/v1")
-        self.write(".local/share/obsgod/backups/prior/secrets.json", "old private binding")
-        self.write(".local/state/obsgod/history.json", "owned history")
-        self.write(".var/app/com.obsproject.Studio/config/obsgod/profile.json", "managed settings")
+        self.write(".local/share/deckystream/backups/prior/secrets.json", "old private binding")
+        self.write(".local/state/deckystream/history.json", "owned history")
+        self.write(".var/app/com.obsproject.Studio/config/deckystream/profile.json", "managed settings")
         self.write(".var/app/com.obsproject.Studio/config/obs-studio/ordinary.json", "ordinary OBS")
-        self.write("homebrew/settings/obsgod/owned.json", "owned adapter")
+        self.write("homebrew/settings/deckystream/owned.json", "owned adapter")
         self.write("homebrew/settings/OtherPlugin/keep", "unrelated")
-        self.media = self.write("Videos/OBSGod/2026-11-20 00-00-00.mkv", "explicit media")
+        self.media = self.write("Videos/deckystream/2026-11-20 00-00-00.mkv", "explicit media")
 
     def write(self, relative, value):
         path = self.home / relative
@@ -56,7 +56,7 @@ class WipeExport(unittest.TestCase):
 
     def intact(self):
         self.assertTrue(self.settings.exists())
-        self.assertTrue((self.base / "current/obsgod").exists())
+        self.assertTrue((self.base / "current/deckystream").exists())
         self.assertTrue(self.media.exists())
 
     def archive(self, receipt):
@@ -89,7 +89,7 @@ class WipeExport(unittest.TestCase):
         self.assertTrue(Path(receipt["path"]).exists())
         self.assertTrue(manifest["contains_credentials"])
         self.assertTrue(manifest["preserved_after_wipe"])
-        self.assertEqual(content["home/.config/obsgod/secrets.json"], SECRET.encode())
+        self.assertEqual(content["home/.config/deckystream/secrets.json"], SECRET.encode())
         self.assertTrue(any(x["kind"] == "alias" and x["path"].endswith("/current") for x in manifest["entries"]))
         self.assertFalse(any("Videos/" in name or "OtherPlugin" in name or "/obs-studio/" in name or
                              name.endswith(("control.lock", "update.lock", "install.lock")) for name in content))
@@ -97,7 +97,7 @@ class WipeExport(unittest.TestCase):
         # staging, never extractall, HOME overwrite or recreated alias execution.
         restored = self.home / "private-recovery-staging"
         restored.mkdir(mode=0o700)
-        (restored / "secrets.json").write_bytes(content["home/.config/obsgod/secrets.json"])
+        (restored / "secrets.json").write_bytes(content["home/.config/deckystream/secrets.json"])
         self.assertEqual((restored / "secrets.json").read_text(), SECRET)
         self.assertEqual([call.args[0] for call in self.cli.call_args_list], ["status"] * 4)
 
@@ -132,7 +132,7 @@ class WipeExport(unittest.TestCase):
 
     def test_export_is_outside_selected_and_plugin_roots_in_both_directions(self):
         for destination in (self.settings.parent / "wipe.tar", self.base / "exports/wipe.tar",
-                            self.home / ".local/state/obsgod/wipe.tar", self.home / "homebrew/plugins/obsgod/wipe.tar",
+                            self.home / ".local/state/deckystream/wipe.tar", self.home / "homebrew/plugins/deckystream/wipe.tar",
                             self.home / ".config"):
             with self.subTest(path=destination), self.assertRaisesRegex(uninstall.RemovalError, "outside"):
                 uninstall.build_plan(self.home, "wipe", export_path=destination)
@@ -217,7 +217,7 @@ class WipeExport(unittest.TestCase):
             self.assertEqual(caught.exception.completed, [])
             self.plugin.assert_not_called()
             self.intact()
-        self.assertEqual(list((self.home / ".local/share/obsgod-wipe-exports").iterdir()), [])
+        self.assertEqual(list((self.home / ".local/share/deckystream-wipe-exports").iterdir()), [])
 
     def test_file_and_directory_fsync_failures_prevent_first_deletion(self):
         original_sync, original_link = os.fsync, os.link
@@ -327,7 +327,7 @@ class WipeExport(unittest.TestCase):
         plan = uninstall.build_plan(self.home, "wipe", recordings=[str(self.media)])
         uninstall.apply_plan(plan, self.home)
         _, content = self.archive(plan["export_result"])
-        self.assertEqual(content["home/Videos/OBSGod/" + self.media.name], b"explicit media")
+        self.assertEqual(content["home/Videos/deckystream/" + self.media.name], b"explicit media")
         self.assertFalse(self.media.exists())
 
     def test_backup_loss_after_helper_stops_remaining_deletions_without_false_retention_claim(self):

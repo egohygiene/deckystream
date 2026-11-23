@@ -5,30 +5,30 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/egohygiene/deckystream/internal/config"
+	api "github.com/egohygiene/deckystream/pkg/api/v1"
+	creator "github.com/egohygiene/deckystream/pkg/creator/v1"
 	"github.com/muesli/coral"
-	"github.com/szmyty/obsgod/internal/config"
-	api "github.com/szmyty/obsgod/pkg/api/v1"
-	creator "github.com/szmyty/obsgod/pkg/creator/v1"
 )
 
 func creatorProfilePath(explicit string) (string, error) {
 	if explicit != "" {
 		return explicit, nil
 	}
-	if path := os.Getenv("OBSGOD_CREATOR_PROFILE"); path != "" {
+	if path := os.Getenv("DECKYSTREAM_CREATOR_PROFILE"); path != "" {
 		return path, nil
 	}
 	if base := os.Getenv("XDG_CONFIG_HOME"); base != "" {
 		if !filepath.IsAbs(base) {
 			return "", &api.Error{Code: api.InvalidInput, Operation: "creator.plan"}
 		}
-		return filepath.Join(base, "obsgod", "creator.json"), nil
+		return filepath.Join(base, "deckystream", "creator.json"), nil
 	}
 	base, e := os.UserConfigDir()
 	if e != nil {
 		return "", &api.Error{Code: api.InvalidInput, Operation: "creator.plan"}
 	}
-	return filepath.Join(base, "obsgod", "creator.json"), nil
+	return filepath.Join(base, "deckystream", "creator.json"), nil
 }
 func readCreatorProfile(explicit string) (creator.Profile, error) {
 	path, e := creatorProfilePath(explicit)
@@ -47,9 +47,9 @@ func newCreatorCommand(connection *config.Config, connect apiConnector) *coral.C
 		connect = connectAPI
 	}
 	root := &coral.Command{Use: "creator", Short: "Optional local creator orchestration through the public OBS API"}
-	root.Example = "  obsgod creator plan --profile creator.json\n  obsgod creator start --profile creator.json --approve --allow-streaming\n  obsgod creator status"
+	root.Example = "  deckystream creator plan --profile creator.json\n  deckystream creator start --profile creator.json --approve --allow-streaming\n  deckystream creator status"
 	var profilePath string
-	root.PersistentFlags().StringVar(&profilePath, "profile", "", "Creator profile file (env: OBSGOD_CREATOR_PROFILE; default: XDG obsgod/creator.json)")
+	root.PersistentFlags().StringVar(&profilePath, "profile", "", "Creator profile file (env: DECKYSTREAM_CREATOR_PROFILE; default: XDG deckystream/creator.json)")
 	root.PersistentFlags().Bool("json", true, "Emit versioned JSON (always enabled for this command family)")
 	root.AddCommand(&coral.Command{Use: "extensions", Short: "Discover local provider/event/content extension boundaries offline", Args: coral.NoArgs, RunE: func(cmd *coral.Command, _ []string) error {
 		return json.NewEncoder(cmd.OutOrStdout()).Encode(creator.Discover())

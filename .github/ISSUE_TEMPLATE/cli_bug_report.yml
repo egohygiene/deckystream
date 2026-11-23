@@ -3,12 +3,12 @@ description: Report a reproducible standalone CLI or reusable OBS API problem
 body:
   - type: markdown
     attributes:
-      value: "For standalone `obsgod`, configuration, completions or reusable OBS API problems. Use the Steam Deck bug form for managed Deck/Decky problems. Never include OBS passwords, stream keys, private setup links, wallet seeds or raw private profiles/logs. Follow [SECURITY.md](https://github.com/szmyty/obsgod/security/policy) for suspected vulnerabilities; do not post sensitive details here."
+      value: "For standalone `deckystream`, configuration, completions or reusable OBS API problems. Use the Steam Deck bug form for managed Deck/Decky problems. Never include OBS passwords, stream keys, private setup links, wallet seeds or raw private profiles/logs. Follow [SECURITY.md](https://github.com/egohygiene/deckystream/security/policy) for suspected vulnerabilities; do not post sensitive details here."
   - type: textarea
     id: versions
     attributes:
       label: Version and environment
-      description: Include `obsgod version --json`, OS/architecture, installation method or source revision, and OBS version if relevant. Mention the shell for completion problems.
+      description: Include `deckystream version --json`, OS/architecture, installation method or source revision, and OBS version if relevant. Mention the shell for completion problems.
     validations:
       required: true
   - type: textarea

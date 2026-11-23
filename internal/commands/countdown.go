@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/szmyty/obsgod/internal/obs"
+	"github.com/egohygiene/deckystream/internal/obs"
 )
 
 func parseCountdownDuration(value string) (time.Duration, error) {
