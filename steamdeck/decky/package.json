@@ -18,7 +18,7 @@
     "esbuild": "0.28.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "rollup": "4.68.7",
+    "rollup": "4.68.8",
     "rollup-plugin-external-globals": "0.13.0",
     "typescript": "7.0.2"
   },
